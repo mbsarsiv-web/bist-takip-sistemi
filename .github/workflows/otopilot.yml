@@ -1,0 +1,35 @@
+name: BIST Robotu Otopilot
+
+on:
+  schedule:
+    - cron: '18 20 * * *' # Türkiye saati ile 23:18
+    - cron: '49 22 * * *' # Türkiye saati ile 01:49
+  workflow_dispatch: # GitHub panelinden manuel çalıştırma butonu
+
+jobs:
+  motoru_calistir:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Kodları İndir
+        uses: actions/checkout@v3
+
+      - name: Python Ortamını Kur
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Gerekli Kütüphaneleri Yükle
+        run: pip install -r requirements.txt
+
+      - name: Güvenli Kasadan Şifreleri Çıkar
+        env:
+          GOOGLE_CREDS: ${{ secrets.GOOGLE_CREDS }}
+        run: echo "$GOOGLE_CREDS" > google_creds.json
+
+      - name: Güncelleme Motorunu Çalıştır
+        if: github.event.schedule == '18 20 * * *' || github.event_name == 'workflow_dispatch'
+        run: python main.py guncelle
+        
+      - name: Bakım Motorunu Çalıştır
+        if: github.event.schedule == '49 22 * * *'
+        run: python main.py bakim
