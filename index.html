@@ -162,7 +162,6 @@
     let fpBaslangic, fpBitis;
     let isDataLoaded = false;
 
-    // YENİ: Her sekme için bağımsız tarih hafızası
     let sekmeTarihleri = {
       tarih: { bas: "", bitis: "" },
       top10: { bas: "", bitis: "" },
@@ -173,9 +172,7 @@
       try {
         const response = await fetch(GAS_API_URL, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'text/plain;charset=utf-8',
-          },
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify(payload)
         });
         return await response.json();
@@ -221,17 +218,34 @@
           if(response.hata) { bosTabloGoster("SİSTEM HATASI: " + response.hata); return; }
           
           globalHeaders = response.headers;
-          globalDbData = response.dbData;
           globalAssets = response.assets;
           globalYillar = response.yillar;
           globalTarihAyarlari = response.tarihAyarlari;
+
+          // GOOGLE'IN HAMMALİYE İŞİNİ TELEFON DEVRALDI:
+          let islenmisData = [];
+          let rawDb = response.dbData;
+          for (let i = 1; i < rawDb.length; i++) {
+            let row = rawDb[i];
+            if (row[0]) {
+               let dateObj = new Date(row[0]);
+               if (!isNaN(dateObj)) {
+                   row[0] = dateObj.toISOString().split('T')[0]; // Tarih formatlama
+                   for (let j = 1; j < row.length; j++) {
+                       if (row[j] === "") row[j] = null; // Boşları temizleme
+                   }
+                   islenmisData.push(row);
+               }
+            }
+          }
+          globalDbData = islenmisData;
           isDataLoaded = true;
 
           document.getElementById('lastUpdateText').innerText = response.lastUpdate;
           document.getElementById('assetCountText').innerText = response.assets.length + " VARLIK";
           
           tabloyuCiz(globalYillar);
-          gosterToast("Veriler cihaza indirildi, sistem ışık hızında hazır!", "#38BDF8");
+          gosterToast("Veriler cihaza indi, sistem ışık hızında hazır!", "#38BDF8");
         })
         .catch(err => bosTabloGoster("BAĞLANTI HATASI: " + err.message));
     }
@@ -550,7 +564,6 @@
         datePanel.style.display = 'flex';
         dataTable.className = 'mode-tarih';
         
-        // YENİ: Takvimi o sekmenin hafızasındaki tarihle güncelle (Sessizce)
         fpBaslangic.setDate(sekmeTarihleri[hedef].bas, false);
         fpBitis.setDate(sekmeTarihleri[hedef].bitis, false);
         
