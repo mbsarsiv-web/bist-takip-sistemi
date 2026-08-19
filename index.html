@@ -115,14 +115,6 @@
       <button id="btnBottom10" class="tab-btn inactive" onclick="sekmeDegistir('bottom10')" style="background-color: #7F1D1D; border-color: #991B1B;">
         <i class="fa-solid fa-arrow-trend-down"></i> EN KÖTÜ 10
       </button>
-      
-      <!-- Otopilot Butonları (İsimleri Eski Haline Getirildi) -->
-      <button id="btnGuncelle" class="tab-btn run-btn" onclick="bilgiGoster('guncelle')" style="background-color: #059669; border-color: #047857;">
-        <i class="fa-solid fa-rocket"></i> Güncelle
-      </button>
-      <button id="btnBakim" class="tab-btn run-btn" onclick="bilgiGoster('bakim')" style="background-color: #D97706; border-color: #B45309;">
-        <i class="fa-solid fa-screwdriver-wrench"></i> Bakım
-      </button>
     </div>
 
     <div id="datePanel" class="date-controls">
@@ -612,14 +604,6 @@
         if (benimId !== istekSayaci.bottom10) return;
         bosTabloGoster("Hata: " + err.message);
       });
-    }
-
-    function bilgiGoster(tip) {
-      if(tip === 'guncelle') {
-        gosterToast("Sistem GitHub Otopilotuna bağlıdır. Her gece 23:18'de bulut üzerinden tamamen otomatik güncellenir.", "#10B981");
-      } else {
-        gosterToast("Sistem GitHub Otopilotuna bağlıdır. Her gece 01:49'da bulut üzerinden otomatik eksik taraması yapar.", "#F59E0B");
-      }
     }
   </script>
 </body>
