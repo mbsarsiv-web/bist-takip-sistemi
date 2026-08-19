@@ -24,9 +24,6 @@
     .tab-btn.inactive { background-color: var(--bg-panel); }
     .tab-btn.inactive:hover { background-color: #1E293B; }
     
-    .run-btn { flex: 0.3; min-width: 120px; font-size: 0.85rem !important; transition: filter 0.2s; }
-    .run-btn:hover { filter: brightness(1.2); }
-    
     .date-controls { background: #111820; padding: 8px 25px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 10px; display: none; justify-content: center; align-items: center; gap: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.3);}
     .date-group { display: flex; align-items: center; gap: 8px; }
     .date-controls label { color: var(--gold); font-weight: 900; font-size: 0.95rem; display: flex; align-items: center; gap: 6px; margin: 0; }
@@ -81,7 +78,7 @@
     @media (max-width: 768px) {
       .main-content { padding: 5px; } .top-header { flex-direction: column; justify-content: center; gap: 8px; padding: 8px 10px; } .header-title { position: static; transform: none; left: auto; font-size: 1.15rem; }
       .update-badge { font-size: 0.7rem; padding: 4px 10px; } .tab-buttons { flex-wrap: wrap; gap: 6px; } .tab-btn { flex-basis: 48%; margin: 0; font-size: 0.8rem; padding: 5px 6px;}
-      .run-btn { flex-basis: 48%; padding: 8px; font-size: 0.85rem !important;} .date-controls { justify-content: space-between; padding: 10px; gap: 10px; } .date-group { flex-direction: column; width: 48%; gap: 6px; }
+      .date-controls { justify-content: space-between; padding: 10px; gap: 10px; } .date-group { flex-direction: column; width: 48%; gap: 6px; }
       .date-controls label { width: 100%; justify-content: center; font-size: 0.75rem; } .date-input { width: 100% !important; padding: 8px 5px !important; font-size: 0.9rem !important; }
       .mode-yillar { width: max-content; margin: 0 auto; } .mode-yillar th, .mode-yillar td { padding: 6px 8px; } .col-varlik { padding-left: 10px !important; }
       .mode-tarih { max-width: 100% !important; margin: 0 auto !important; } .mode-tarih th { font-size: 0.95rem !important; padding: 4px 2px !important; } .mode-tarih td { font-size: 0.95rem !important; padding: 1px 2px !important; }
@@ -149,30 +146,24 @@
   <script src="https://npmcdn.com/flatpickr/dist/l10n/tr.js"></script>
 
   <script>
-    // 🔴 Kendi Google Apps Script API URL'niz
-    const GAS_API_URL = "https://script.google.com/macros/s/AKfycbydzwC5fJ_4PHdMMhlqAojX0eYWWEKJHu5DmHHoAR6SdfFFdlLhV2kewl7HGZCET4I/exec";
+    // YENİ VE HIZLI API URL'N
+    const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxvISjns0Zle5VYIgTLzkoJa38T7LC20bRAEW9Sm6LZYpcW61PF1pzrcgBAulDV6XNM/exec";
 
-    let globalAssetList = [];
-    let dataYillar = [];
-    let dataTarih = [];
-    let dataTop10 = [];
-    let dataBottom10 = [];
-    let sonSorgulananTop10Tarihleri = "";
-    let sonSorgulananBottom10Tarihleri = "";
+    // CİHAZIN HAFIZASINDA TUTULACAK VERİLER (İnternet harcamayacak kısım)
+    let globalHeaders = [];
+    let globalDbData = [];
+    let globalAssets = [];
+    let globalYillar = [];
+    let globalTarihAyarlari = [];
+    
+    // TABLO VERİLERİ (Görüntüleme için)
+    let currentDataTarih = [];
+    let currentDataTop10 = [];
+    let currentDataBottom10 = [];
+
     let aktifSekme = 'yillar';
     let fpBaslangic, fpBitis;
-    let isFirstLoad = true;
-    let yeniGuncellemeTetiklendi = false;
-    let lastKnownUpdate = "";
-
-    let istekSayaci = { tarih: 0, top10: 0, bottom10: 0 };
-    let debounceTimer = null;
-
-    let tabDates = {
-      tarih: { bas: "", bit: "" },
-      top10: { bas: "", bit: "" },
-      bottom10: { bas: "", bit: "" }
-    };
+    let isDataLoaded = false;
 
     async function apiRequest(payload) {
       try {
@@ -180,8 +171,7 @@
           method: 'POST',
           body: JSON.stringify(payload)
         });
-        const data = await response.json();
-        return data;
+        return await response.json();
       } catch (error) {
         console.error("API Hatası:", error);
         throw error;
@@ -189,41 +179,19 @@
     }
 
     document.addEventListener("DOMContentLoaded", function() {
+      // Sayfa açıldığında veriyi sadece 1 kere çeker.
       veriCek();
 
       fpBaslangic = flatpickr("#tarihBaslangic", {
         locale: "tr", dateFormat: "Y-m-d", altInput: true, altFormat: "d.m.Y", disableMobile: "true",
-        onClose: function(s, d, instance) { instance.input.blur(); },
-        onChange: function(s, d, instance) { tarihHafizasinaKaydet(); tarihleriBackendGonderDebounced(); }
+        onChange: function() { localHesaplamalariTetikle(); }
       });
 
       fpBitis = flatpickr("#tarihBitis", {
         locale: "tr", dateFormat: "Y-m-d", altInput: true, altFormat: "d.m.Y", disableMobile: "true",
-        onClose: function(s, d, instance) { instance.input.blur(); },
-        onChange: function(s, d, instance) { tarihHafizasinaKaydet(); tarihleriBackendGonderDebounced(); }
-      });
-
-      document.addEventListener('visibilitychange', function() {
-        if (document.hidden) {
-          if (fpBaslangic) fpBaslangic.close();
-          if (fpBitis) fpBitis.close();
-          if (document.activeElement && typeof document.activeElement.blur === 'function') document.activeElement.blur();
-        }
-      });
-
-      window.addEventListener('blur', function() {
-        if (fpBaslangic) fpBaslangic.close();
-        if (fpBitis) fpBitis.close();
+        onChange: function() { localHesaplamalariTetikle(); }
       });
     });
-
-    function tarihHafizasinaKaydet() {
-      let b = document.getElementById('tarihBaslangic').value;
-      let bit = document.getElementById('tarihBitis').value;
-      if (aktifSekme === 'tarih') { tabDates.tarih.bas = b; tabDates.tarih.bit = bit; }
-      else if (aktifSekme === 'top10') { tabDates.top10.bas = b; tabDates.top10.bit = bit; }
-      else if (aktifSekme === 'bottom10') { tabDates.bottom10.bas = b; tabDates.bottom10.bit = bit; }
-    }
 
     function gosterToast(mesaj, renk = "#10B981") {
       const toast = document.getElementById('toastNotification');
@@ -231,58 +199,168 @@
       toast.style.borderLeftColor = renk;
       msgEl.innerText = mesaj;
       toast.classList.add('show');
-      setTimeout(() => toast.classList.remove('show'), 6000);
-    }
-
-    function guncelTarihEtiketiGoster(bas, bit) {
-      if (bas && bit) gosterToast("Kullanılan aralık: " + bas + " → " + bit, "#38BDF8");
+      setTimeout(() => toast.classList.remove('show'), 4000);
     }
 
     function veriCek() {
       apiRequest({ action: 'getAppData' })
-        .then(response => sistemiKur(response))
-        .catch(err => bosTabloGoster("Veritabanına bağlanılamadı."));
+        .then(response => {
+          if(!response || response.hata) { bosTabloGoster("Veritabanına bağlanılamadı."); return; }
+          
+          globalHeaders = response.headers;
+          globalDbData = response.dbData;
+          globalAssets = response.assets;
+          globalYillar = response.yillar;
+          globalTarihAyarlari = response.tarihAyarlari;
+          isDataLoaded = true;
+
+          document.getElementById('lastUpdateText').innerText = response.lastUpdate;
+          document.getElementById('assetCountText').innerText = response.assets.length + " VARLIK";
+          
+          tabloyuCiz(globalYillar);
+          gosterToast("Veriler cihaza indirildi, sistem ışık hızında hazır!", "#38BDF8");
+        })
+        .catch(err => bosTabloGoster("Bağlantı Hatası: " + err.message));
     }
 
-    function sistemiKur(response) {
-      if (!response) return;
-
-      if (lastKnownUpdate !== "" && response.lastUpdate !== lastKnownUpdate) {
-          sonSorgulananTop10Tarihleri = "";
-          sonSorgulananBottom10Tarihleri = "";
+    // ==========================================
+    // YENİ: CİHAZ İÇİ (OFFLINE) HESAPLAMA MOTORU
+    // ==========================================
+    
+    function asOfSatirBul(targetDateStr) {
+      let target = new Date(targetDateStr).getTime();
+      let bestIdx = -1;
+      for (let i = 0; i < globalDbData.length; i++) {
+        let rowTime = new Date(globalDbData[i][0]).getTime();
+        if (rowTime <= target) { bestIdx = i; } 
+        else { break; }
       }
-      lastKnownUpdate = response.lastUpdate;
-      globalAssetList = response.assets;
-      dataYillar = response.yillar;
-      dataTarih = response.tarih;
+      return bestIdx;
+    }
 
-      document.getElementById('lastUpdateText').innerText = response.lastUpdate;
-      document.getElementById('assetCountText').innerText = response.assets.length + " VARLIK";
-
-      if (yeniGuncellemeTetiklendi) {
-        gosterToast("Veritabanı senkronizasyonu tamamlandı. Toplam " + response.assets.length + " varlık işlendi.", "#10B981");
-        yeniGuncellemeTetiklendi = false;
-      }
-
-      if (isFirstLoad) {
-        let b = response.kayitliBaslangic || "";
-        let bit = response.kayitliBitis || "";
-        tabDates.tarih = { bas: b, bit: bit };
-        tabDates.top10 = { bas: "", bit: "" };
-        tabDates.bottom10 = { bas: "", bit: "" };
-
-        if(aktifSekme === 'tarih') {
-          if(b) fpBaslangic.setDate(b, false);
-          if(bit) fpBitis.setDate(bit, false);
+    function fiyatBul(colIdx, ankorRowIdx) {
+      for (let r = ankorRowIdx; r >= 0; r--) {
+        let val = globalDbData[r][colIdx];
+        if (val !== null && val !== "" && !isNaN(val)) {
+          return { deger: parseFloat(val), satir: r };
         }
-        isFirstLoad = false;
+      }
+      return null;
+    }
+
+    function ilkDoluSatiriBul(colIdx) {
+      for (let r = 0; r < globalDbData.length; r++) {
+        let val = globalDbData[r][colIdx];
+        if (val !== null && val !== "" && !isNaN(val)) return r;
+      }
+      return -1;
+    }
+
+    function formatDateTR(yyyyMMdd) {
+      let p = yyyyMMdd.split('-');
+      return p[2] + "." + p[1] + "." + p[0];
+    }
+
+    function formatGetiri(getiri, arzTarihi) {
+      let formatli = (getiri < 0) 
+        ? "%-" + Math.abs(getiri).toFixed(2).replace(".", ",") 
+        : "%" + getiri.toFixed(2).replace(".", ",");
+      if (arzTarihi) {
+        formatli += "\n(ARZ: " + formatDateTR(arzTarihi) + ")";
+      }
+      return formatli;
+    }
+
+    function tekVarlikGetiri(colIdx, startIdx, endIdx) {
+      let endHit = fiyatBul(colIdx, endIdx);
+      let startHit = fiyatBul(colIdx, startIdx);
+      if (!endHit || !startHit || startHit.deger <= 0) return null;
+
+      let getiri = ((endHit.deger - startHit.deger) / startHit.deger) * 100;
+      let arzTarihi = null;
+      
+      let ilkDolu = ilkDoluSatiriBul(colIdx);
+      if (ilkDolu !== -1 && ilkDolu >= startHit.satir) {
+        arzTarihi = globalDbData[startHit.satir][0];
+      }
+      return { getiri, arzTarihi };
+    }
+
+    function localHesaplamalariTetikle() {
+      if(!isDataLoaded) return;
+      let bas = document.getElementById('tarihBaslangic').value;
+      let bitis = document.getElementById('tarihBitis').value;
+      if (!bas || !bitis) return;
+
+      let startIdx = asOfSatirBul(bas);
+      let endIdx = asOfSatirBul(bitis);
+      
+      if (startIdx === -1 || endIdx === -1 || startIdx > endIdx) {
+        bosTabloGoster("Seçilen tarih aralığında veri bulunamadı.");
+        return;
       }
 
-      if(aktifSekme === 'yillar') tabloyuCiz(dataYillar);
-      else if(aktifSekme === 'tarih') tabloyuCiz(dataTarih);
-      else if(aktifSekme === 'top10') tabloyuCiz(dataTop10);
-      else tabloyuCiz(dataBottom10);
+      let basKullanilan = formatDateTR(globalDbData[startIdx][0]);
+      let bitKullanilan = formatDateTR(globalDbData[endIdx][0]);
+
+      if (aktifSekme === 'tarih') {
+        currentDataTarih = [["SIRA", "VARLIK", "GETİRİ"]];
+        for(let i = 1; i < globalTarihAyarlari.length - 1; i++) {
+          let varlik = globalTarihAyarlari[i][1];
+          let colIdx = globalHeaders.indexOf(varlik);
+          let getiriStr = "-";
+          if (colIdx !== -1) {
+            let res = tekVarlikGetiri(colIdx, startIdx, endIdx);
+            if(res) getiriStr = formatGetiri(res.getiri, res.arzTarihi);
+          }
+          currentDataTarih.push([i.toString(), varlik, getiriStr]);
+        }
+        
+        let altinIdx = globalHeaders.indexOf("GR ALTIN");
+        let altinStr = "-";
+        if(altinIdx !== -1) {
+            let res = tekVarlikGetiri(altinIdx, startIdx, endIdx);
+            if(res) altinStr = formatGetiri(res.getiri, res.arzTarihi);
+        }
+        currentDataTarih.push(["📌", "GR ALTIN", altinStr]);
+        
+        gosterToast("Hesaplandı: " + basKullanilan + " → " + bitKullanilan, "#10B981");
+        tabloyuCiz(currentDataTarih);
+      } 
+      else if (aktifSekme === 'top10' || aktifSekme === 'bottom10') {
+        let sonuclar = [];
+        for(let c = 1; c < globalHeaders.length; c++) {
+          let varlik = globalHeaders[c];
+          if(!varlik || varlik === "Tarih") continue;
+          let res = tekVarlikGetiri(c, startIdx, endIdx);
+          if (res) {
+            sonuclar.push({ varlik: varlik, getiri: res.getiri, arzTarihi: res.arzTarihi });
+          }
+        }
+
+        let grAltinObj = sonuclar.find(s => s.varlik === "GR ALTIN");
+        sonuclar.sort((a, b) => aktifSekme === 'top10' ? (b.getiri - a.getiri) : (a.getiri - b.getiri));
+        let topListe = sonuclar.slice(0, 10);
+
+        let arr = [["SIRA", "VARLIK", "GETİRİ"]];
+        topListe.forEach((t, i) => {
+          arr.push([(i+1).toString(), t.varlik, formatGetiri(t.getiri, t.arzTarihi)]);
+        });
+        if(grAltinObj) {
+          arr.push(["📌", "GR ALTIN", formatGetiri(grAltinObj.getiri, grAltinObj.arzTarihi)]);
+        }
+
+        if(aktifSekme === 'top10') currentDataTop10 = arr;
+        else currentDataBottom10 = arr;
+
+        gosterToast("Hesaplandı: " + basKullanilan + " → " + bitKullanilan, "#10B981");
+        tabloyuCiz(arr);
+      }
     }
+
+    // ==========================================
+    // ARAYÜZ (HTML) ÇİZİM İŞLEMLERİ
+    // ==========================================
 
     function tabloyuCiz(data) {
       if(!data || data.length === 0) {
@@ -333,11 +411,7 @@
 
           if (index === 0) {
             td.className = 'col-sira';
-            if (hucreVerisi === "📌" || visibleRowData[0] === "📌") {
-              td.innerText = "📌";
-            } else {
-              td.innerText = i;
-            }
+            td.innerText = (hucreVerisi === "📌" || visibleRowData[0] === "📌") ? "📌" : i;
           } else if (index === 1) {
             td.className = 'col-varlik';
             if (aktifSekme === 'top10' || aktifSekme === 'bottom10' || visibleRowData[0] === "📌") {
@@ -351,7 +425,7 @@
               let select = document.createElement('select');
               select.className = 'asset-select';
 
-              globalAssetList.forEach(asset => {
+              globalAssets.forEach(asset => {
                 let opt = document.createElement('option');
                 opt.value = asset;
                 opt.innerText = asset;
@@ -362,28 +436,20 @@
               select.onchange = function() {
                 tr.classList.add('row-loading');
                 let yeniVarlik = this.value;
-                let bas = document.getElementById('tarihBaslangic').value;
-                let bit = document.getElementById('tarihBitis').value;
-
-                apiRequest({
-                  action: 'varlikGuncelle',
-                  sekme: aktifSekme,
-                  dataIndex: i,
-                  yeniVarlik: yeniVarlik,
-                  basStr: bas,
-                  bitStr: bit
-                }).then(res => {
-                    if (res && res.updatedTarihData && !res.updatedTarihData.hata) {
-                        dataTarih = res.updatedTarihData.satirlar;
-                        tabloyuCiz(dataTarih);
-                    } else if (res && res.updatedTarihData && res.updatedTarihData.hata) {
-                        gosterToast(res.updatedTarihData.hata, "#EF4444");
-                        tr.classList.remove('row-loading');
-                    } else {
-                        sistemiKur(res);
+                
+                // Arka planda Google'a sadece "Bunu kaydet" diyoruz, hesabı biz yapıyoruz
+                apiRequest({ action: 'varlikGuncelle', sekme: aktifSekme, dataIndex: i, yeniVarlik: yeniVarlik })
+                .then(res => {
+                    tr.classList.remove('row-loading');
+                    if(aktifSekme === 'yillar') {
+                        globalYillar[i][1] = yeniVarlik;
+                        tabloyuCiz(globalYillar);
+                    } else if (aktifSekme === 'tarih') {
+                        globalTarihAyarlari[i][1] = yeniVarlik;
+                        localHesaplamalariTetikle();
                     }
                 }).catch(err => {
-                    gosterToast("Hata oluştu", "#EF4444");
+                    gosterToast("Kayıt Hatası", "#EF4444");
                     tr.classList.remove('row-loading');
                 });
               };
@@ -399,7 +465,7 @@
             }
 
           } else {
-            if(hucreVerisi === "" || hucreVerisi === "-") {
+            if(hucreVerisi === "" || hucreVerisi === "-" || hucreVerisi === null) {
               td.innerText = "-";
               td.style.color = "#475569";
             } else {
@@ -450,7 +516,7 @@
     function bosTabloGoster(mesaj, yukleniyorMu = false) {
       document.getElementById('tableHeader').innerHTML = '<th class="col-sira">SIRA</th><th class="col-varlik">VARLIK</th><th>GETİRİ</th>';
       if (yukleniyorMu) {
-        document.getElementById('tableBody').innerHTML = '<tr><td colspan="3" class="loading-state"><i class="fa-solid fa-spinner fa-spin"></i><br>Yükleniyor...</td></tr>';
+        document.getElementById('tableBody').innerHTML = '<tr><td colspan="3" class="loading-state"><i class="fa-solid fa-spinner fa-spin"></i><br>Hesaplanıyor...</td></tr>';
       } else {
         document.getElementById('tableBody').innerHTML = '<tr><td colspan="3" style="padding: 20px; color: #FACC15; text-align:center;">' + mesaj + '</td></tr>';
       }
@@ -471,139 +537,23 @@
       const datePanel = document.getElementById('datePanel');
       const dataTable = document.getElementById('dataTable');
 
-      if (hedef !== 'yillar') {
-          let hDate = tabDates[hedef];
-          fpBaslangic.setDate(hDate.bas || "", false);
-          fpBitis.setDate(hDate.bit || "", false);
-      }
-
       if (hedef === 'yillar') {
         datePanel.style.display = 'none';
         dataTable.className = 'mode-yillar';
-        tabloyuCiz(dataYillar);
-      } else if (hedef === 'tarih') {
+        tabloyuCiz(globalYillar);
+      } else {
         datePanel.style.display = 'flex';
         dataTable.className = 'mode-tarih';
+        
         let bas = document.getElementById('tarihBaslangic').value;
         let bitis = document.getElementById('tarihBitis').value;
 
-        if (!dataTarih || dataTarih.length <= 1) {
-            bosTabloGoster("Veriler hesaplanıyor...", true);
-            if (bas && bitis) {
-              const benimId = ++istekSayaci.tarih;
-              apiRequest({action: 'tarihVerileriniGetir', bas: bas, bitis: bitis}).then(res => {
-                  if (benimId !== istekSayaci.tarih) return;
-                  if (!res || res.hata) { bosTabloGoster(res ? res.hata : "Bilinmeyen hata."); return; }
-                  dataTarih = res.satirlar;
-                  if(aktifSekme === 'tarih') tabloyuCiz(dataTarih);
-              }).catch(err => {
-                  if (benimId !== istekSayaci.tarih) return;
-                  bosTabloGoster("Hata: " + err.message);
-              });
-            } else {
-              bosTabloGoster("Lütfen başlangıç ve bitiş tarihi seçin.");
-            }
+        if(!bas || !bitis) {
+            bosTabloGoster("Lütfen başlangıç ve bitiş tarihi seçin.");
         } else {
-            tabloyuCiz(dataTarih);
+            localHesaplamalariTetikle();
         }
-      } else if (hedef === 'top10') {
-        datePanel.style.display = 'flex';
-        dataTable.className = 'mode-tarih';
-        bosTabloGoster("", true);
-        top10VeriCek();
-      } else if (hedef === 'bottom10') {
-        datePanel.style.display = 'flex';
-        dataTable.className = 'mode-tarih';
-        bosTabloGoster("", true);
-        bottom10VeriCek();
       }
-    }
-
-    function tarihleriBackendGonder() {
-      let bas = document.getElementById('tarihBaslangic').value;
-      let bitis = document.getElementById('tarihBitis').value;
-      if (!bas || !bitis) return;
-
-      if (aktifSekme === 'tarih') {
-        bosTabloGoster("Hızlı Arama Algoritması devrede, hesaplanıyor...", true);
-        const benimId = ++istekSayaci.tarih;
-
-        apiRequest({action: 'tarihVerileriniGetir', bas: bas, bitis: bitis}).then(res => {
-          if (benimId !== istekSayaci.tarih) return;
-          if (!res || res.hata) { bosTabloGoster(res ? res.hata : "Bilinmeyen hata."); return; }
-          dataTarih = res.satirlar;
-          guncelTarihEtiketiGoster(res.basKullanilan, res.bitKullanilan);
-          tabloyuCiz(dataTarih);
-        }).catch(err => {
-          if (benimId !== istekSayaci.tarih) return;
-          bosTabloGoster("Hata: " + err.message);
-        });
-
-      } else if (aktifSekme === 'top10') top10VeriCek();
-      else if (aktifSekme === 'bottom10') bottom10VeriCek();
-    }
-
-    function tarihleriBackendGonderDebounced() {
-      clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(tarihleriBackendGonder, 350);
-    }
-
-    function top10VeriCek() {
-      let bas = document.getElementById('tarihBaslangic').value;
-      let bitis = document.getElementById('tarihBitis').value;
-      if(!bas || !bitis) { bosTabloGoster("Lütfen başlangıç ve bitiş tarihi seçin."); return; }
-
-      let guncelTarihler = bas + "_" + bitis;
-      if (guncelTarihler === sonSorgulananTop10Tarihleri && dataTop10.length > 0) {
-        if (aktifSekme === 'top10') tabloyuCiz(dataTop10);
-        return;
-      }
-
-      bosTabloGoster("Hızlı Arama Algoritması devrede, hesaplanıyor...", true);
-      const benimId = ++istekSayaci.top10;
-
-      apiRequest({action: 'enIyi10', bas: bas, bitis: bitis}).then(res => {
-        if (benimId !== istekSayaci.top10) return;
-        if (!res || res.hata) { bosTabloGoster(res ? res.hata : "Bilinmeyen hata."); return; }
-        dataTop10 = res.satirlar;
-        sonSorgulananTop10Tarihleri = guncelTarihler;
-        if (aktifSekme === 'top10') {
-          guncelTarihEtiketiGoster(res.basKullanilan, res.bitKullanilan);
-          tabloyuCiz(dataTop10);
-        }
-      }).catch(err => {
-        if (benimId !== istekSayaci.top10) return;
-        bosTabloGoster("Hata: " + err.message);
-      });
-    }
-
-    function bottom10VeriCek() {
-      let bas = document.getElementById('tarihBaslangic').value;
-      let bitis = document.getElementById('tarihBitis').value;
-      if(!bas || !bitis) { bosTabloGoster("Lütfen başlangıç ve bitiş tarihi seçin."); return; }
-
-      let guncelTarihler = bas + "_" + bitis;
-      if (guncelTarihler === sonSorgulananBottom10Tarihleri && dataBottom10.length > 0) {
-        if (aktifSekme === 'bottom10') tabloyuCiz(dataBottom10);
-        return;
-      }
-
-      bosTabloGoster("Hızlı Arama Algoritması devrede, hesaplanıyor...", true);
-      const benimId = ++istekSayaci.bottom10;
-
-      apiRequest({action: 'enKotu10', bas: bas, bitis: bitis}).then(res => {
-        if (benimId !== istekSayaci.bottom10) return;
-        if (!res || res.hata) { bosTabloGoster(res ? res.hata : "Bilinmeyen hata."); return; }
-        dataBottom10 = res.satirlar;
-        sonSorgulananBottom10Tarihleri = guncelTarihler;
-        if (aktifSekme === 'bottom10') {
-          guncelTarihEtiketiGoster(res.basKullanilan, res.bitKullanilan);
-          tabloyuCiz(dataBottom10);
-        }
-      }).catch(err => {
-        if (benimId !== istekSayaci.bottom10) return;
-        bosTabloGoster("Hata: " + err.message);
-      });
     }
   </script>
 </body>
