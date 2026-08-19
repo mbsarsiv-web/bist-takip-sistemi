@@ -131,7 +131,7 @@
           <tr id="tableHeader"></tr>
         </thead>
         <tbody id="tableBody">
-          <tr><td colspan="15" class="loading-state"><i class="fa-solid fa-spinner fa-spin"></i><br>Sistem Verileri Yükleniyor...</td></tr>
+          <tr><td colspan="15" class="loading-state"><i class="fa-solid fa-spinner fa-spin"></i><br>Fiber Hızında Veri İndiriliyor...</td></tr>
         </tbody>
       </table>
     </div>
@@ -147,6 +147,9 @@
 
   <script>
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxvISjns0Zle5VYIgTLzkoJa38T7LC20bRAEW9Sm6LZYpcW61PF1pzrcgBAulDV6XNM/exec";
+    
+    // YENİ: DOĞRUDAN GOOGLE VERİ MERKEZİNE BAĞLANAN FİBER KABLO (Visualization API)
+    const GVIZ_URL = "https://docs.google.com/spreadsheets/d/1alSTQD8LsM7nMAXV58v3ij1Ke6H69g1pXwJsJtT9AJ4/gviz/tq?tqx=out:json&sheet=Veritaban%C4%B1";
 
     let globalHeaders = [];
     let globalDbData = [];
@@ -169,17 +172,12 @@
     };
 
     async function apiRequest(payload) {
-      try {
-        const response = await fetch(GAS_API_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify(payload)
-        });
-        return await response.json();
-      } catch (error) {
-        console.error("API Hatası:", error);
-        throw error;
-      }
+      const response = await fetch(GAS_API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload)
+      });
+      return await response.json();
     }
 
     document.addEventListener("DOMContentLoaded", function() {
@@ -211,43 +209,69 @@
       setTimeout(() => toast.classList.remove('show'), 4000);
     }
 
+    // YENİ: ÇİFT MOTORLU VERİ ÇEKME İŞLEMİ (Sıfır Gecikme)
     function veriCek() {
-      apiRequest({ action: 'getAppData' })
-        .then(response => {
-          if(!response) { bosTabloGoster("Sunucudan boş yanıt geldi."); return; }
-          if(response.hata) { bosTabloGoster("SİSTEM HATASI: " + response.hata); return; }
+      // Hem Dashboard'u hem de Fiber Veritabanını aynı anda çekiyoruz
+      Promise.all([
+        apiRequest({ action: 'getAppData' }),
+        fetch(GVIZ_URL).then(res => res.text()).then(text => {
+           // Google'ın eklediği fazlalıkları temizleyip saf JSON'a çeviriyoruz
+           const jsonString = text.substring(text.indexOf('(') + 1, text.lastIndexOf(')'));
+           return JSON.parse(jsonString);
+        })
+      ])
+      .then(([appData, dbJson]) => {
+          if(appData.hata) { bosTabloGoster("SİSTEM HATASI: " + appData.hata); return; }
           
-          globalHeaders = response.headers;
-          globalAssets = response.assets;
-          globalYillar = response.yillar;
-          globalTarihAyarlari = response.tarihAyarlari;
+          globalYillar = appData.yillar;
+          globalTarihAyarlari = appData.tarihAyarlari;
 
-          // GOOGLE'IN HAMMALİYE İŞİNİ TELEFON DEVRALDI:
+          // Veritabanı başlıklarını API'den alıyoruz
+          globalHeaders = dbJson.table.cols.map(c => c.label || "");
+          globalAssets = globalHeaders.filter(h => h !== "" && h !== "Tarih");
+
           let islenmisData = [];
-          let rawDb = response.dbData;
-          for (let i = 1; i < rawDb.length; i++) {
-            let row = rawDb[i];
-            if (row[0]) {
-               let dateObj = new Date(row[0]);
-               if (!isNaN(dateObj)) {
-                   row[0] = dateObj.toISOString().split('T')[0]; // Tarih formatlama
-                   for (let j = 1; j < row.length; j++) {
-                       if (row[j] === "") row[j] = null; // Boşları temizleme
-                   }
-                   islenmisData.push(row);
-               }
+          let lastUpd = "Bilinmiyor";
+
+          // Google'dan gelen devasa tabloyu JavaScript gücüyle anında işliyoruz
+          dbJson.table.rows.forEach(row => {
+            if (row.c && row.c[0] && row.c[0].v) {
+              let rowArr = [];
+              let dateRaw = String(row.c[0].v);
+              let dMatch = dateRaw.match(/Date\((\d+),\s*(\d+),\s*(\d+)/);
+              
+              if (dMatch) {
+                 let y = dMatch[1];
+                 let m = String(parseInt(dMatch[2]) + 1).padStart(2, '0');
+                 let d = String(dMatch[3]).padStart(2, '0');
+                 rowArr.push(`${y}-${m}-${d}`);
+                 lastUpd = `${d}.${m}.${y}`; // En son okunan tarih son güncel tarih olur
+              } else {
+                 rowArr.push(row.c[0].f || dateRaw);
+              }
+              
+              // Satırdaki tüm varlık fiyatlarını alıyoruz
+              for (let i = 1; i < dbJson.table.cols.length; i++) {
+                 if (row.c[i] && row.c[i].v !== null && row.c[i].v !== undefined) {
+                    rowArr.push(row.c[i].v);
+                 } else {
+                    rowArr.push(null);
+                 }
+              }
+              islenmisData.push(rowArr);
             }
-          }
+          });
+
           globalDbData = islenmisData;
           isDataLoaded = true;
 
-          document.getElementById('lastUpdateText').innerText = response.lastUpdate;
-          document.getElementById('assetCountText').innerText = response.assets.length + " VARLIK";
+          document.getElementById('lastUpdateText').innerText = lastUpd;
+          document.getElementById('assetCountText').innerText = globalAssets.length + " VARLIK";
           
           tabloyuCiz(globalYillar);
-          gosterToast("Veriler cihaza indi, sistem ışık hızında hazır!", "#38BDF8");
-        })
-        .catch(err => bosTabloGoster("BAĞLANTI HATASI: " + err.message));
+          gosterToast("Veriler fiber bağlantıyla saliseler içinde yüklendi!", "#38BDF8");
+      })
+      .catch(err => bosTabloGoster("FİBER BAĞLANTI HATASI: " + err.message));
     }
 
     function asOfSatirBul(targetDateStr) {
