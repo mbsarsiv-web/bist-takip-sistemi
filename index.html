@@ -146,17 +146,14 @@
   <script src="https://npmcdn.com/flatpickr/dist/l10n/tr.js"></script>
 
   <script>
-    // YENİ VE HIZLI API URL'N
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxvISjns0Zle5VYIgTLzkoJa38T7LC20bRAEW9Sm6LZYpcW61PF1pzrcgBAulDV6XNM/exec";
 
-    // CİHAZIN HAFIZASINDA TUTULACAK VERİLER (İnternet harcamayacak kısım)
     let globalHeaders = [];
     let globalDbData = [];
     let globalAssets = [];
     let globalYillar = [];
     let globalTarihAyarlari = [];
     
-    // TABLO VERİLERİ (Görüntüleme için)
     let currentDataTarih = [];
     let currentDataTop10 = [];
     let currentDataBottom10 = [];
@@ -165,10 +162,20 @@
     let fpBaslangic, fpBitis;
     let isDataLoaded = false;
 
+    // YENİ: Her sekme için bağımsız tarih hafızası
+    let sekmeTarihleri = {
+      tarih: { bas: "", bitis: "" },
+      top10: { bas: "", bitis: "" },
+      bottom10: { bas: "", bitis: "" }
+    };
+
     async function apiRequest(payload) {
       try {
         const response = await fetch(GAS_API_URL, {
           method: 'POST',
+          headers: {
+            'Content-Type': 'text/plain;charset=utf-8',
+          },
           body: JSON.stringify(payload)
         });
         return await response.json();
@@ -179,17 +186,22 @@
     }
 
     document.addEventListener("DOMContentLoaded", function() {
-      // Sayfa açıldığında veriyi sadece 1 kere çeker.
       veriCek();
 
       fpBaslangic = flatpickr("#tarihBaslangic", {
         locale: "tr", dateFormat: "Y-m-d", altInput: true, altFormat: "d.m.Y", disableMobile: "true",
-        onChange: function() { localHesaplamalariTetikle(); }
+        onChange: function(selectedDates, dateStr) {
+          if (aktifSekme !== 'yillar') sekmeTarihleri[aktifSekme].bas = dateStr;
+          localHesaplamalariTetikle(); 
+        }
       });
 
       fpBitis = flatpickr("#tarihBitis", {
         locale: "tr", dateFormat: "Y-m-d", altInput: true, altFormat: "d.m.Y", disableMobile: "true",
-        onChange: function() { localHesaplamalariTetikle(); }
+        onChange: function(selectedDates, dateStr) {
+          if (aktifSekme !== 'yillar') sekmeTarihleri[aktifSekme].bitis = dateStr;
+          localHesaplamalariTetikle(); 
+        }
       });
     });
 
@@ -205,7 +217,8 @@
     function veriCek() {
       apiRequest({ action: 'getAppData' })
         .then(response => {
-          if(!response || response.hata) { bosTabloGoster("Veritabanına bağlanılamadı."); return; }
+          if(!response) { bosTabloGoster("Sunucudan boş yanıt geldi."); return; }
+          if(response.hata) { bosTabloGoster("SİSTEM HATASI: " + response.hata); return; }
           
           globalHeaders = response.headers;
           globalDbData = response.dbData;
@@ -220,13 +233,9 @@
           tabloyuCiz(globalYillar);
           gosterToast("Veriler cihaza indirildi, sistem ışık hızında hazır!", "#38BDF8");
         })
-        .catch(err => bosTabloGoster("Bağlantı Hatası: " + err.message));
+        .catch(err => bosTabloGoster("BAĞLANTI HATASI: " + err.message));
     }
 
-    // ==========================================
-    // YENİ: CİHAZ İÇİ (OFFLINE) HESAPLAMA MOTORU
-    // ==========================================
-    
     function asOfSatirBul(targetDateStr) {
       let target = new Date(targetDateStr).getTime();
       let bestIdx = -1;
@@ -287,9 +296,10 @@
     }
 
     function localHesaplamalariTetikle() {
-      if(!isDataLoaded) return;
-      let bas = document.getElementById('tarihBaslangic').value;
-      let bitis = document.getElementById('tarihBitis').value;
+      if(!isDataLoaded || aktifSekme === 'yillar') return;
+      
+      let bas = sekmeTarihleri[aktifSekme].bas;
+      let bitis = sekmeTarihleri[aktifSekme].bitis;
       if (!bas || !bitis) return;
 
       let startIdx = asOfSatirBul(bas);
@@ -357,10 +367,6 @@
         tabloyuCiz(arr);
       }
     }
-
-    // ==========================================
-    // ARAYÜZ (HTML) ÇİZİM İŞLEMLERİ
-    // ==========================================
 
     function tabloyuCiz(data) {
       if(!data || data.length === 0) {
@@ -437,7 +443,6 @@
                 tr.classList.add('row-loading');
                 let yeniVarlik = this.value;
                 
-                // Arka planda Google'a sadece "Bunu kaydet" diyoruz, hesabı biz yapıyoruz
                 apiRequest({ action: 'varlikGuncelle', sekme: aktifSekme, dataIndex: i, yeniVarlik: yeniVarlik })
                 .then(res => {
                     tr.classList.remove('row-loading');
@@ -545,8 +550,12 @@
         datePanel.style.display = 'flex';
         dataTable.className = 'mode-tarih';
         
-        let bas = document.getElementById('tarihBaslangic').value;
-        let bitis = document.getElementById('tarihBitis').value;
+        // YENİ: Takvimi o sekmenin hafızasındaki tarihle güncelle (Sessizce)
+        fpBaslangic.setDate(sekmeTarihleri[hedef].bas, false);
+        fpBitis.setDate(sekmeTarihleri[hedef].bitis, false);
+        
+        let bas = sekmeTarihleri[hedef].bas;
+        let bitis = sekmeTarihleri[hedef].bitis;
 
         if(!bas || !bitis) {
             bosTabloGoster("Lütfen başlangıç ve bitiş tarihi seçin.");
