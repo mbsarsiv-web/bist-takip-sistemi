@@ -153,14 +153,12 @@
     let aktifSekme = 'yillar';
     let fpBaslangic, fpBitis;
     
-    // YENİ: Bağımsız Takvim Hafızasını KORUYORUZ
     let sekmeTarihleri = {
       tarih: { bas: "", bitis: "" },
       top10: { bas: "", bitis: "" },
       bottom10: { bas: "", bitis: "" }
     };
 
-    // Hafızaya alınan son sekme verileri (gereksiz Google isteklerini engellemek için)
     let cacheVeriler = { tarih: null, top10: null, bottom10: null };
 
     async function apiRequest(payload) {
@@ -185,7 +183,7 @@
         onChange: function(selectedDates, dateStr) {
           if (aktifSekme !== 'yillar') {
             sekmeTarihleri[aktifSekme].bas = dateStr;
-            cacheVeriler[aktifSekme] = null; // Tarih değişince eski hafızayı sil
+            cacheVeriler[aktifSekme] = null; 
             googleSorgusuTetikle(); 
           }
         }
@@ -196,7 +194,7 @@
         onChange: function(selectedDates, dateStr) {
           if (aktifSekme !== 'yillar') {
             sekmeTarihleri[aktifSekme].bitis = dateStr;
-            cacheVeriler[aktifSekme] = null; // Tarih değişince eski hafızayı sil
+            cacheVeriler[aktifSekme] = null; 
             googleSorgusuTetikle(); 
           }
         }
@@ -212,7 +210,6 @@
       setTimeout(() => toast.classList.remove('show'), 4000);
     }
 
-    // AÇILIŞTA SADECE DASHBOARD ÇEKİLİR (Şimşek Hızı)
     function veriCekHizliAcilis() {
       apiRequest({ action: 'getAppData' })
         .then(response => {
@@ -230,14 +227,12 @@
         .catch(err => bosTabloGoster("BAĞLANTI HATASI"));
     }
 
-    // YENİ: HESAPLAMA YÜKÜ TEKRAR GOOGLE'DA (Eski Usul)
     function googleSorgusuTetikle() {
       let bas = sekmeTarihleri[aktifSekme].bas;
       let bitis = sekmeTarihleri[aktifSekme].bitis;
       
       if (!bas || !bitis) return;
       
-      // Eğer bu tarih aralığını zaten az önce çektiysek tekrar Google'a gitme
       if (cacheVeriler[aktifSekme]) {
          tabloyuCiz(cacheVeriler[aktifSekme]);
          return;
@@ -252,7 +247,7 @@
       apiRequest({ action: islem, bas: bas, bitis: bitis })
         .then(res => {
            if(res.hata) { bosTabloGoster(res.hata); return; }
-           cacheVeriler[aktifSekme] = res.satirlar; // Gelecek için hafızaya al
+           cacheVeriler[aktifSekme] = res.satirlar; 
            tabloyuCiz(res.satirlar);
            gosterToast("Hesaplandı: " + res.basKullanilan + " → " + res.bitKullanilan, "#10B981");
         })
@@ -334,17 +329,21 @@
                 tr.classList.add('row-loading');
                 let yeniVarlik = this.value;
                 
-                let bas = sekmeTarihleri[aktifSekme].bas;
-                let bit = sekmeTarihleri[aktifSekme].bitis;
+                // İŞTE SİSTEMİ DONDURAN HATA BURADAYDI, DÜZELTİLDİ:
+                let bas = (aktifSekme === 'yillar') ? "" : sekmeTarihleri[aktifSekme].bas;
+                let bit = (aktifSekme === 'yillar') ? "" : sekmeTarihleri[aktifSekme].bitis;
 
                 apiRequest({ action: 'varlikGuncelle', sekme: aktifSekme, dataIndex: i, yeniVarlik: yeniVarlik, bas: bas, bitis: bit })
                 .then(res => {
                     tr.classList.remove('row-loading');
                     if(aktifSekme === 'yillar') {
-                        globalYillar[i][1] = yeniVarlik;
+                        if(res.yillar) {
+                            globalYillar = res.yillar; // Google'ın hesapladığı yepyeni oranları listeye çek
+                        }
                         tabloyuCiz(globalYillar);
+                        gosterToast("Hisse değiştirildi!", "#10B981");
                     } else if (aktifSekme === 'tarih') {
-                        cacheVeriler['tarih'] = null; // Listeyi güncelledik, hafızayı silip yeniden hesaplat
+                        cacheVeriler['tarih'] = null; 
                         googleSorgusuTetikle();
                     }
                 }).catch(err => {
@@ -444,7 +443,6 @@
         datePanel.style.display = 'flex';
         dataTable.className = 'mode-tarih';
         
-        // O sekmeye özel tarihi ekrana geri bas
         fpBaslangic.setDate(sekmeTarihleri[hedef].bas, false);
         fpBitis.setDate(sekmeTarihleri[hedef].bitis, false);
         
