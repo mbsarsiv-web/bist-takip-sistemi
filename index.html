@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Getiri Takibi Sistemi</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <link rel="stylesheet" type="text/css" href="https://npmcdn.com/flatpickr/dist/themes/dark.css">
+
+  <style>
+    :root { --bg-main: #0a0e14; --bg-panel: #111820; --text-main: #E2E8F0; --gold: #FACC15; --blue-accent: #38BDF8; --green-accent: #10B981; --red-accent: #EF4444; --red-btn: #991B1B; --border-color: #2D3748; --panel-border: #1F2937; }
+    body { margin: 0; font-family: 'Inter', sans-serif; background-color: var(--bg-main); color: var(--text-main); display: flex; height: 100vh; overflow: hidden; }
+    .main-content { flex: 1; display: flex; flex-direction: column; padding: 5px 15px; max-width: 1400px; margin: 0 auto; width: 100%; box-sizing: border-box; overflow: hidden;}
+    .top-header { position: relative; display: flex; justify-content: flex-end; align-items: center; background-color: var(--red-btn); padding: 8px 15px; border-radius: 8px; margin-bottom: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); border: 1px solid #FCA5A5;}
+    .header-title { position: absolute; left: 50%; transform: translateX(-50%); font-size: 1.25rem; font-weight: 900; margin: 0; letter-spacing: 1px; color: white; white-space: nowrap; z-index: 1;}
+    .update-badge { background-color: #000; padding: 4px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: 800; border: 1px solid #333; display: flex; align-items: center; gap: 6px; z-index: 2;}
+    .update-badge .dot { width: 6px; height: 6px; background-color: #22C55E; border-radius: 50%; box-shadow: 0 0 6px #22C55E; animation: pulse 2s infinite; }
+    @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+    .tab-buttons { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+    .tab-btn { flex: 1; padding: 6px 8px; border-radius: 8px; font-size: 0.9rem; font-weight: 900; cursor: pointer; border: 1px solid var(--border-color); display: flex; justify-content: center; align-items: center; gap: 6px; transition: 0.2s; color: white; }
+    .tab-btn.active { background-color: var(--red-btn); border-color: #F87171; }
+    .tab-btn.inactive { background-color: var(--bg-panel); }
+    .tab-btn.inactive:hover { background-color: #1E293B; }
+    
+    .run-btn { flex: 0.3; min-width: 120px; font-size: 0.85rem !important; transition: filter 0.2s; }
+    .run-btn:hover { filter: brightness(1.2); }
+    
+    .date-controls { background: #111820; padding: 8px 25px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 10px; display: none; justify-content: center; align-items: center; gap: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.3);}
+    .date-group { display: flex; align-items: center; gap: 8px; }
+    .date-controls label { color: var(--gold); font-weight: 900; font-size: 0.95rem; display: flex; align-items: center; gap: 6px; margin: 0; }
+    .date-input { background-color: #0a0e14 !important; border: 1px solid var(--border-color) !important; color: white !important; padding: 6px 15px !important; border-radius: 6px !important; font-family: 'Inter', sans-serif !important; font-weight: 800 !important; font-size: 1.0rem !important; outline: none !important; cursor: pointer !important; transition: all 0.3s ease !important; text-align: center; width: 140px; box-sizing: border-box;}
+    .date-input:focus, .date-input:hover { border-color: var(--gold) !important; box-shadow: 0 0 8px rgba(250, 204, 21, 0.2) !important; }
+    .flatpickr-calendar { background: #111820 !important; border: 1px solid #2D3748 !important; box-shadow: 0 10px 25px rgba(0,0,0,0.8) !important; font-family: 'Inter', sans-serif !important; }
+    .flatpickr-day.selected { background: var(--gold) !important; color: #000 !important; border-color: var(--gold) !important; font-weight: 900 !important; }
+    .flatpickr-day:hover { background: #1F2937 !important; }
+    .table-container { background-color: var(--bg-panel); border-radius: 10px; border: 1px solid var(--panel-border); box-shadow: 0 10px 20px rgba(0,0,0,0.5); flex: 1; display: flex; flex-direction: column; width: 100%; overflow-x: auto; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+    table { border-collapse: collapse; text-align: center; margin: 0 auto; width: max-content;}
+    thead { border-bottom: 2px solid var(--panel-border); background-color: #141b24; }
+    th, td { box-sizing: border-box; vertical-align: middle; }
+    th { color: var(--gold); font-weight: 900; letter-spacing: 0.5px; }
+    td { border-bottom: 1px solid rgba(255,255,255,0.03); font-weight: 700; }
+    .mode-yillar { width: max-content; margin: 0 auto; }
+    .mode-yillar th { font-size: 1.05rem; padding: 6px 10px; white-space: nowrap; min-width: 90px; }
+    .mode-yillar td { padding: 4px 10px; height: auto; white-space: nowrap; }
+    .mode-tarih { width: 100%; max-width: 420px; margin: 0 auto; table-layout: fixed; }
+    .mode-tarih th:nth-child(1), .mode-tarih td:nth-child(1) { width: 15%; text-align: center !important; }
+    .mode-tarih th:nth-child(2), .mode-tarih td:nth-child(2) { width: 40%; text-align: left !important; padding: 4px 5px !important; padding-left: 20px !important; }
+    .mode-tarih th:nth-child(3), .mode-tarih td:nth-child(3) { width: 45%; text-align: center !important; padding: 4px 5px !important; }
+    .mode-tarih th { font-size: 1.15rem; padding: 4px 5px !important; }
+    .mode-tarih td { font-size: 1.0rem; padding: 1px 5px !important; white-space: nowrap; }
+    .select-wrapper { display: inline-flex; align-items: center; justify-content: flex-start !important; gap: 6px; width: 100%; margin: 0; }
+    .asset-select { background-color: transparent; border: none; color: var(--blue-accent); font-family: 'Inter', sans-serif; font-weight: 900; cursor: pointer; outline: none; -webkit-appearance: none; appearance: none; text-align: left !important; width: auto; max-width: 120px; font-size: 1.05rem !important; }
+    .sabit-varlik { font-size: 1.05rem !important; }
+    .asset-select option { background-color: var(--bg-panel); color: white; font-size: 1.0rem; text-align: left; }
+    .getiri-wrapper { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.1; width: 100%; }
+    .mode-tarih .getiri-wrapper { position: relative; align-items: center !important; }
+    .kat-val { font-size: 0.70rem; color: var(--gold); font-weight: 900; margin-top: 1px; letter-spacing: 0px; }
+    .getiri-val { font-weight: 900; }
+    .mode-tarih .arz-val { position: absolute; left: 100%; margin-left: 8px; font-size: 0.75em; color: #FBBF24; font-weight: 700; white-space: nowrap; }
+    .col-sira { color: var(--gold); text-align: center; font-size: 1.05rem !important; font-weight: 900; }
+    .col-varlik { text-align: left !important; padding-left: 20px !important; white-space: nowrap; overflow: hidden; }
+    .col-getiri { color: var(--green-accent); font-weight: 800;}
+    .col-getiri.negative { color: var(--red-accent); }
+    .mode-yillar th:nth-child(1), .mode-yillar td:nth-child(1) { position: sticky; left: 0; z-index: 2; background-color: var(--bg-panel); width: 50px; min-width: 50px; }
+    .mode-yillar th:nth-child(2), .mode-yillar td:nth-child(2) { position: sticky; left: 50px; z-index: 2; background-color: var(--bg-panel); box-shadow: 2px 0 8px rgba(0,0,0,0.3); width: 120px; min-width: 120px; }
+    .mode-yillar th:nth-child(1), .mode-yillar th:nth-child(2) { background-color: #141b24; }
+    tbody tr:hover td { background-color: rgba(255, 255, 255, 0.05); }
+    .mode-yillar tbody tr:hover td:nth-child(1), .mode-yillar tbody tr:hover td:nth-child(2) { background-color: #1a222d; }
+    .loading-state { text-align: center; padding: 30px; color: #94A3B8; font-size: 1rem; font-weight: 600; }
+    .loading-state i { color: #10B981; margin-bottom: 10px; font-size: 2rem; }
+    .row-loading { opacity: 0.4; pointer-events: none; }
+    .toast { position: fixed; bottom: 20px; right: 20px; background: #111820; border-left: 4px solid #10B981; color: white; padding: 15px 20px; border-radius: 6px; box-shadow: 0 10px 25px rgba(0,0,0,0.8); display: flex; align-items: center; gap: 12px; font-weight: 700; opacity: 0; transform: translateY(20px); transition: all 0.4s ease; z-index: 9999; pointer-events: none; }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    @media (max-height: 720px) {
+      .top-header { padding: 4px 10px; margin-bottom: 5px; } .header-title { font-size: 1.1rem; } .tab-buttons { margin-bottom: 5px; } .tab-btn { padding: 4px 6px; font-size: 0.8rem; }
+      .mode-yillar th { font-size: 0.85rem !important; padding: 2px 4px !important; } .mode-yillar td { padding: 2px 5px !important; height: auto; }
+      .getiri-val { font-size: 0.9rem; } .kat-val { font-size: 0.6rem; } .asset-select { font-size: 0.9rem !important; } .sabit-varlik { font-size: 0.9rem !important; } .table-container { box-shadow: none; }
+    }
+    @media (max-width: 768px) {
+      .main-content { padding: 5px; } .top-header { flex-direction: column; justify-content: center; gap: 8px; padding: 8px 10px; } .header-title { position: static; transform: none; left: auto; font-size: 1.15rem; }
+      .update-badge { font-size: 0.7rem; padding: 4px 10px; } .tab-buttons { flex-wrap: wrap; gap: 6px; } .tab-btn { flex-basis: 48%; margin: 0; font-size: 0.8rem; padding: 5px 6px;}
+      .run-btn { flex-basis: 48%; padding: 8px; font-size: 0.85rem !important;} .date-controls { justify-content: space-between; padding: 10px; gap: 10px; } .date-group { flex-direction: column; width: 48%; gap: 6px; }
+      .date-controls label { width: 100%; justify-content: center; font-size: 0.75rem; } .date-input { width: 100% !important; padding: 8px 5px !important; font-size: 0.9rem !important; }
+      .mode-yillar { width: max-content; margin: 0 auto; } .mode-yillar th, .mode-yillar td { padding: 6px 8px; } .col-varlik { padding-left: 10px !important; }
+      .mode-tarih { max-width: 100% !important; margin: 0 auto !important; } .mode-tarih th { font-size: 0.95rem !important; padding: 4px 2px !important; } .mode-tarih td { font-size: 0.95rem !important; padding: 1px 2px !important; }
+      .mode-tarih th:nth-child(2), .mode-tarih td:nth-child(2) { padding-left: 10px !important; } .mode-tarih th:nth-child(3), .mode-tarih td:nth-child(3) { padding-left: 2px !important; }
+      .asset-select { font-size: 0.95rem !important; } .sabit-varlik { font-size: 0.95rem !important; }
+    }
+  </style>
+</head>
+<body>
+
+  <main class="main-content">
+    <div class="top-header">
+      <h1 class="header-title">GETİRİ TAKİBİ</h1>
+      <div class="update-badge">
+        <div class="dot"></div> SON VERİ: <span style="color: #94A3B8; margin-left: 5px;" id="lastUpdateText">Yükleniyor...</span>
+        <span style="color: #475569; margin: 0 8px;">|</span>
+        <span style="color: #10B981;" id="assetCountText"><i class="fa-solid fa-spinner fa-spin"></i></span>
+      </div>
+    </div>
+
+    <div class="tab-buttons">
+      <button id="btnYillar" class="tab-btn active" onclick="sekmeDegistir('yillar')">
+        <i class="fa-solid fa-chart-column"></i> YILLARA GÖRE
+      </button>
+      <button id="btnTarih" class="tab-btn inactive" onclick="sekmeDegistir('tarih')">
+        <i class="fa-solid fa-hourglass-end"></i> İKİ TARİH ARASI
+      </button>
+      <button id="btnTop10" class="tab-btn inactive" onclick="sekmeDegistir('top10')" style="background-color: #4C1D95; border-color: #6D28D9;">
+        <i class="fa-solid fa-trophy"></i> EN İYİ 10
+      </button>
+      <button id="btnBottom10" class="tab-btn inactive" onclick="sekmeDegistir('bottom10')" style="background-color: #7F1D1D; border-color: #991B1B;">
+        <i class="fa-solid fa-arrow-trend-down"></i> EN KÖTÜ 10
+      </button>
+      
+      <!-- BURASI DEĞİŞTİ: Otopilot Butonları -->
+      <button id="btnGuncelle" class="tab-btn run-btn" onclick="bilgiGoster('guncelle')" style="background-color: #059669; border-color: #047857;">
+        <i class="fa-solid fa-robot"></i> Otopilot Devrede
+      </button>
+      <button id="btnBakim" class="tab-btn run-btn" onclick="bilgiGoster('bakim')" style="background-color: #D97706; border-color: #B45309;">
+        <i class="fa-solid fa-broom"></i> Onarım Otopilotu
+      </button>
+    </div>
+
+    <div id="datePanel" class="date-controls">
+      <div class="date-group">
+        <label><i class="fa-solid fa-calendar-day"></i> BAŞLANGIÇ:</label>
+        <input type="text" id="tarihBaslangic" class="date-input" placeholder="Tarih Seç">
+      </div>
+      <div class="date-group">
+        <label><i class="fa-solid fa-calendar-check"></i> BİTİŞ:</label>
+        <input type="text" id="tarihBitis" class="date-input" placeholder="Tarih Seç">
+      </div>
+    </div>
+
+    <div id="tableContainer" class="table-container">
+      <table id="dataTable" class="mode-yillar">
+        <thead>
+          <tr id="tableHeader"></tr>
+        </thead>
+        <tbody id="tableBody">
+          <tr><td colspan="15" class="loading-state"><i class="fa-solid fa-spinner fa-spin"></i><br>Sistem Verileri Yükleniyor...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+
+  <div id="toastNotification" class="toast">
+    <i class="fa-solid fa-circle-info" style="color: #38BDF8; font-size: 1.2rem;"></i>
+    <span id="toastMessage">Bildirim mesajı</span>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script src="https://npmcdn.com/flatpickr/dist/l10n/tr.js"></script>
+
+  <script>
+    // 🔴 Kendi Google Apps Script API URL'niz
+    const GAS_API_URL = "https://script.google.com/macros/s/AKfycbydzwC5fJ_4PHdMMhlqAojX0eYWWEKJHu5DmHHoAR6SdfFFdlLhV2kewl7HGZCET4I/exec";
+
+    let globalAssetList = [];
+    let dataYillar = [];
+    let dataTarih = [];
+    let dataTop10 = [];
+    let dataBottom10 = [];
+    let sonSorgulananTop10Tarihleri = "";
+    let sonSorgulananBottom10Tarihleri = "";
+    let aktifSekme = 'yillar';
+    let fpBaslangic, fpBitis;
+    let isFirstLoad = true;
+    let yeniGuncellemeTetiklendi = false;
+    let lastKnownUpdate = "";
+
+    let istekSayaci = { tarih: 0, top10: 0, bottom10: 0 };
+    let debounceTimer = null;
+
+    let tabDates = {
+      tarih: { bas: "", bit: "" },
+      top10: { bas: "", bit: "" },
+      bottom10: { bas: "", bit: "" }
+    };
+
+    async function apiRequest(payload) {
+      try {
+        const response = await fetch(GAS_API_URL, {
+          method: 'POST',
+          body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+        return data;
+      } catch (error) {
+        console.error("API Hatası:", error);
+        throw error;
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+      veriCek();
+
+      fpBaslangic = flatpickr("#tarihBaslangic", {
+        locale: "tr", dateFormat: "Y-m-d", altInput: true, altFormat: "d.m.Y", disableMobile: "true",
+        onClose: function(s, d, instance) { instance.input.blur(); },
+        onChange: function(s, d, instance) { tarihHafizasinaKaydet(); tarihleriBackendGonderDebounced(); }
+      });
+
+      fpBitis = flatpickr("#tarihBitis", {
+        locale: "tr", dateFormat: "Y-m-d", altInput: true, altFormat: "d.m.Y", disableMobile: "true",
+        onClose: function(s, d, instance) { instance.input.blur(); },
+        onChange: function(s, d, instance) { tarihHafizasinaKaydet(); tarihleriBackendGonderDebounced(); }
+      });
+
+      document.addEventListener('visibilitychange', function() {
+        if (document.hidden) {
+          if (fpBaslangic) fpBaslangic.close();
+          if (fpBitis) fpBitis.close();
+          if (document.activeElement && typeof document.activeElement.blur === 'function') document.activeElement.blur();
+        }
+      });
+
+      window.addEventListener('blur', function() {
+        if (fpBaslangic) fpBaslangic.close();
+        if (fpBitis) fpBitis.close();
+      });
+    });
+
+    function tarihHafizasinaKaydet() {
+      let b = document.getElementById('tarihBaslangic').value;
+      let bit = document.getElementById('tarihBitis').value;
+      if (aktifSekme === 'tarih') { tabDates.tarih.bas = b; tabDates.tarih.bit = bit; }
+      else if (aktifSekme === 'top10') { tabDates.top10.bas = b; tabDates.top10.bit = bit; }
+      else if (aktifSekme === 'bottom10') { tabDates.bottom10.bas = b; tabDates.bottom10.bit = bit; }
+    }
+
+    function gosterToast(mesaj, renk = "#10B981") {
+      const toast = document.getElementById('toastNotification');
+      const msgEl = document.getElementById('toastMessage');
+      toast.style.borderLeftColor = renk;
+      msgEl.innerText = mesaj;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 6000);
+    }
+
+    function guncelTarihEtiketiGoster(bas, bit) {
+      if (bas && bit) gosterToast("Kullanılan aralık: " + bas + " → " + bit, "#38BDF8");
+    }
+
+    function veriCek() {
+      apiRequest({ action: 'getAppData' })
+        .then(response => sistemiKur(response))
+        .catch(err => bosTabloGoster("Veritabanına bağlanılamadı."));
+    }
+
+    function sistemiKur(response) {
+      if (!response) return;
+
+      if (lastKnownUpdate !== "" && response.lastUpdate !== lastKnownUpdate) {
+          sonSorgulananTop10Tarihleri = "";
+          sonSorgulananBottom10Tarihleri = "";
+      }
+      lastKnownUpdate = response.lastUpdate;
+      globalAssetList = response.assets;
+      dataYillar = response.yillar;
+      dataTarih = response.tarih;
+
+      document.getElementById('lastUpdateText').innerText = response.lastUpdate;
+      document.getElementById('assetCountText').innerText = response.assets.length + " VARLIK";
+
+      if (yeniGuncellemeTetiklendi) {
+        gosterToast("Veritabanı senkronizasyonu tamamlandı. Toplam " + response.assets.length + " varlık işlendi.", "#10B981");
+        yeniGuncellemeTetiklendi = false;
+      }
+
+      if (isFirstLoad) {
+        let b = response.kayitliBaslangic || "";
+        let bit = response.kayitliBitis || "";
+        tabDates.tarih = { bas: b, bit: bit };
+        tabDates.top10 = { bas: "", bit: "" };
+        tabDates.bottom10 = { bas: "", bit: "" };
+
+        if(aktifSekme === 'tarih') {
+          if(b) fpBaslangic.setDate(b, false);
+          if(bit) fpBitis.setDate(bit, false);
+        }
+        isFirstLoad = false;
+      }
+
+      if(aktifSekme === 'yillar') tabloyuCiz(dataYillar);
+      else if(aktifSekme === 'tarih') tabloyuCiz(dataTarih);
+      else if(aktifSekme === 'top10') tabloyuCiz(dataTop10);
+      else tabloyuCiz(dataBottom10);
+    }
+
+    function tabloyuCiz(data) {
+      if(!data || data.length === 0) {
+        document.getElementById('tableBody').innerHTML = '<tr><td colspan="15" style="padding: 20px; color: #EF4444; text-align:center;">Veri bulunamadı.</td></tr>';
+        return;
+      }
+
+      const headers = data[0].slice(0, 11);
+      const headerRow = document.getElementById('tableHeader');
+      headerRow.innerHTML = '';
+
+      headers.forEach((baslik, index) => {
+        let th = document.createElement('th');
+        if(index === 0 && !baslik) baslik = "SIRA";
+        if(index === 1 && !baslik) baslik = "VARLIK";
+        if(index === 2 && !baslik && (aktifSekme === 'tarih' || aktifSekme === 'top10' || aktifSekme === 'bottom10')) baslik = "GETİRİ";
+
+        th.innerText = baslik;
+        if(index === 0) th.className = 'col-sira';
+        if(index === 1) th.className = 'col-varlik';
+        headerRow.appendChild(th);
+      });
+
+      const tbody = document.getElementById('tableBody');
+      tbody.innerHTML = '';
+
+      for (let i = 1; i < data.length; i++) {
+        let rowData = data[i];
+        let visibleRowData = rowData.slice(0, 11);
+
+        if (visibleRowData[0] === "📌") {
+          let spacerTr = document.createElement('tr');
+          spacerTr.style.pointerEvents = "none";
+          let spacerTd = document.createElement('td');
+          spacerTd.colSpan = visibleRowData.length;
+          spacerTd.style.height = "10px";
+          spacerTd.style.border = "none";
+          spacerTd.style.padding = "0";
+          spacerTd.style.backgroundColor = "transparent";
+          spacerTr.appendChild(spacerTd);
+          tbody.appendChild(spacerTr);
+        }
+
+        let tr = document.createElement('tr');
+
+        visibleRowData.forEach((hucreVerisi, index) => {
+          let td = document.createElement('td');
+
+          if (index === 0) {
+            td.className = 'col-sira';
+            if (hucreVerisi === "📌" || visibleRowData[0] === "📌") {
+              td.innerText = "📌";
+            } else {
+              td.innerText = i;
+            }
+          } else if (index === 1) {
+            td.className = 'col-varlik';
+            if (aktifSekme === 'top10' || aktifSekme === 'bottom10' || visibleRowData[0] === "📌") {
+              td.innerText = hucreVerisi;
+              td.style.color = (hucreVerisi === "GR ALTIN" && visibleRowData[0] === "📌") ? "#FBBF24" : "#38BDF8";
+              td.style.fontWeight = "900";
+              td.classList.add("sabit-varlik");
+            } else {
+              let wrapper = document.createElement('div');
+              wrapper.className = 'select-wrapper';
+              let select = document.createElement('select');
+              select.className = 'asset-select';
+
+              globalAssetList.forEach(asset => {
+                let opt = document.createElement('option');
+                opt.value = asset;
+                opt.innerText = asset;
+                if(asset === hucreVerisi) opt.selected = true;
+                select.appendChild(opt);
+              });
+
+              select.onchange = function() {
+                tr.classList.add('row-loading');
+                let yeniVarlik = this.value;
+                let bas = document.getElementById('tarihBaslangic').value;
+                let bit = document.getElementById('tarihBitis').value;
+
+                apiRequest({
+                  action: 'varlikGuncelle',
+                  sekme: aktifSekme,
+                  dataIndex: i,
+                  yeniVarlik: yeniVarlik,
+                  basStr: bas,
+                  bitStr: bit
+                }).then(res => {
+                    if (res && res.updatedTarihData && !res.updatedTarihData.hata) {
+                        dataTarih = res.updatedTarihData.satirlar;
+                        tabloyuCiz(dataTarih);
+                    } else if (res && res.updatedTarihData && res.updatedTarihData.hata) {
+                        gosterToast(res.updatedTarihData.hata, "#EF4444");
+                        tr.classList.remove('row-loading');
+                    } else {
+                        sistemiKur(res);
+                    }
+                }).catch(err => {
+                    gosterToast("Hata oluştu", "#EF4444");
+                    tr.classList.remove('row-loading');
+                });
+              };
+
+              let icon = document.createElement('i');
+              icon.className = 'fa-solid fa-chevron-down';
+              icon.style.color = '#475569';
+              icon.style.fontSize = '0.7em';
+
+              wrapper.appendChild(select);
+              wrapper.appendChild(icon);
+              td.appendChild(wrapper);
+            }
+
+          } else {
+            if(hucreVerisi === "" || hucreVerisi === "-") {
+              td.innerText = "-";
+              td.style.color = "#475569";
+            } else {
+              let textVal = hucreVerisi.toString();
+              let parts = textVal.split("\n");
+              let safGetiri = parts[0].trim().replace(/%/g, '');
+
+              if (safGetiri.startsWith('-')) {
+                  parts[0] = '%-' + safGetiri.substring(1);
+              } else {
+                  parts[0] = '%' + safGetiri;
+              }
+
+              let isNegative = parts[0].includes("-");
+              td.className = isNegative ? 'col-getiri negative' : 'col-getiri';
+
+              let katHtml = "";
+              if (!isNegative && aktifSekme === 'yillar') {
+                  let sayisalGetiri = parseFloat(safGetiri.replace(/\./g, "").replace(",", "."));
+                  if (!isNaN(sayisalGetiri) && sayisalGetiri >= 100) {
+                      let katSayisi = (sayisalGetiri / 100) + 1;
+                      let formatliKat = (katSayisi % 1 === 0) ? katSayisi : katSayisi.toFixed(1);
+                      formatliKat = formatliKat.toString().replace(".", ",");
+                      katHtml = `<span class="kat-val">(${formatliKat} KAT)</span>`;
+                  }
+              }
+
+              let ustSatir = `<span class="getiri-val">${parts[0]}</span>`;
+              if (parts.length > 1) {
+                  ustSatir += `<span class="arz-val">${parts[1]}</span>`;
+              }
+
+              td.innerHTML = `
+                <div class="getiri-wrapper">
+                  <div style="position:relative; display:inline-flex; align-items:center;">
+                    ${ustSatir}
+                  </div>
+                  ${katHtml}
+                </div>`;
+            }
+          }
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      }
+    }
+
+    function bosTabloGoster(mesaj, yukleniyorMu = false) {
+      document.getElementById('tableHeader').innerHTML = '<th class="col-sira">SIRA</th><th class="col-varlik">VARLIK</th><th>GETİRİ</th>';
+      if (yukleniyorMu) {
+        document.getElementById('tableBody').innerHTML = '<tr><td colspan="3" class="loading-state"><i class="fa-solid fa-spinner fa-spin"></i><br>Yükleniyor...</td></tr>';
+      } else {
+        document.getElementById('tableBody').innerHTML = '<tr><td colspan="3" style="padding: 20px; color: #FACC15; text-align:center;">' + mesaj + '</td></tr>';
+      }
+    }
+
+    function sekmeDegistir(hedef) {
+      if(aktifSekme === hedef) return;
+      aktifSekme = hedef;
+
+      document.getElementById('btnYillar').className = (hedef === 'yillar') ? 'tab-btn active' : 'tab-btn inactive';
+      document.getElementById('btnTarih').className = (hedef === 'tarih') ? 'tab-btn active' : 'tab-btn inactive';
+      document.getElementById('btnTop10').className = (hedef === 'top10') ? 'tab-btn active' : 'tab-btn inactive';
+      document.getElementById('btnBottom10').className = (hedef === 'bottom10') ? 'tab-btn active' : 'tab-btn inactive';
+
+      document.getElementById('btnTop10').style.backgroundColor = (hedef === 'top10') ? "#7C3AED" : "#4C1D95";
+      document.getElementById('btnBottom10').style.backgroundColor = (hedef === 'bottom10') ? "#B91C1C" : "#7F1D1D";
+
+      const datePanel = document.getElementById('datePanel');
+      const dataTable = document.getElementById('dataTable');
+
+      if (hedef !== 'yillar') {
+          let hDate = tabDates[hedef];
+          fpBaslangic.setDate(hDate.bas || "", false);
+          fpBitis.setDate(hDate.bit || "", false);
+      }
+
+      if (hedef === 'yillar') {
+        datePanel.style.display = 'none';
+        dataTable.className = 'mode-yillar';
+        tabloyuCiz(dataYillar);
+      } else if (hedef === 'tarih') {
+        datePanel.style.display = 'flex';
+        dataTable.className = 'mode-tarih';
+        let bas = document.getElementById('tarihBaslangic').value;
+        let bitis = document.getElementById('tarihBitis').value;
+
+        if (!dataTarih || dataTarih.length <= 1) {
+            bosTabloGoster("Veriler hesaplanıyor...", true);
+            if (bas && bitis) {
+              const benimId = ++istekSayaci.tarih;
+              apiRequest({action: 'tarihVerileriniGetir', bas: bas, bitis: bitis}).then(res => {
+                  if (benimId !== istekSayaci.tarih) return;
+                  if (!res || res.hata) { bosTabloGoster(res ? res.hata : "Bilinmeyen hata."); return; }
+                  dataTarih = res.satirlar;
+                  if(aktifSekme === 'tarih') tabloyuCiz(dataTarih);
+              }).catch(err => {
+                  if (benimId !== istekSayaci.tarih) return;
+                  bosTabloGoster("Hata: " + err.message);
+              });
+            } else {
+              bosTabloGoster("Lütfen başlangıç ve bitiş tarihi seçin.");
+            }
+        } else {
+            tabloyuCiz(dataTarih);
+        }
+      } else if (hedef === 'top10') {
+        datePanel.style.display = 'flex';
+        dataTable.className = 'mode-tarih';
+        bosTabloGoster("", true);
+        top10VeriCek();
+      } else if (hedef === 'bottom10') {
+        datePanel.style.display = 'flex';
+        dataTable.className = 'mode-tarih';
+        bosTabloGoster("", true);
+        bottom10VeriCek();
+      }
+    }
+
+    function tarihleriBackendGonder() {
+      let bas = document.getElementById('tarihBaslangic').value;
+      let bitis = document.getElementById('tarihBitis').value;
+      if (!bas || !bitis) return;
+
+      if (aktifSekme === 'tarih') {
+        bosTabloGoster("Hızlı Arama Algoritması devrede, hesaplanıyor...", true);
+        const benimId = ++istekSayaci.tarih;
+
+        apiRequest({action: 'tarihVerileriniGetir', bas: bas, bitis: bitis}).then(res => {
+          if (benimId !== istekSayaci.tarih) return;
+          if (!res || res.hata) { bosTabloGoster(res ? res.hata : "Bilinmeyen hata."); return; }
+          dataTarih = res.satirlar;
+          guncelTarihEtiketiGoster(res.basKullanilan, res.bitKullanilan);
+          tabloyuCiz(dataTarih);
+        }).catch(err => {
+          if (benimId !== istekSayaci.tarih) return;
+          bosTabloGoster("Hata: " + err.message);
+        });
+
+      } else if (aktifSekme === 'top10') top10VeriCek();
+      else if (aktifSekme === 'bottom10') bottom10VeriCek();
+    }
+
+    function tarihleriBackendGonderDebounced() {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(tarihleriBackendGonder, 350);
+    }
+
+    function top10VeriCek() {
+      let bas = document.getElementById('tarihBaslangic').value;
+      let bitis = document.getElementById('tarihBitis').value;
+      if(!bas || !bitis) { bosTabloGoster("Lütfen başlangıç ve bitiş tarihi seçin."); return; }
+
+      let guncelTarihler = bas + "_" + bitis;
+      if (guncelTarihler === sonSorgulananTop10Tarihleri && dataTop10.length > 0) {
+        if (aktifSekme === 'top10') tabloyuCiz(dataTop10);
+        return;
+      }
+
+      bosTabloGoster("Hızlı Arama Algoritması devrede, hesaplanıyor...", true);
+      const benimId = ++istekSayaci.top10;
+
+      apiRequest({action: 'enIyi10', bas: bas, bitis: bitis}).then(res => {
+        if (benimId !== istekSayaci.top10) return;
+        if (!res || res.hata) { bosTabloGoster(res ? res.hata : "Bilinmeyen hata."); return; }
+        dataTop10 = res.satirlar;
+        sonSorgulananTop10Tarihleri = guncelTarihler;
+        if (aktifSekme === 'top10') {
+          guncelTarihEtiketiGoster(res.basKullanilan, res.bitKullanilan);
+          tabloyuCiz(dataTop10);
+        }
+      }).catch(err => {
+        if (benimId !== istekSayaci.top10) return;
+        bosTabloGoster("Hata: " + err.message);
+      });
+    }
+
+    function bottom10VeriCek() {
+      let bas = document.getElementById('tarihBaslangic').value;
+      let bitis = document.getElementById('tarihBitis').value;
+      if(!bas || !bitis) { bosTabloGoster("Lütfen başlangıç ve bitiş tarihi seçin."); return; }
+
+      let guncelTarihler = bas + "_" + bitis;
+      if (guncelTarihler === sonSorgulananBottom10Tarihleri && dataBottom10.length > 0) {
+        if (aktifSekme === 'bottom10') tabloyuCiz(dataBottom10);
+        return;
+      }
+
+      bosTabloGoster("Hızlı Arama Algoritması devrede, hesaplanıyor...", true);
+      const benimId = ++istekSayaci.bottom10;
+
+      apiRequest({action: 'enKotu10', bas: bas, bitis: bitis}).then(res => {
+        if (benimId !== istekSayaci.bottom10) return;
+        if (!res || res.hata) { bosTabloGoster(res ? res.hata : "Bilinmeyen hata."); return; }
+        dataBottom10 = res.satirlar;
+        sonSorgulananBottom10Tarihleri = guncelTarihler;
+        if (aktifSekme === 'bottom10') {
+          guncelTarihEtiketiGoster(res.basKullanilan, res.bitKullanilan);
+          tabloyuCiz(dataBottom10);
+        }
+      }).catch(err => {
+        if (benimId !== istekSayaci.bottom10) return;
+        bosTabloGoster("Hata: " + err.message);
+      });
+    }
+
+    function bilgiGoster(tip) {
+      if(tip === 'guncelle') {
+        gosterToast("Sistem GitHub Otopilotuna bağlıdır. Her gece 23:18'de bulut üzerinden tamamen otomatik güncellenir.", "#10B981");
+      } else {
+        gosterToast("Sistem GitHub Otopilotuna bağlıdır. Her gece 01:49'da bulut üzerinden otomatik eksik taraması yapar.", "#F59E0B");
+      }
+    }
+  </script>
+</body>
+</html>
