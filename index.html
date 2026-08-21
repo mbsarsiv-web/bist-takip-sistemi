@@ -32,17 +32,23 @@
     .flatpickr-calendar { background: #111820 !important; border: 1px solid #2D3748 !important; box-shadow: 0 10px 25px rgba(0,0,0,0.8) !important; font-family: 'Inter', sans-serif !important; }
     .flatpickr-day.selected { background: var(--gold) !important; color: #000 !important; border-color: var(--gold) !important; font-weight: 900 !important; }
     .flatpickr-day:hover { background: #1F2937 !important; }
-    .table-container { background-color: var(--bg-panel); border-radius: 10px; border: 1px solid var(--panel-border); box-shadow: 0 10px 20px rgba(0,0,0,0.5); flex: 1; display: flex; flex-direction: column; width: 100%; overflow-x: auto; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+    
+    /* DÜZELTME 1: flex kaldırılarak block yapıldı, tabloların ezilmesi engellendi */
+    .table-container { background-color: var(--bg-panel); border-radius: 10px; border: 1px solid var(--panel-border); box-shadow: 0 10px 20px rgba(0,0,0,0.5); flex: 1; display: block; width: 100%; overflow-x: auto; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+    
     table { border-collapse: collapse; text-align: center; margin: 0 auto; width: max-content;}
     thead { border-bottom: 2px solid var(--panel-border); background-color: #141b24; }
     th, td { box-sizing: border-box; vertical-align: middle; }
     th { color: var(--gold); font-weight: 900; letter-spacing: 0.5px; }
     td { border-bottom: 1px solid rgba(255,255,255,0.03); font-weight: 700; }
     .mode-yillar { width: max-content; margin: 0 auto; }
-    /* DÜZELTME 1: th ve td hücrelerine min-width eklendi */
     .mode-yillar th { font-size: 1.05rem; padding: 6px 10px; white-space: nowrap; min-width: 100px; }
     .mode-yillar td { padding: 4px 10px; height: auto; white-space: nowrap; min-width: 100px; }
     .mode-tarih { width: 100%; max-width: 420px; margin: 0 auto; table-layout: fixed; }
+    
+    /* DÜZELTME 2: mode-tarih içine fazladan sütun kaçarsa yazılar taşmasın diye güvenlik kilitleri */
+    .mode-tarih th, .mode-tarih td { overflow: hidden; text-overflow: ellipsis; }
+    
     .mode-tarih th:nth-child(1), .mode-tarih td:nth-child(1) { width: 15%; text-align: center !important; }
     .mode-tarih th:nth-child(2), .mode-tarih td:nth-child(2) { width: 40%; text-align: left !important; padding: 4px 5px !important; padding-left: 20px !important; }
     .mode-tarih th:nth-child(3), .mode-tarih td:nth-child(3) { width: 45%; text-align: center !important; padding: 4px 5px !important; }
@@ -179,7 +185,6 @@
     document.addEventListener("DOMContentLoaded", function() {
       veriCekHizliAcilis();
 
-      // DÜZELTME 2: onChange fonksiyonlarına instance eklendi ve blur() eklendi
       fpBaslangic = flatpickr("#tarihBaslangic", {
         locale: "tr", dateFormat: "Y-m-d", altInput: true, altFormat: "d.m.Y", disableMobile: "true",
         onChange: function(selectedDates, dateStr, instance) {
@@ -227,37 +232,50 @@
           document.getElementById('lastUpdateText').innerText = response.lastUpdate;
           document.getElementById('assetCountText').innerText = (response.assets.length > 0) ? response.assets.length + " VARLIK" : "Yüklendi";
           
-          tabloyuCiz(globalYillar);
+          // DÜZELTME 3: Veri geldiğinde kullanıcı çoktan başka sekmeye geçmişse tabloyu yanlış çizmeyi engeller
+          if (aktifSekme === 'yillar') {
+             tabloyuCiz(globalYillar);
+          }
           gosterToast("Sistem hazır!", "#38BDF8");
         })
         .catch(err => bosTabloGoster("BAĞLANTI HATASI"));
     }
 
     function googleSorgusuTetikle() {
-      let bas = sekmeTarihleri[aktifSekme].bas;
-      let bitis = sekmeTarihleri[aktifSekme].bitis;
+      let islemSekmesi = aktifSekme; // DÜZELTME 4: İsteğin hangi sekmede başlatıldığını hafızaya alıyoruz
+      let bas = sekmeTarihleri[islemSekmesi].bas;
+      let bitis = sekmeTarihleri[islemSekmesi].bitis;
       
       if (!bas || !bitis) return;
       
-      if (cacheVeriler[aktifSekme]) {
-         tabloyuCiz(cacheVeriler[aktifSekme]);
+      if (cacheVeriler[islemSekmesi]) {
+         if (aktifSekme === islemSekmesi) { tabloyuCiz(cacheVeriler[islemSekmesi]); }
          return;
       }
 
       bosTabloGoster("Veritabanından Hesaplanıyor...", true);
 
       let islem = 'tarihVerileriniGetir';
-      if (aktifSekme === 'top10') islem = 'enIyi10';
-      if (aktifSekme === 'bottom10') islem = 'enKotu10';
+      if (islemSekmesi === 'top10') islem = 'enIyi10';
+      if (islemSekmesi === 'bottom10') islem = 'enKotu10';
 
       apiRequest({ action: islem, bas: bas, bitis: bitis })
         .then(res => {
-           if(res.hata) { bosTabloGoster(res.hata); return; }
-           cacheVeriler[aktifSekme] = res.satirlar; 
-           tabloyuCiz(res.satirlar);
-           gosterToast("Hesaplandı: " + res.basKullanilan + " → " + res.bitKullanilan, "#10B981");
+           if(res.hata) { 
+               if (aktifSekme === islemSekmesi) bosTabloGoster(res.hata); 
+               return; 
+           }
+           cacheVeriler[islemSekmesi] = res.satirlar; 
+           
+           // İstek döndüğünde kullanıcı hala aynı sekmedeyse tabloyu günceller
+           if (aktifSekme === islemSekmesi) {
+               tabloyuCiz(res.satirlar);
+               gosterToast("Hesaplandı: " + res.basKullanilan + " → " + res.bitKullanilan, "#10B981");
+           }
         })
-        .catch(err => bosTabloGoster("Hata oluştu."));
+        .catch(err => {
+            if (aktifSekme === islemSekmesi) bosTabloGoster("Hata oluştu.");
+        });
     }
 
     function tabloyuCiz(data) {
