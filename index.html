@@ -39,8 +39,9 @@
     th { color: var(--gold); font-weight: 900; letter-spacing: 0.5px; }
     td { border-bottom: 1px solid rgba(255,255,255,0.03); font-weight: 700; }
     .mode-yillar { width: max-content; margin: 0 auto; }
-    .mode-yillar th { font-size: 1.05rem; padding: 6px 10px; white-space: nowrap; min-width: 90px; }
-    .mode-yillar td { padding: 4px 10px; height: auto; white-space: nowrap; }
+    /* DÜZELTME 1: th ve td hücrelerine min-width eklendi */
+    .mode-yillar th { font-size: 1.05rem; padding: 6px 10px; white-space: nowrap; min-width: 100px; }
+    .mode-yillar td { padding: 4px 10px; height: auto; white-space: nowrap; min-width: 100px; }
     .mode-tarih { width: 100%; max-width: 420px; margin: 0 auto; table-layout: fixed; }
     .mode-tarih th:nth-child(1), .mode-tarih td:nth-child(1) { width: 15%; text-align: center !important; }
     .mode-tarih th:nth-child(2), .mode-tarih td:nth-child(2) { width: 40%; text-align: left !important; padding: 4px 5px !important; padding-left: 20px !important; }
@@ -178,25 +179,30 @@
     document.addEventListener("DOMContentLoaded", function() {
       veriCekHizliAcilis();
 
+      // DÜZELTME 2: onChange fonksiyonlarına instance eklendi ve blur() eklendi
       fpBaslangic = flatpickr("#tarihBaslangic", {
         locale: "tr", dateFormat: "Y-m-d", altInput: true, altFormat: "d.m.Y", disableMobile: "true",
-        onChange: function(selectedDates, dateStr) {
+        onChange: function(selectedDates, dateStr, instance) {
           if (aktifSekme !== 'yillar') {
             sekmeTarihleri[aktifSekme].bas = dateStr;
             cacheVeriler[aktifSekme] = null; 
             googleSorgusuTetikle(); 
           }
+          if (instance && instance.altInput) instance.altInput.blur();
+          if (instance && instance.element) instance.element.blur();
         }
       });
 
       fpBitis = flatpickr("#tarihBitis", {
         locale: "tr", dateFormat: "Y-m-d", altInput: true, altFormat: "d.m.Y", disableMobile: "true",
-        onChange: function(selectedDates, dateStr) {
+        onChange: function(selectedDates, dateStr, instance) {
           if (aktifSekme !== 'yillar') {
             sekmeTarihleri[aktifSekme].bitis = dateStr;
             cacheVeriler[aktifSekme] = null; 
             googleSorgusuTetikle(); 
           }
+          if (instance && instance.altInput) instance.altInput.blur();
+          if (instance && instance.element) instance.element.blur();
         }
       });
     });
@@ -329,7 +335,6 @@
                 tr.classList.add('row-loading');
                 let yeniVarlik = this.value;
                 
-                // İŞTE SİSTEMİ DONDURAN HATA BURADAYDI, DÜZELTİLDİ:
                 let bas = (aktifSekme === 'yillar') ? "" : sekmeTarihleri[aktifSekme].bas;
                 let bit = (aktifSekme === 'yillar') ? "" : sekmeTarihleri[aktifSekme].bitis;
 
@@ -338,7 +343,7 @@
                     tr.classList.remove('row-loading');
                     if(aktifSekme === 'yillar') {
                         if(res.yillar) {
-                            globalYillar = res.yillar; // Google'ın hesapladığı yepyeni oranları listeye çek
+                            globalYillar = res.yillar; 
                         }
                         tabloyuCiz(globalYillar);
                         gosterToast("Hisse değiştirildi!", "#10B981");
