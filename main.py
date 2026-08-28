@@ -165,6 +165,20 @@ def guncelleme_motoru():
     try:
         sheet, headers, tarih_to_row, last_valid_row_idx, last_date_str = baglanti_ve_bilgi_getir()
         if not last_date_str: return
+
+        # --- GÜN İÇİ SIFIRLAMA MANTIĞI EKLENDİ ---
+        last_date = datetime.datetime.strptime(last_date_str, "%d.%m.%Y")
+        today = datetime.datetime.now()
+        
+        if last_date.date() == today.date():
+            sheet.delete_row(last_valid_row_idx) # Bugünün eksik verisini içeren son satırı sil
+            time.sleep(2)
+            # Satır silindiği için veritabanı bilgilerini tazeleyerek yeniden alıyoruz
+            sheet, headers, tarih_to_row, last_valid_row_idx, last_date_str = baglanti_ve_bilgi_getir()
+            if not last_date_str: return
+            last_date = datetime.datetime.strptime(last_date_str, "%d.%m.%Y")
+        # -----------------------------------------
+
         aktif_hisseler = get_all_bist_stocks()
         if aktif_hisseler:
             yeni_hisseler = [h for h in aktif_hisseler if h not in headers]
@@ -172,10 +186,8 @@ def guncelleme_motoru():
                 headers.extend(yeni_hisseler)
                 sheet.update(values=[headers], range_name='A1', value_input_option='USER_ENTERED')
                 time.sleep(2)
-        
+
         row_to_tarih = {v: k for k, v in tarih_to_row.items()}
-        last_date = datetime.datetime.strptime(last_date_str, "%d.%m.%Y")
-        today = datetime.datetime.now()
         yf_col_indices = {ad: headers.index(ad) + 1 for ad in YFINANCE_SUTUNLAR if ad in headers}
         yf_last_valid_date = {}
 
@@ -196,7 +208,7 @@ def guncelleme_motoru():
         start_fetch = (last_date + datetime.timedelta(days=1)).strftime("%d-%m-%Y")
         end_fetch = today.strftime("%d-%m-%Y")
         bist_pivot = pd.DataFrame()
-        
+
         if last_date.date() < today.date():
             stocks = [h for h in headers if h not in (['Tarih'] + YFINANCE_SUTUNLAR) and h]
             all_data = []
