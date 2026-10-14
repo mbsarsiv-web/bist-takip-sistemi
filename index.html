@@ -29,9 +29,17 @@
     .date-controls label { color: var(--gold); font-weight: 900; font-size: 0.95rem; display: flex; align-items: center; gap: 6px; margin: 0; }
     .date-input { background-color: #0a0e14 !important; border: 1px solid var(--border-color) !important; color: white !important; padding: 6px 15px !important; border-radius: 6px !important; font-family: 'Inter', sans-serif !important; font-weight: 800 !important; font-size: 1.0rem !important; outline: none !important; cursor: pointer !important; transition: all 0.3s ease !important; text-align: center; width: 140px; box-sizing: border-box;}
     .date-input:focus, .date-input:hover { border-color: var(--gold) !important; box-shadow: 0 0 8px rgba(250, 204, 21, 0.2) !important; }
+    
+    /* FLATPICKR DARK MODE FIX */
     .flatpickr-calendar { background: #111820 !important; border: 1px solid #2D3748 !important; box-shadow: 0 10px 25px rgba(0,0,0,0.8) !important; font-family: 'Inter', sans-serif !important; }
+    .flatpickr-day { color: #E2E8F0 !important; }
+    .flatpickr-day.prevMonthDay, .flatpickr-day.nextMonthDay { color: #475569 !important; }
     .flatpickr-day.selected { background: var(--gold) !important; color: #000 !important; border-color: var(--gold) !important; font-weight: 900 !important; }
-    .flatpickr-day:hover { background: #1F2937 !important; }
+    .flatpickr-day:hover { background: #1F2937 !important; color: #ffffff !important; }
+    .flatpickr-current-month .flatpickr-monthDropdown-months, .flatpickr-current-month input.cur-year { color: #E2E8F0 !important; }
+    span.flatpickr-weekday { color: #38BDF8 !important; }
+    .flatpickr-month, .flatpickr-prev-month svg, .flatpickr-next-month svg { color: #E2E8F0 !important; fill: #E2E8F0 !important; }
+    /* FLATPICKR FIX END */
     
     /* DÜZELTME 1: flex kaldırılarak block yapıldı, tabloların ezilmesi engellendi */
     .table-container { background-color: var(--bg-panel); border-radius: 10px; border: 1px solid var(--panel-border); box-shadow: 0 10px 20px rgba(0,0,0,0.5); flex: 1; display: block; width: 100%; overflow-x: auto; overflow-y: auto; -webkit-overflow-scrolling: touch; }
