@@ -87,12 +87,19 @@
     .toast.show { opacity: 1; transform: translateY(0); }
 
     /* ===== AYLIK GETİRİ SEKMESİ ===== */
-    .aylik-panel { background: #111820; padding: 8px 25px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 10px; display: none; justify-content: center; align-items: center; gap: 12px; flex-wrap: wrap; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+    .aylik-panel { background: #111820; padding: 10px 25px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 10px; display: none; flex-direction: column; justify-content: center; align-items: center; gap: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+    .aylik-satir { display: flex; justify-content: center; align-items: center; gap: 10px; flex-wrap: wrap; }
     .aylik-panel label { color: var(--gold); font-weight: 900; font-size: 0.95rem; display: flex; align-items: center; gap: 6px; margin: 0; }
     .aylik-input { background-color: #0a0e14; border: 1px solid var(--border-color); color: white; padding: 6px 15px; border-radius: 6px; font-family: 'Inter', sans-serif; font-weight: 800; font-size: 1.0rem; outline: none; text-align: center; width: 220px; box-sizing: border-box; text-transform: uppercase; transition: all 0.3s ease; }
     .aylik-input:focus, .aylik-input:hover { border-color: var(--gold); box-shadow: 0 0 8px rgba(250, 204, 21, 0.2); }
+    .aylik-select { background-color: #0a0e14; border: 1px solid var(--border-color); color: white; padding: 6px 10px; border-radius: 6px; font-family: 'Inter', sans-serif; font-weight: 800; font-size: 0.95rem; outline: none; cursor: pointer; transition: all 0.3s ease; color-scheme: dark; }
+    .aylik-select:focus, .aylik-select:hover { border-color: var(--gold); box-shadow: 0 0 8px rgba(250, 204, 21, 0.2); }
+    .aylik-select option { background-color: var(--bg-panel); color: white; }
+    .aylik-ayrac { color: #475569; font-weight: 900; }
     .aylik-btn { background-color: #0F766E; border: 1px solid #14B8A6; color: white; padding: 7px 18px; border-radius: 6px; font-family: 'Inter', sans-serif; font-weight: 900; font-size: 0.95rem; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: 0.2s; }
     .aylik-btn:hover { background-color: #0D9488; }
+    .aylik-preset { background-color: #0a0e14; border: 1px solid var(--border-color); color: #CBD5E1; padding: 6px 12px; border-radius: 6px; font-family: 'Inter', sans-serif; font-weight: 800; font-size: 0.8rem; cursor: pointer; transition: 0.2s; }
+    .aylik-preset:hover { border-color: var(--gold); color: var(--gold); }
     #aylikContainer { display: none; padding: 10px; }
     .aylik-hint { text-align: center; padding: 30px; color: #94A3B8; font-size: 1rem; font-weight: 600; }
     .aylik-hint i { color: #14B8A6; margin-bottom: 10px; font-size: 2rem; display: block; }
@@ -135,6 +142,7 @@
       .mode-tarih th:nth-child(2), .mode-tarih td:nth-child(2) { padding-left: 10px !important; } .mode-tarih th:nth-child(3), .mode-tarih td:nth-child(3) { padding-left: 2px !important; }
       .asset-select { font-size: 0.95rem !important; } .sabit-varlik { font-size: 0.95rem !important; }
       .aylik-panel { padding: 10px; gap: 8px; } .aylik-input { width: 100%; } .aylik-btn { width: 100%; justify-content: center; }
+      .aylik-satir { width: 100%; } .aylik-select { padding: 6px 6px; font-size: 0.85rem; }
       .aylik-chip { min-width: 100px; padding: 5px 8px; }
       #aylikContainer { padding: 6px; }
     }
@@ -182,12 +190,29 @@
     </div>
 
     <div id="aylikPanel" class="aylik-panel">
-      <label><i class="fa-solid fa-magnifying-glass-chart"></i> HİSSE / VARLIK:</label>
-      <input type="text" id="aylikVarlikInput" class="aylik-input" list="aylikVarlikListesi" placeholder="Yazın veya seçin" autocomplete="off" spellcheck="false">
-      <datalist id="aylikVarlikListesi"></datalist>
-      <button id="aylikGetirBtn" class="aylik-btn" onclick="aylikSorguBaslat()">
-        <i class="fa-solid fa-calculator"></i> HESAPLA
-      </button>
+      <div class="aylik-satir">
+        <label><i class="fa-solid fa-magnifying-glass-chart"></i> HİSSE / VARLIK:</label>
+        <input type="text" id="aylikVarlikInput" class="aylik-input" list="aylikVarlikListesi" placeholder="Yazın veya seçin" autocomplete="off" spellcheck="false">
+        <datalist id="aylikVarlikListesi"></datalist>
+        <button id="aylikGetirBtn" class="aylik-btn" onclick="aylikSorguBaslat()">
+          <i class="fa-solid fa-calculator"></i> HESAPLA
+        </button>
+      </div>
+      <div class="aylik-satir">
+        <label><i class="fa-solid fa-calendar-day"></i> BAŞLANGIÇ:</label>
+        <select id="aylikBasAy" class="aylik-select"></select>
+        <select id="aylikBasYil" class="aylik-select"></select>
+        <span class="aylik-ayrac">→</span>
+        <label><i class="fa-solid fa-calendar-check"></i> BİTİŞ:</label>
+        <select id="aylikBitAy" class="aylik-select"></select>
+        <select id="aylikBitYil" class="aylik-select"></select>
+      </div>
+      <div class="aylik-satir">
+        <button class="aylik-preset" onclick="aylikOnAyar(5, true)">SON 5 YIL</button>
+        <button class="aylik-preset" onclick="aylikOnAyar(10, true)">SON 10 YIL</button>
+        <button class="aylik-preset" onclick="aylikOnAyar(15, true)">SON 15 YIL</button>
+        <button class="aylik-preset" onclick="aylikOnAyar(20, true)">SON 20 YIL</button>
+      </div>
     </div>
 
     <div id="tableContainer" class="table-container">
@@ -202,7 +227,7 @@
     </div>
 
     <div id="aylikContainer" class="table-container">
-      <div class="aylik-hint"><i class="fa-solid fa-calendar-days"></i>Yukarıdan bir hisse veya varlık seçin; son 5 yılın aylık getirileri hesaplanacak.</div>
+      <div class="aylik-hint"><i class="fa-solid fa-calendar-days"></i>Yukarıdan bir hisse veya varlık seçin. Dönemi (başlangıç ve bitiş ayı) dilediğiniz gibi ayarlayabilirsiniz; varsayılan son 10 yıldır.</div>
     </div>
   </main>
 
@@ -233,7 +258,10 @@
     // AYLIK GETİRİ SEKMESİ DURUMU
     let cacheAylik = {};
     let aylikIstekNo = 0;
+    let aylikSonVeri = { y: new Date().getFullYear(), m: new Date().getMonth() + 1 };
     const AY_ADLARI = ["OCA", "ŞUB", "MAR", "NİS", "MAY", "HAZ", "TEM", "AĞU", "EYL", "EKİ", "KAS", "ARA"];
+    const AY_ADLARI_UZUN = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
+    const AYLIK_EN_ESKI_YIL = 1995;
 
     async function apiRequest(payload) {
       try {
@@ -250,6 +278,9 @@
     }
 
     document.addEventListener("DOMContentLoaded", function() {
+      aylikSecicileriHazirla();
+      aylikOnAyar(10, false);
+
       veriCekHizliAcilis();
 
       fpBaslangic = flatpickr("#tarihBaslangic", {
@@ -290,6 +321,11 @@
         const eslesen = globalAssets.find(a => a.toUpperCase() === deger);
         if (eslesen) aylikSorguBaslat();
       });
+
+      // Dönem seçicileri değişince, geçerli bir varlık seçiliyse otomatik yeniden hesapla
+      ['aylikBasAy', 'aylikBasYil', 'aylikBitAy', 'aylikBitYil'].forEach(function(id) {
+        document.getElementById(id).addEventListener('change', aylikDegisti);
+      });
     });
 
     function gosterToast(mesaj, renk = "#10B981") {
@@ -313,6 +349,8 @@
           document.getElementById('assetCountText').innerText = (response.assets.length > 0) ? response.assets.length + " VARLIK" : "Yüklendi";
 
           aylikListeDoldur();
+          aylikSonVeriAyarla(response.lastUpdate);
+          aylikOnAyar(10, false);
           
           // DÜZELTME 3: Veri geldiğinde kullanıcı çoktan başka sekmeye geçmişse tabloyu yanlış çizmeyi engeller
           if (aktifSekme === 'yillar') {
@@ -533,6 +571,10 @@
       });
     }
 
+    function ikiHane(n) {
+      return (n < 10 ? "0" : "") + n;
+    }
+
     function aylikListeDoldur() {
       const dl = document.getElementById('aylikVarlikListesi');
       dl.innerHTML = '';
@@ -541,6 +583,60 @@
         opt.value = asset;
         dl.appendChild(opt);
       });
+    }
+
+    // Ay ve yıl seçicilerinin seçeneklerini oluşturur
+    function aylikSecicileriHazirla() {
+      const buYil = new Date().getFullYear();
+
+      ['aylikBasAy', 'aylikBitAy'].forEach(function(id) {
+        const sel = document.getElementById(id);
+        sel.innerHTML = '';
+        AY_ADLARI_UZUN.forEach(function(ad, i) {
+          const opt = document.createElement('option');
+          opt.value = String(i + 1);
+          opt.textContent = ad;
+          sel.appendChild(opt);
+        });
+      });
+
+      ['aylikBasYil', 'aylikBitYil'].forEach(function(id) {
+        const sel = document.getElementById(id);
+        sel.innerHTML = '';
+        for (let y = buYil; y >= AYLIK_EN_ESKI_YIL; y--) {
+          const opt = document.createElement('option');
+          opt.value = String(y);
+          opt.textContent = String(y);
+          sel.appendChild(opt);
+        }
+      });
+    }
+
+    // "13.11.2026" biçimindeki son veri tarihinden son veri ayını çıkarır
+    function aylikSonVeriAyarla(metin) {
+      const p = String(metin || "").match(/(\d{2})\.(\d{2})\.(\d{4})/);
+      if (p) aylikSonVeri = { y: parseInt(p[3], 10), m: parseInt(p[2], 10) };
+    }
+
+    // Seçicileri, son veri ayında biten ve "yil" yıl geriye giden döneme ayarlar
+    function aylikOnAyar(yil, tetikle) {
+      const bitIdx = aylikSonVeri.y * 12 + (aylikSonVeri.m - 1);
+      const basIdx = bitIdx - (yil * 12 - 1);
+
+      document.getElementById('aylikBitYil').value = String(Math.floor(bitIdx / 12));
+      document.getElementById('aylikBitAy').value = String((bitIdx % 12) + 1);
+      document.getElementById('aylikBasYil').value = String(Math.max(AYLIK_EN_ESKI_YIL, Math.floor(basIdx / 12)));
+      document.getElementById('aylikBasAy').value = String((basIdx % 12) + 1);
+
+      if (tetikle) aylikDegisti();
+    }
+
+    // Seçici değişince: geçerli bir varlık yazılıysa otomatik yeniden hesapla
+    function aylikDegisti() {
+      const deger = (document.getElementById('aylikVarlikInput').value || "").trim().toUpperCase();
+      if (!deger || !globalAssets || globalAssets.length === 0) return;
+      const eslesen = globalAssets.find(a => a.toUpperCase() === deger);
+      if (eslesen) aylikSorguBaslat();
     }
 
     function fmtGetiri(g) {
@@ -576,16 +672,28 @@
 
       inp.value = eslesen;
 
-      if (cacheAylik[eslesen]) { aylikCiz(cacheAylik[eslesen]); return; }
+      const basY = parseInt(document.getElementById('aylikBasYil').value, 10);
+      const basA = parseInt(document.getElementById('aylikBasAy').value, 10);
+      const bitY = parseInt(document.getElementById('aylikBitYil').value, 10);
+      const bitA = parseInt(document.getElementById('aylikBitAy').value, 10);
+
+      if (isNaN(basY) || isNaN(basA) || isNaN(bitY) || isNaN(bitA)) { aylikMesajGoster("Lütfen başlangıç ve bitiş ayını seçin.", false, true); return; }
+      if ((basY * 12 + basA) > (bitY * 12 + bitA)) { aylikMesajGoster("Başlangıç ayı, bitiş ayından sonra olamaz.", false, true); return; }
+
+      const basStr = basY + "-" + ikiHane(basA);
+      const bitStr = bitY + "-" + ikiHane(bitA);
+      const anahtar = eslesen + "|" + basStr + "|" + bitStr;
+
+      if (cacheAylik[anahtar]) { aylikCiz(cacheAylik[anahtar]); return; }
 
       const istekNo = ++aylikIstekNo;
       aylikMesajGoster("Aylık getiriler hesaplanıyor...", true);
 
-      apiRequest({ action: 'aylikGetiri', varlik: eslesen })
+      apiRequest({ action: 'aylikGetiri', varlik: eslesen, basAy: basStr, bitAy: bitStr })
         .then(res => {
           if (istekNo !== aylikIstekNo) return; // daha yeni bir sorgu başlatıldıysa eski cevabı yok say
           if (!res || res.hata) { aylikMesajGoster((res && res.hata) ? res.hata : "Hata oluştu.", false, true); return; }
-          cacheAylik[eslesen] = res;
+          cacheAylik[anahtar] = res;
           aylikCiz(res);
         })
         .catch(err => {
@@ -605,7 +713,7 @@
       return '<td class="' + (poz ? 'poz' : 'neg') + (a.kismi ? ' kismi' : '') + '" style="background-color:' + bg + ';" title="' + htmlKacis(tip) + '">' + fmtGetiri(a.getiri) + '</td>';
     }
 
-    function aylikToplamHucre(g, ortMu) {
+    function aylikToplamHucre(g) {
       if (g === null || g === undefined) return '<td class="ay-toplam ay-bos">-</td>';
       return '<td class="ay-toplam ' + (g >= 0 ? 'poz' : 'neg') + '">' + fmtGetiri(g) + '</td>';
     }
@@ -619,7 +727,7 @@
       const c = document.getElementById('aylikContainer');
       const oz = res.ozet;
 
-      let html = '<div class="aylik-baslik">' + htmlKacis(res.hisse) + '<span>' + htmlKacis(res.baslangicAy) + ' – ' + htmlKacis(res.bitisAy) + ' • SON 5 YIL</span></div>';
+      let html = '<div class="aylik-baslik">' + htmlKacis(res.hisse) + '<span>' + htmlKacis(res.baslangicAy) + ' – ' + htmlKacis(res.bitisAy) + ' • ' + res.ayAdedi + ' AY</span></div>';
 
       if (oz && oz.adet > 0) {
         const yuzde = Math.round((oz.pozitif / oz.adet) * 100);
@@ -648,7 +756,7 @@
       html += '<td class="ay-toplam ay-bos">-</td></tr>';
       html += '</tbody></table>';
 
-      html += '<div class="aylik-not">Her ayın getirisi: ayın <b>ilk işlem gününün kapanışından</b> ayın <b>son işlem gününün kapanışına</b> (ikisi de dahil) hesaplanır. Kesikli çerçeveli hücre henüz tamamlanmamış aydır. Hücrenin üzerine gelince kullanılan tarih ve fiyatlar görünür. "YIL (BİLEŞİK)" sütunu, o yılın aylık getirilerinin bileşiğidir; aylar arası geçiş getirisi dahil değildir.</div>';
+      html += '<div class="aylik-not">Her ayın getirisi: ayın <b>ilk işlem gününün kapanışından</b> ayın <b>son işlem gününün kapanışına</b> (ikisi de dahil) hesaplanır. Fiyatlar uygulamanın kendi veritabanından (Veritabanı sayfası) okunur. Kesikli çerçeveli hücre henüz tamamlanmamış aydır; "-" o ay için yeterli veri olmadığını gösterir. Hücrenin üzerine gelince kullanılan tarih ve fiyatlar görünür. "YIL (BİLEŞİK)" sütunu, o yılın aylık getirilerinin bileşiğidir; aylar arası geçiş getirisi dahil değildir.</div>';
 
       c.innerHTML = html;
     }
