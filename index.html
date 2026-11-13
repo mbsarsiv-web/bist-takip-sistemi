@@ -92,7 +92,7 @@
     body.aylik-modu .tab-buttons { margin-bottom: 6px; }
     body.aylik-modu .tab-btn { padding: 4px 6px; font-size: 0.8rem; }
 
-    .aylik-panel { background: #111820; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 6px; display: none; flex-direction: row; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px 18px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+    .aylik-panel { background: #111820; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 6px; display: none; flex-direction: row; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px 18px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); position: relative; z-index: 40; }
     .aylik-grup { display: flex; align-items: center; justify-content: center; gap: 6px; }
     .aylik-panel label { color: var(--gold); font-weight: 900; font-size: 0.85rem; display: flex; align-items: center; gap: 5px; margin: 0; white-space: nowrap; }
     .aylik-input { background-color: #0a0e14; border: 1px solid var(--border-color); color: white; padding: 5px 12px; border-radius: 6px; font-family: 'Inter', sans-serif; font-weight: 800; font-size: 0.95rem; outline: none; text-align: center; width: 170px; box-sizing: border-box; text-transform: uppercase; transition: all 0.3s ease; }
@@ -106,6 +106,22 @@
     .aylik-preset { background-color: #0a0e14; border: 1px solid var(--border-color); color: #CBD5E1; padding: 6px 12px; border-radius: 6px; font-family: 'Inter', sans-serif; font-weight: 800; font-size: 0.78rem; cursor: pointer; transition: 0.2s; white-space: nowrap; }
     .aylik-preset:hover { border-color: var(--gold); color: var(--gold); }
     .lbl-kisa { display: none; }
+
+    /* ===== VARLIK ARAMA KUTUSU (ÖZEL AÇILIR LİSTE - TÜM VARLIKLARI GÖSTERİR) ===== */
+    .combo { position: relative; display: flex; align-items: center; }
+    .combo .aylik-input { padding-right: 28px; }
+    .combo-temizle { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); width: 22px; height: 22px; border: none; border-radius: 50%; background: transparent; color: #64748B; font-size: 0.8rem; cursor: pointer; display: none; align-items: center; justify-content: center; padding: 0; }
+    .combo-temizle:hover { color: var(--gold); background: rgba(255,255,255,0.06); }
+    .combo.dolu .combo-temizle { display: flex; }
+    .combo-liste { display: none; position: absolute; top: calc(100% + 4px); left: 0; min-width: 100%; width: 240px; max-height: min(60vh, 420px); overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; background: #0f161f; border: 1px solid var(--gold); border-radius: 8px; box-shadow: 0 12px 30px rgba(0,0,0,0.85); z-index: 200; padding: 3px; box-sizing: border-box; }
+    .combo.acik .combo-liste { display: block; }
+    .combo-bilgi { position: sticky; top: -3px; background: #0f161f; color: #64748B; font-size: 0.65rem; font-weight: 800; letter-spacing: 0.4px; padding: 5px 8px 4px 8px; border-bottom: 1px solid var(--panel-border); z-index: 1; margin-bottom: 2px; }
+    .combo-oge { padding: 7px 10px; border-radius: 5px; font-weight: 800; font-size: 0.9rem; color: #E2E8F0; cursor: pointer; white-space: nowrap; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .combo-oge:hover { background: rgba(255,255,255,0.06); }
+    .combo-oge.aktif { background: rgba(250, 204, 21, 0.16); color: var(--gold); }
+    .combo-oge.secili::after { content: "✓"; color: var(--green-accent); font-weight: 900; }
+    .combo-oge b { color: var(--gold); font-weight: 900; }
+    .combo-bos { padding: 14px 10px; text-align: center; color: #94A3B8; font-size: 0.82rem; font-weight: 700; }
 
     #aylikContainer { display: none; padding: 8px 10px; }
     .aylik-hint { text-align: center; padding: 30px; color: #94A3B8; font-size: 1rem; font-weight: 600; }
@@ -165,7 +181,10 @@
       .aylik-panel { padding: 6px; gap: 5px; margin-bottom: 5px; }
       .aylik-grup { width: 100%; gap: 4px; }
       .aylik-grup.g-varlik .lbl-uzun-grup { display: none; }
-      .aylik-grup.g-varlik .aylik-input { flex: 1; min-width: 0; width: auto; }
+      .aylik-grup.g-varlik .combo { flex: 1; min-width: 0; }
+      .aylik-grup.g-varlik .aylik-input { width: 100%; min-width: 0; font-size: 1rem; padding-top: 7px; padding-bottom: 7px; }
+      .combo-liste { width: 100%; max-height: 42vh; }
+      .combo-oge { padding: 10px 12px; font-size: 1rem; }
       .lbl-uzun { display: none; }
       .lbl-kisa { display: inline; }
       .aylik-panel label { font-size: 0.7rem; gap: 3px; }
@@ -237,8 +256,11 @@
     <div id="aylikPanel" class="aylik-panel">
       <div class="aylik-grup g-varlik">
         <label class="lbl-uzun-grup"><i class="fa-solid fa-magnifying-glass-chart"></i> HİSSE / VARLIK:</label>
-        <input type="text" id="aylikVarlikInput" class="aylik-input" list="aylikVarlikListesi" placeholder="Hisse / varlık yazın" autocomplete="off" spellcheck="false">
-        <datalist id="aylikVarlikListesi"></datalist>
+        <div id="aylikCombo" class="combo">
+          <input type="text" id="aylikVarlikInput" class="aylik-input" placeholder="Hisse / varlık ara..." autocomplete="off" autocapitalize="characters" spellcheck="false" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="aylikListe">
+          <button type="button" id="aylikTemizleBtn" class="combo-temizle" title="Temizle" aria-label="Temizle"><i class="fa-solid fa-xmark"></i></button>
+          <div id="aylikListe" class="combo-liste" role="listbox"></div>
+        </div>
         <button id="aylikGetirBtn" class="aylik-btn" onclick="aylikSorguBaslat()">
           <i class="fa-solid fa-calculator"></i> HESAPLA
         </button>
@@ -270,7 +292,7 @@
     </div>
 
     <div id="aylikContainer" class="table-container">
-      <div class="aylik-hint"><i class="fa-solid fa-calendar-days"></i>Yukarıdan bir hisse veya varlık seçin. Dönemi dilediğiniz gibi ayarlayabilirsiniz (en fazla 10 takvim yılı); varsayılan son 10 yıldır.</div>
+      <div class="aylik-hint"><i class="fa-solid fa-calendar-days"></i>Yukarıdaki kutuya tıklayıp listeden bir hisse veya varlık seçin ya da yazarak arayın. Dönemi dilediğiniz gibi ayarlayabilirsiniz (en fazla 10 takvim yılı); varsayılan son 10 yıldır.</div>
     </div>
   </main>
 
@@ -307,6 +329,11 @@
     const AYLIK_EN_ESKI_YIL = 1995;
     const AYLIK_MAKS_YIL_SAYISI = 10;
 
+    // VARLIK ARAMA KUTUSU DURUMU
+    let comboSonuclar = [];     // şu an listede gösterilen varlıklar
+    let comboAktifIdx = -1;     // klavye ile vurgulanan satır
+    let comboSeciliVarlik = ""; // en son seçilen (hesaplanan) varlık
+
     async function apiRequest(payload) {
       try {
         const response = await fetch(GAS_API_URL, {
@@ -324,6 +351,7 @@
     document.addEventListener("DOMContentLoaded", function() {
       aylikSecicileriHazirla();
       aylikOnAyar(10, false);
+      comboKur();
 
       veriCekHizliAcilis();
 
@@ -351,19 +379,6 @@
           if (instance && instance.altInput) instance.altInput.blur();
           if (instance && instance.element) instance.element.blur();
         }
-      });
-
-      // Aylık getiri sekmesi: giriş alanı olayları
-      const aylikInput = document.getElementById('aylikVarlikInput');
-      aylikInput.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') { e.preventDefault(); aylikSorguBaslat(); this.blur(); }
-      });
-      aylikInput.addEventListener('change', function() {
-        // Listeden seçim yapıldığında (tam eşleşme varsa) otomatik hesapla
-        const deger = (this.value || "").trim().toUpperCase();
-        if (!deger) return;
-        const eslesen = globalAssets.find(a => a.toUpperCase() === deger);
-        if (eslesen) aylikSorguBaslat();
       });
 
       // Dönem seçicileri değişince: önce 10 yıl kuralına göre düzelt, sonra (varlık seçiliyse) yeniden hesapla
@@ -631,14 +646,255 @@
       return (n < 10 ? "0" : "") + n;
     }
 
-    function aylikListeDoldur() {
-      const dl = document.getElementById('aylikVarlikListesi');
-      dl.innerHTML = '';
-      globalAssets.forEach(asset => {
-        let opt = document.createElement('option');
-        opt.value = asset;
-        dl.appendChild(opt);
+    // Arama için normalize: Türkçe büyük harf + aksan sadeleştirme (i/İ/ı, ç, ğ, ö, ş, ü fark etmez)
+    function aramaNorm(s) {
+      return String(s || "").toLocaleUpperCase('tr-TR')
+        .replace(/İ/g, 'I').replace(/Ç/g, 'C').replace(/Ğ/g, 'G')
+        .replace(/Ö/g, 'O').replace(/Ş/g, 'S').replace(/Ü/g, 'U')
+        .replace(/\s+/g, ' ').trim();
+    }
+
+    // Varlık listesinde (tam eşleşme) arar; bulursa gerçek adını döndürür
+    function varlikBul(deger) {
+      const n = aramaNorm(deger);
+      if (!n || !globalAssets) return null;
+      for (let i = 0; i < globalAssets.length; i++) {
+        if (aramaNorm(globalAssets[i]) === n) return globalAssets[i];
+      }
+      return null;
+    }
+
+    // ---------- ÖZEL ARAMA KUTUSU (COMBOBOX) ----------
+
+    function comboFiltrele(sorgu) {
+      const q = aramaNorm(sorgu);
+      if (!q) return globalAssets.slice();
+      const bas = [], icinde = [];
+      for (let i = 0; i < globalAssets.length; i++) {
+        const n = aramaNorm(globalAssets[i]);
+        const p = n.indexOf(q);
+        if (p === 0) bas.push(globalAssets[i]);
+        else if (p > 0) icinde.push(globalAssets[i]);
+      }
+      return bas.concat(icinde);
+    }
+
+    function comboAcikMi() {
+      return document.getElementById('aylikCombo').classList.contains('acik');
+    }
+
+    function comboAc() {
+      const combo = document.getElementById('aylikCombo');
+      combo.classList.add('acik');
+      document.getElementById('aylikVarlikInput').setAttribute('aria-expanded', 'true');
+    }
+
+    function comboKapat() {
+      const combo = document.getElementById('aylikCombo');
+      combo.classList.remove('acik');
+      document.getElementById('aylikVarlikInput').setAttribute('aria-expanded', 'false');
+    }
+
+    function comboDoluGuncelle() {
+      const inp = document.getElementById('aylikVarlikInput');
+      document.getElementById('aylikCombo').classList.toggle('dolu', inp.value.length > 0);
+    }
+
+    // Listeyi çizer. Tüm sonuçlar DOM'a eklenir (kesme/limit yok).
+    function comboCiz(sorgu, aktifOlaniGoster) {
+      const liste = document.getElementById('aylikListe');
+      const q = aramaNorm(sorgu);
+      comboSonuclar = comboFiltrele(sorgu);
+
+      if (!globalAssets || globalAssets.length === 0) {
+        liste.innerHTML = '<div class="combo-bos"><i class="fa-solid fa-spinner fa-spin"></i> Varlık listesi yükleniyor...</div>';
+        comboAktifIdx = -1;
+        return;
+      }
+
+      if (comboSonuclar.length === 0) {
+        liste.innerHTML = '<div class="combo-bilgi">0 SONUÇ</div><div class="combo-bos">"' + htmlKacis(sorgu.trim()) + '" bulunamadı.</div>';
+        comboAktifIdx = -1;
+        return;
+      }
+
+      // Aktif satır: seçili varlık listede varsa o, yoksa ilk sonuç
+      comboAktifIdx = 0;
+      if (aktifOlaniGoster && comboSeciliVarlik) {
+        const k = comboSonuclar.indexOf(comboSeciliVarlik);
+        if (k !== -1) comboAktifIdx = k;
+      }
+
+      const parcalar = [];
+      parcalar.push('<div class="combo-bilgi">' + (q ? comboSonuclar.length + ' SONUÇ' : globalAssets.length + ' VARLIK') + '</div>');
+      for (let i = 0; i < comboSonuclar.length; i++) {
+        const ad = comboSonuclar[i];
+        let sinif = 'combo-oge';
+        if (i === comboAktifIdx) sinif += ' aktif';
+        if (ad === comboSeciliVarlik) sinif += ' secili';
+
+        let etiket = htmlKacis(ad);
+        if (q) {
+          const n = aramaNorm(ad);
+          // Büyük/küçük harf ve aksan dönüşümü uzunluğu değiştirmediği sürece vurgula
+          if (n.length === ad.length) {
+            const p = n.indexOf(q);
+            if (p !== -1) {
+              etiket = htmlKacis(ad.substring(0, p)) + '<b>' + htmlKacis(ad.substring(p, p + q.length)) + '</b>' + htmlKacis(ad.substring(p + q.length));
+            }
+          }
+        }
+        parcalar.push('<div class="' + sinif + '" role="option" data-i="' + i + '">' + etiket + '</div>');
+      }
+      liste.innerHTML = parcalar.join('');
+
+      if (aktifOlaniGoster) comboAktifiGorunurYap(true);
+      else liste.scrollTop = 0;
+    }
+
+    function comboAktifiGorunurYap(ortala) {
+      const liste = document.getElementById('aylikListe');
+      const el = liste.querySelector('.combo-oge.aktif');
+      if (!el) return;
+      if (ortala) {
+        liste.scrollTop = el.offsetTop - (liste.clientHeight / 2) + (el.offsetHeight / 2);
+      } else {
+        const ust = el.offsetTop - 30; // yapışkan başlık payı
+        const alt = el.offsetTop + el.offsetHeight;
+        if (ust < liste.scrollTop) liste.scrollTop = ust;
+        else if (alt > liste.scrollTop + liste.clientHeight) liste.scrollTop = alt - liste.clientHeight;
+      }
+    }
+
+    function comboAktifDegistir(yeniIdx) {
+      if (comboSonuclar.length === 0) return;
+      if (yeniIdx < 0) yeniIdx = comboSonuclar.length - 1;
+      if (yeniIdx >= comboSonuclar.length) yeniIdx = 0;
+      const liste = document.getElementById('aylikListe');
+      const eski = liste.querySelector('.combo-oge.aktif');
+      if (eski) eski.classList.remove('aktif');
+      comboAktifIdx = yeniIdx;
+      const yeni = liste.querySelector('.combo-oge[data-i="' + yeniIdx + '"]');
+      if (yeni) yeni.classList.add('aktif');
+      comboAktifiGorunurYap(false);
+    }
+
+    // Bir varlık seçildi: kutuya yaz, listeyi kapat, otomatik hesapla
+    function comboSec(ad) {
+      const inp = document.getElementById('aylikVarlikInput');
+      inp.value = ad;
+      comboSeciliVarlik = ad;
+      comboDoluGuncelle();
+      comboKapat();
+      inp.blur();
+      aylikSorguBaslat();
+    }
+
+    function comboKur() {
+      const inp = document.getElementById('aylikVarlikInput');
+      const liste = document.getElementById('aylikListe');
+      const temizle = document.getElementById('aylikTemizleBtn');
+
+      // Odaklanınca: tüm listeyi aç, mevcut metni seç (yazmaya başlayınca üzerine yazılsın)
+      inp.addEventListener('focus', function() {
+        comboCiz("", true);
+        comboAc();
+        const el = this;
+        setTimeout(function() { try { el.select(); } catch (e) {} }, 0);
       });
+
+      // Zaten odaktayken tekrar tıklanırsa listeyi yeniden aç
+      inp.addEventListener('click', function() {
+        if (!comboAcikMi()) {
+          comboCiz(this.value.trim() && !varlikBul(this.value) ? this.value : "", true);
+          comboAc();
+        }
+      });
+
+      // Yazdıkça süz
+      inp.addEventListener('input', function() {
+        comboDoluGuncelle();
+        comboCiz(this.value, false);
+        comboAc();
+      });
+
+      inp.addEventListener('keydown', function(e) {
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          if (!comboAcikMi()) { comboCiz("", true); comboAc(); }
+          else comboAktifDegistir(comboAktifIdx + 1);
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          if (!comboAcikMi()) { comboCiz("", true); comboAc(); }
+          else comboAktifDegistir(comboAktifIdx - 1);
+        } else if (e.key === 'Enter') {
+          e.preventDefault();
+          if (comboAcikMi() && comboAktifIdx >= 0 && comboSonuclar[comboAktifIdx]) {
+            comboSec(comboSonuclar[comboAktifIdx]);
+          } else {
+            comboKapat();
+            aylikSorguBaslat();
+            inp.blur();
+          }
+        } else if (e.key === 'Escape') {
+          comboKapat();
+          inp.blur();
+        } else if (e.key === 'Tab') {
+          comboKapat();
+        }
+      });
+
+      // Odak kaybında kapat; geçersiz/yarım yazıyı son geçerli seçime döndür
+      inp.addEventListener('blur', function() {
+        setTimeout(function() {
+          comboKapat();
+          const bulunan = varlikBul(inp.value);
+          if (bulunan) {
+            inp.value = bulunan;
+          } else if (inp.value.trim() !== "" && comboSeciliVarlik) {
+            inp.value = comboSeciliVarlik;
+          }
+          comboDoluGuncelle();
+        }, 120);
+      });
+
+      // Listede satıra tıklama / dokunma
+      liste.addEventListener('mousedown', function(e) { e.preventDefault(); }); // kutunun odağı kaybolmasın
+      liste.addEventListener('click', function(e) {
+        const el = e.target.closest ? e.target.closest('.combo-oge') : null;
+        if (!el) return;
+        const idx = parseInt(el.getAttribute('data-i'), 10);
+        if (!isNaN(idx) && comboSonuclar[idx]) comboSec(comboSonuclar[idx]);
+      });
+      liste.addEventListener('mousemove', function(e) {
+        const el = e.target.closest ? e.target.closest('.combo-oge') : null;
+        if (!el) return;
+        const idx = parseInt(el.getAttribute('data-i'), 10);
+        if (!isNaN(idx) && idx !== comboAktifIdx) {
+          const eski = liste.querySelector('.combo-oge.aktif');
+          if (eski) eski.classList.remove('aktif');
+          el.classList.add('aktif');
+          comboAktifIdx = idx;
+        }
+      });
+
+      // Temizle (X) düğmesi: kutuyu boşalt ve tüm listeyi aç
+      temizle.addEventListener('mousedown', function(e) { e.preventDefault(); });
+      temizle.addEventListener('click', function() {
+        inp.value = "";
+        comboDoluGuncelle();
+        inp.focus();
+        comboCiz("", false);
+        comboAc();
+      });
+    }
+
+    // Varlık listesi geldiğinde / değiştiğinde çağrılır
+    function aylikListeDoldur() {
+      if (comboAcikMi()) {
+        const inp = document.getElementById('aylikVarlikInput');
+        comboCiz(inp.value, false);
+      }
     }
 
     // Ay ve yıl seçicilerinin seçeneklerini oluşturur
@@ -729,13 +985,12 @@
       if (mesaj) gosterToast(mesaj, "#FACC15");
     }
 
-    // Seçici değişince: dönemi düzelt, geçerli bir varlık yazılıysa otomatik yeniden hesapla
+    // Seçici değişince: dönemi düzelt, geçerli bir varlık seçiliyse otomatik yeniden hesapla
     function aylikDegisti(e) {
       aylikDonemiDuzelt(e && e.target ? e.target.id : '');
-      const deger = (document.getElementById('aylikVarlikInput').value || "").trim().toUpperCase();
+      const deger = (document.getElementById('aylikVarlikInput').value || "").trim();
       if (!deger || !globalAssets || globalAssets.length === 0) return;
-      const eslesen = globalAssets.find(a => a.toUpperCase() === deger);
-      if (eslesen) aylikSorguBaslat();
+      if (varlikBul(deger)) aylikSorguBaslat();
     }
 
     // Uzun biçim (masaüstü): %-18,91
@@ -774,10 +1029,18 @@
       if (!deger) { aylikMesajGoster("Lütfen bir hisse veya varlık seçin.", false, true); return; }
       if (!globalAssets || globalAssets.length === 0) { aylikMesajGoster("Varlık listesi henüz yüklenmedi, birkaç saniye sonra tekrar deneyin.", false, true); return; }
 
-      const eslesen = globalAssets.find(a => a.toUpperCase() === deger.toUpperCase());
+      // Tam eşleşme yoksa ve tek bir aday varsa onu kullan (ör. "TTR" yazıp HESAPLA'ya basınca)
+      let eslesen = varlikBul(deger);
+      if (!eslesen) {
+        const adaylar = comboFiltrele(deger);
+        if (adaylar.length === 1) eslesen = adaylar[0];
+      }
       if (!eslesen) { aylikMesajGoster("'" + deger + "' listede bulunamadı.", false, true); return; }
 
       inp.value = eslesen;
+      comboSeciliVarlik = eslesen;
+      comboDoluGuncelle();
+      comboKapat();
 
       aylikDonemiDuzelt('');
 
@@ -910,9 +1173,17 @@
         tableContainer.style.display = 'none';
         aylikPanel.style.display = 'flex';
         aylikContainer.style.display = 'block';
+
+        // Masaüstünde (fare olan cihazlarda) arama kutusu otomatik aktif olur: hemen yazmaya başlanabilir
+        if (!comboSeciliVarlik && window.matchMedia && window.matchMedia('(hover: hover)').matches) {
+          setTimeout(function() {
+            if (aktifSekme === 'aylik') document.getElementById('aylikVarlikInput').focus();
+          }, 50);
+        }
         return;
       }
 
+      comboKapat();
       aylikPanel.style.display = 'none';
       aylikContainer.style.display = 'none';
       tableContainer.style.display = 'block';
