@@ -1084,7 +1084,7 @@
       if (a.durum !== 'ok') return '<td class="ay-bos">-</td>';
 
       const poz = a.getiri >= 0;
-      const bilgi = AY_ADLARI[mIdx] + ' ' + yil + '  •  ' + a.bas + ' (' + fmtFiyat(a.basFiyat) + ') → ' + a.bit + ' (' + fmtFiyat(a.bitFiyat) + ')  •  ' + fmtGetiri(a.getiri) + (a.kismi ? '  •  AY HENÜZ TAMAMLANMADI' : '');
+      const bilgi = AY_ADLARI[mIdx] + ' ' + yil + '  •  ' + a.bas + ((a.basFiyatTarih && a.basFiyatTarih !== a.bas) ? ' [' + a.basFiyatTarih + ' kapanışı]' : '') + ' (' + fmtFiyat(a.basFiyat) + ') → ' + a.bit + ' (' + fmtFiyat(a.bitFiyat) + ')  •  ' + fmtGetiri(a.getiri) + (a.kismi ? '  •  AY HENÜZ TAMAMLANMADI' : '');
       return '<td class="' + (poz ? 'poz' : 'neg') + (a.kismi ? ' kismi' : '') + '" style="background-color:' + aylikRenkArkaPlani(a.getiri) + ';" data-bilgi="' + htmlKacis(bilgi) + '" title="' + htmlKacis(bilgi) + '">' +
              '<span class="v-uzun">' + fmtGetiri(a.getiri) + '</span><span class="v-kisa">' + fmtKisa(a.getiri) + '</span></td>';
     }
@@ -1139,7 +1139,7 @@
       html += '</tbody></table>';
 
       html += '<div id="aylikDetay" class="aylik-detay">Bir hücreye tıklayın veya dokunun: kullanılan tarihler ve fiyatlar burada görünür.</div>';
-      html += '<div class="aylik-not">Her ayın getirisi: ayın ilk tarihindeki fiyattan, ayın son tarihindeki kapanış fiyatına doğru hesaplanır (getiri = son / ilk - 1); fiyatlar uygulamanın kendi veritabanından okunur. Bir tarihte varlığın fiyatı yoksa o tarihe kadarki son bilinen fiyat esas alınır. Kesikli çerçeve: ay henüz tamamlanmadı. "-": yeterli veri yok. "YIL (BİLEŞİK)": o yılın aylık getirilerinin bileşiği (aylar arası geçiş getirisi dahil değildir). Mobilde değerler % işaretsiz ve yuvarlanmış gösterilir.</div>';
+      html += '<div class="aylik-not">Her ayın getirisi: ayın 1'indeki fiyattan, ayın son tarihindeki kapanış fiyatına doğru hesaplanır (getiri = son / ilk - 1); fiyatlar uygulamanın kendi veritabanından okunur. Ayın 1'i hafta sonu veya tatile denk gelirse 1'inden önceki son kapanış fiyatı esas alınır (hücre detayında "[tarih kapanışı]" olarak görünür). Kesikli çerçeve: ay henüz tamamlanmadı. "-": yeterli veri yok. "YIL (BİLEŞİK)": o yılın aylık getirilerinin bileşiği (aylar arası geçiş getirisi dahil değildir). Mobilde değerler % işaretsiz ve yuvarlanmış gösterilir.</div>';
 
       c.innerHTML = html;
     }
