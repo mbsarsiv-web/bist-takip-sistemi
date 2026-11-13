@@ -1139,7 +1139,7 @@
       html += '</tbody></table>';
 
       html += '<div id="aylikDetay" class="aylik-detay">Bir hücreye tıklayın veya dokunun: kullanılan tarihler ve fiyatlar burada görünür.</div>';
-      html += '<div class="aylik-not">Her ayın getirisi: ayın ilk işlem günü kapanışından son işlem günü kapanışına (ikisi de dahil) hesaplanır; fiyatlar uygulamanın kendi veritabanından okunur. Kesikli çerçeve: ay henüz tamamlanmadı. "-": yeterli veri yok. "YIL (BİLEŞİK)": o yılın aylık getirilerinin bileşiği (aylar arası geçiş getirisi dahil değildir). Mobilde değerler % işaretsiz ve yuvarlanmış gösterilir.</div>';
+      html += '<div class="aylik-not">Her ayın getirisi: ayın ilk tarihindeki fiyattan, ayın son tarihindeki kapanış fiyatına doğru hesaplanır (getiri = son / ilk - 1); fiyatlar uygulamanın kendi veritabanından okunur. Bir tarihte varlığın fiyatı yoksa o tarihe kadarki son bilinen fiyat esas alınır. Kesikli çerçeve: ay henüz tamamlanmadı. "-": yeterli veri yok. "YIL (BİLEŞİK)": o yılın aylık getirilerinin bileşiği (aylar arası geçiş getirisi dahil değildir). Mobilde değerler % işaretsiz ve yuvarlanmış gösterilir.</div>';
 
       c.innerHTML = html;
     }
