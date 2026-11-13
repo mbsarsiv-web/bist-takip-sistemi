@@ -13,19 +13,21 @@
     :root { --bg-main: #0a0e14; --bg-panel: #111820; --text-main: #E2E8F0; --gold: #FACC15; --blue-accent: #38BDF8; --green-accent: #10B981; --red-accent: #EF4444; --red-btn: #991B1B; --border-color: #2D3748; --panel-border: #1F2937; }
     body { margin: 0; font-family: 'Inter', sans-serif; background-color: var(--bg-main); color: var(--text-main); display: flex; height: 100vh; overflow: hidden; }
     .main-content { flex: 1; display: flex; flex-direction: column; padding: 5px 15px; max-width: 1400px; margin: 0 auto; width: 100%; box-sizing: border-box; overflow: hidden;}
+    
     .top-header { position: relative; display: flex; justify-content: flex-end; align-items: center; background-color: var(--red-btn); padding: 8px 15px; border-radius: 8px; margin-bottom: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); border: 1px solid #FCA5A5;}
     .header-title { position: absolute; left: 50%; transform: translateX(-50%); font-size: 1.25rem; font-weight: 900; margin: 0; letter-spacing: 1px; color: white; white-space: nowrap; z-index: 1;}
     .update-badge { background-color: #000; padding: 4px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: 800; border: 1px solid #333; display: flex; align-items: center; gap: 6px; z-index: 2;}
     .update-badge .dot { width: 6px; height: 6px; background-color: #22C55E; border-radius: 50%; box-shadow: 0 0 6px #22C55E; animation: pulse 2s infinite; }
     @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+    
     .tab-buttons { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
     .tab-btn { flex: 1; padding: 6px 8px; border-radius: 8px; font-size: 0.9rem; font-weight: 900; cursor: pointer; border: 1px solid var(--border-color); display: flex; justify-content: center; align-items: center; gap: 6px; transition: 0.2s; color: white; font-family: 'Inter', sans-serif; }
     .tab-btn.active { background-color: var(--red-btn); border-color: #F87171; }
     .tab-btn.inactive { background-color: var(--bg-panel); }
     .tab-btn.inactive:hover { background-color: #1E293B; }
 
-    /* UZAKTAN KUMANDA / TV: odaklanan her düğme belirgin çerçeve alsın */
-    button:focus { outline: 3px solid var(--gold); outline-offset: 2px; }
+    /* SMART TV OPTİMİZASYONLARI: odaklanan her alan net görünmeli */
+    button:focus, select:focus, input:focus { outline: 3px solid var(--gold) !important; outline-offset: 2px !important; }
 
     .date-controls { background: #111820; padding: 8px 25px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 10px; display: none; justify-content: center; align-items: center; gap: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.3);}
     .date-group { display: flex; align-items: center; gap: 8px; }
@@ -42,7 +44,6 @@
     .flatpickr-current-month .flatpickr-monthDropdown-months, .flatpickr-current-month input.cur-year { color: #E2E8F0 !important; }
     span.flatpickr-weekday { color: #38BDF8 !important; }
     .flatpickr-month, .flatpickr-prev-month svg, .flatpickr-next-month svg { color: #E2E8F0 !important; fill: #E2E8F0 !important; }
-    /* FLATPICKR FIX END */
     
     .table-container { background-color: var(--bg-panel); border-radius: 10px; border: 1px solid var(--panel-border); box-shadow: 0 10px 20px rgba(0,0,0,0.5); flex: 1; display: block; width: 100%; overflow-x: auto; overflow-y: auto; -webkit-overflow-scrolling: touch; }
     
@@ -51,56 +52,54 @@
     th, td { box-sizing: border-box; vertical-align: middle; }
     th { color: var(--gold); font-weight: 900; letter-spacing: 0.5px; }
     td { border-bottom: 1px solid rgba(255,255,255,0.03); font-weight: 700; }
+    
     .mode-yillar { width: max-content; margin: 0 auto; }
     .mode-yillar th { font-size: 1.05rem; padding: 6px 10px; white-space: nowrap; min-width: 100px; }
     .mode-yillar td { padding: 4px 10px; height: auto; white-space: nowrap; min-width: 100px; }
     .mode-tarih { width: 100%; max-width: 420px; margin: 0 auto; table-layout: fixed; }
     
     .mode-tarih th, .mode-tarih td { overflow: hidden; text-overflow: ellipsis; }
-    
     .mode-tarih th:nth-child(1), .mode-tarih td:nth-child(1) { width: 15%; text-align: center !important; }
     .mode-tarih th:nth-child(2), .mode-tarih td:nth-child(2) { width: 40%; text-align: left !important; padding: 4px 5px !important; padding-left: 20px !important; }
     .mode-tarih th:nth-child(3), .mode-tarih td:nth-child(3) { width: 45%; text-align: center !important; padding: 4px 5px !important; }
     .mode-tarih th { font-size: 1.15rem; padding: 4px 5px !important; }
     .mode-tarih td { font-size: 1.0rem; padding: 1px 5px !important; white-space: nowrap; }
+    
     .select-wrapper { display: inline-flex; align-items: center; justify-content: flex-start !important; gap: 6px; width: 100%; margin: 0; }
-    /* Varlık değiştirme düğmesi (eski açılır listenin yerine: tıklayınca varlık seçici açılır) */
-    .asset-btn { background-color: transparent; border: none; color: var(--blue-accent); font-family: 'Inter', sans-serif; font-weight: 900; cursor: pointer; text-align: left; font-size: 1.05rem; padding: 3px 6px; border-radius: 6px; display: inline-flex; align-items: center; white-space: nowrap; }
-    .asset-btn:hover { background-color: rgba(255,255,255,0.06); }
-    .asset-btn i { color: #475569; font-size: 0.7em; margin-left: 6px; }
+    
+    /* Native SELECT (Smart TV uyumlu, hücre içi) */
+    .asset-select { background-color: #0a0e14; border: 1px solid var(--border-color); color: var(--blue-accent); font-family: 'Inter', sans-serif; font-weight: 900; font-size: 1.05rem; padding: 6px; border-radius: 6px; cursor: pointer; outline: none; width: 100%; }
+    .asset-select:hover { background-color: #1a222d; }
+    .asset-select option, .asset-select optgroup { background-color: var(--bg-panel); color: white; }
+    
     .sabit-varlik { font-size: 1.05rem !important; }
     .getiri-wrapper { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.1; width: 100%; }
     .mode-tarih .getiri-wrapper { position: relative; align-items: center !important; }
     .kat-val { font-size: 0.70rem; color: var(--gold); font-weight: 900; margin-top: 1px; letter-spacing: 0px; }
     .getiri-val { font-weight: 900; }
     .mode-tarih .arz-val { position: absolute; left: 100%; margin-left: 8px; font-size: 0.75em; color: #FBBF24; font-weight: 700; white-space: nowrap; }
+    
     .col-sira { color: var(--gold); text-align: center; font-size: 1.05rem !important; font-weight: 900; }
     .col-varlik { text-align: left !important; padding-left: 20px !important; white-space: nowrap; overflow: hidden; }
     .col-getiri { color: var(--green-accent); font-weight: 800;}
     .col-getiri.negative { color: var(--red-accent); }
+    
     .mode-yillar th:nth-child(1), .mode-yillar td:nth-child(1) { position: sticky; left: 0; z-index: 2; background-color: var(--bg-panel); width: 50px; min-width: 50px; }
     .mode-yillar th:nth-child(2), .mode-yillar td:nth-child(2) { position: sticky; left: 50px; z-index: 2; background-color: var(--bg-panel); box-shadow: 2px 0 8px rgba(0,0,0,0.3); width: 120px; min-width: 120px; }
     .mode-yillar th:nth-child(1), .mode-yillar th:nth-child(2) { background-color: #141b24; }
     tbody tr:hover td { background-color: rgba(255, 255, 255, 0.05); }
     .mode-yillar tbody tr:hover td:nth-child(1), .mode-yillar tbody tr:hover td:nth-child(2) { background-color: #1a222d; }
+    
     .loading-state { text-align: center; padding: 30px; color: #94A3B8; font-size: 1rem; font-weight: 600; }
     .loading-state i { color: #10B981; margin-bottom: 10px; font-size: 2rem; }
     .row-loading { opacity: 0.4; pointer-events: none; }
     .toast { position: fixed; bottom: 20px; right: 20px; background: #111820; border-left: 4px solid #10B981; color: white; padding: 15px 20px; border-radius: 6px; box-shadow: 0 10px 25px rgba(0,0,0,0.8); display: flex; align-items: center; gap: 12px; font-weight: 700; opacity: 0; transform: translateY(20px); transition: all 0.4s ease; z-index: 9999; pointer-events: none; }
     .toast.show { opacity: 1; transform: translateY(0); }
 
-    /* ===== EKRAN KAYDIRMA DÜĞMELERİ (TV KUMANDASI İÇİN) ===== */
-    .kaydir { position: fixed; left: 14px; bottom: 14px; z-index: 1100; }
-    .kaydir button { display: block; width: 54px; height: 54px; margin-top: 8px; border-radius: 50%; background-color: #0F766E; border: 2px solid #14B8A6; color: white; font-size: 1.3rem; cursor: pointer; opacity: 0.85; padding: 0; }
-    .kaydir button:hover { opacity: 1; background-color: #0D9488; }
-
     /* ===== AYLIK GETİRİ SEKMESİ ===== */
-    /* DÜZELTME: Aylık sekmede iç kaydırma kutusu yerine normal SAYFA kaydırması kullanılır.
-       (TV tarayıcıları iç kutuda yukarı kaydıramıyordu; sayfa kaydırması hem aşağı hem yukarı çalışır.) */
     body.aylik-modu { display: block; height: auto; min-height: 100vh; overflow-y: auto; overflow-x: hidden; }
     body.aylik-modu .main-content { display: block; height: auto; overflow: visible; }
     body.aylik-modu #aylikContainer { overflow: visible; flex: none; }
-    body.modal-acik { overflow: hidden !important; }
 
     body.aylik-modu .top-header { padding: 4px 12px; margin-bottom: 6px; }
     body.aylik-modu .header-title { font-size: 1.05rem; }
@@ -114,37 +113,18 @@
     .aylik-select:focus, .aylik-select:hover { border-color: var(--gold); box-shadow: 0 0 8px rgba(250, 204, 21, 0.2); }
     .aylik-select option { background-color: var(--bg-panel); color: white; }
     .aylik-ayrac { color: #475569; font-weight: 900; margin: 0 2px; }
+    
     .aylik-btn { background-color: #0F766E; border: 1px solid #14B8A6; color: white; padding: 6px 14px; border-radius: 6px; font-family: 'Inter', sans-serif; font-weight: 900; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: 0.2s; white-space: nowrap; }
     .aylik-btn:hover { background-color: #0D9488; }
-    .aylik-varlik-btn { background-color: #0a0e14; border: 2px solid var(--gold); color: white; padding: 6px 16px; border-radius: 8px; font-family: 'Inter', sans-serif; font-weight: 900; font-size: 1rem; cursor: pointer; display: flex; align-items: center; gap: 8px; min-width: 190px; justify-content: center; transition: 0.2s; }
+    
+    /* Native SELECT (Smart TV uyumlu, aylık sekme üst panel) */
+    .aylik-varlik-btn { background-color: #0a0e14; border: 2px solid var(--gold); color: white; padding: 6px 16px; border-radius: 8px; font-family: 'Inter', sans-serif; font-weight: 900; font-size: 1rem; cursor: pointer; display: flex; align-items: center; gap: 8px; min-width: 190px; transition: 0.2s; text-align: center; appearance: auto;}
     .aylik-varlik-btn:hover { background-color: rgba(250, 204, 21, 0.1); }
-    .aylik-varlik-btn i { color: var(--gold); }
+    .aylik-varlik-btn option, .aylik-varlik-btn optgroup { background-color: var(--bg-panel); color: white; text-align: left; }
+    
     .aylik-preset { background-color: #0a0e14; border: 1px solid var(--border-color); color: #CBD5E1; padding: 6px 12px; border-radius: 6px; font-family: 'Inter', sans-serif; font-weight: 800; font-size: 0.78rem; cursor: pointer; transition: 0.2s; white-space: nowrap; }
     .aylik-preset:hover { border-color: var(--gold); color: var(--gold); }
     .lbl-kisa { display: none; }
-
-    /* ===== VARLIK SEÇİCİ (TAM EKRAN, KUMANDA / DOKUNMATİK DOSTU) ===== */
-    .vs-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(5, 8, 12, 0.94); z-index: 1000; overflow-y: auto; -webkit-overflow-scrolling: touch; }
-    .vs-overlay.acik { display: block; }
-    .vs-kutu { width: calc(100% - 24px); max-width: 980px; margin: 14px auto; padding: 14px 16px 40px 16px; background-color: #111820; border: 1px solid var(--gold); border-radius: 12px; box-sizing: border-box; }
-    .vs-ust { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
-    .vs-baslik { font-weight: 900; color: var(--gold); font-size: 1.1rem; }
-    .vs-kapat { background-color: var(--red-btn); border: 1px solid #F87171; color: white; font-family: 'Inter', sans-serif; font-weight: 900; font-size: 0.95rem; padding: 8px 18px; border-radius: 8px; cursor: pointer; }
-    .vs-arama { width: 100%; box-sizing: border-box; background-color: #0a0e14; border: 1px solid var(--border-color); color: white; padding: 10px 14px; border-radius: 8px; font-family: 'Inter', sans-serif; font-weight: 800; font-size: 1.05rem; outline: none; text-transform: uppercase; }
-    .vs-arama:focus { border-color: var(--gold); box-shadow: 0 0 8px rgba(250, 204, 21, 0.25); }
-    .vs-bolum { color: #64748B; font-size: 0.72rem; font-weight: 900; letter-spacing: 0.6px; margin: 16px 0 8px 0; }
-    .vs-chip { display: inline-block; margin: 0 8px 8px 0; padding: 11px 18px; background-color: rgba(250, 204, 21, 0.1); border: 1px solid var(--gold); color: var(--gold); border-radius: 8px; font-family: 'Inter', sans-serif; font-weight: 900; font-size: 1rem; cursor: pointer; }
-    .vs-chip:hover { background-color: rgba(250, 204, 21, 0.2); }
-    .vs-harf { display: inline-block; margin: 0 6px 6px 0; min-width: 62px; padding: 7px 6px; background-color: #0a0e14; border: 1px solid var(--border-color); color: #E2E8F0; border-radius: 8px; font-family: 'Inter', sans-serif; font-weight: 900; font-size: 1.1rem; cursor: pointer; text-align: center; line-height: 1.1; }
-    .vs-harf small { display: block; font-size: 0.6rem; color: #64748B; font-weight: 800; margin-top: 2px; }
-    .vs-harf:hover { border-color: var(--gold); }
-    .vs-harf.aktif { background-color: var(--gold); color: #000; border-color: var(--gold); }
-    .vs-harf.aktif small { color: #422006; }
-    .vs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); grid-gap: 8px; }
-    .vs-btn { padding: 13px 6px; background-color: #0a0e14; border: 1px solid var(--border-color); color: #E2E8F0; border-radius: 8px; font-family: 'Inter', sans-serif; font-weight: 800; font-size: 1rem; cursor: pointer; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .vs-btn:hover { border-color: var(--gold); color: var(--gold); }
-    .vs-btn.secili { border-color: var(--green-accent); color: var(--green-accent); background-color: rgba(16, 185, 129, 0.1); }
-    .vs-bos { padding: 22px 10px; text-align: center; color: #94A3B8; font-size: 0.95rem; font-weight: 700; }
 
     #aylikContainer { display: none; padding: 8px 10px; }
     .aylik-hint { text-align: center; padding: 30px; color: #94A3B8; font-size: 1rem; font-weight: 600; }
@@ -182,7 +162,7 @@
     @media (max-height: 720px) {
       .top-header { padding: 4px 10px; margin-bottom: 5px; } .header-title { font-size: 1.1rem; } .tab-buttons { margin-bottom: 5px; } .tab-btn { padding: 4px 6px; font-size: 0.8rem; }
       .mode-yillar th { font-size: 0.85rem !important; padding: 2px 4px !important; } .mode-yillar td { padding: 2px 5px !important; height: auto; }
-      .getiri-val { font-size: 0.9rem; } .kat-val { font-size: 0.6rem; } .asset-btn { font-size: 0.9rem !important; } .sabit-varlik { font-size: 0.9rem !important; } .table-container { box-shadow: none; }
+      .getiri-val { font-size: 0.9rem; } .kat-val { font-size: 0.6rem; } .asset-select { font-size: 0.9rem !important; } .sabit-varlik { font-size: 0.9rem !important; } .table-container { box-shadow: none; }
       .mode-aylik th { padding: 3px 2px; } .mode-aylik td { padding: 3px 2px; font-size: 0.8rem; }
     }
     @media (max-width: 768px) {
@@ -198,7 +178,7 @@
       .mode-yillar { width: max-content; margin: 0 auto; } .mode-yillar th, .mode-yillar td { padding: 6px 8px; } .col-varlik { padding-left: 10px !important; }
       .mode-tarih { max-width: 100% !important; margin: 0 auto !important; } .mode-tarih th { font-size: 0.95rem !important; padding: 4px 2px !important; } .mode-tarih td { font-size: 0.95rem !important; padding: 1px 2px !important; }
       .mode-tarih th:nth-child(2), .mode-tarih td:nth-child(2) { padding-left: 10px !important; } .mode-tarih th:nth-child(3), .mode-tarih td:nth-child(3) { padding-left: 2px !important; }
-      .asset-btn { font-size: 0.95rem !important; } .sabit-varlik { font-size: 0.95rem !important; }
+      .asset-select { font-size: 0.95rem !important; padding: 4px;} .sabit-varlik { font-size: 0.95rem !important; }
 
       /* Aylık getiri: mobil */
       .aylik-panel { padding: 6px; gap: 5px; margin-bottom: 5px; }
@@ -228,9 +208,6 @@
       .v-kisa, .th-kisa { display: inline; }
       .aylik-detay { font-size: 0.68rem; margin: 6px 2px 2px 2px; }
       .aylik-not { display: none; }
-      .vs-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
-      .vs-harf { min-width: 50px; }
-      .kaydir button { width: 46px; height: 46px; }
     }
   </style>
 </head>
@@ -277,9 +254,10 @@
 
     <div id="aylikPanel" class="aylik-panel">
       <div class="aylik-grup g-varlik">
-        <button type="button" id="aylikVarlikBtn" class="aylik-varlik-btn" onclick="aylikVarlikSec()">
-          <i class="fa-solid fa-magnifying-glass-chart"></i> <span id="aylikVarlikAd">VARLIK SEÇ</span>
-        </button>
+        <!-- Özel Modal Tasarımı Yerine TV Dostu Native Select -->
+        <select id="aylikVarlikSelect" class="aylik-varlik-btn" onchange="aylikVarlikSecildi(this)">
+          <option value="" disabled selected>VARLIK SEÇ</option>
+        </select>
         <button type="button" id="aylikGetirBtn" class="aylik-btn" onclick="aylikSorguBaslat()">
           <i class="fa-solid fa-calculator"></i> HESAPLA
         </button>
@@ -311,27 +289,9 @@
     </div>
 
     <div id="aylikContainer" class="table-container">
-      <div class="aylik-hint"><i class="fa-solid fa-calendar-days"></i>Yukarıdaki "VARLIK SEÇ" düğmesine basın; hızlı seçim düğmelerinden veya baş harfe göre listeden bir hisse ya da varlık seçin. Dönemi dilediğiniz gibi ayarlayabilirsiniz (en fazla 10 takvim yılı); varsayılan son 10 yıldır.</div>
+      <div class="aylik-hint"><i class="fa-solid fa-calendar-days"></i>Yukarıdaki "VARLIK SEÇ" listesinden bir hisse ya da varlık seçin. Dönemi dilediğiniz gibi ayarlayabilirsiniz (en fazla 10 takvim yılı); varsayılan son 10 yıldır.</div>
     </div>
   </main>
-
-  <!-- VARLIK SEÇİCİ -->
-  <div id="vsOverlay" class="vs-overlay">
-    <div class="vs-kutu" id="vsKutu">
-      <div class="vs-ust">
-        <div class="vs-baslik"><i class="fa-solid fa-magnifying-glass-chart"></i> VARLIK SEÇ</div>
-        <button type="button" id="vsKapatBtn" class="vs-kapat"><i class="fa-solid fa-xmark"></i> KAPAT</button>
-      </div>
-      <input type="text" id="vsArama" class="vs-arama" placeholder="İsteğe bağlı: yazarak ara..." autocomplete="off" autocapitalize="characters" spellcheck="false">
-      <div id="vsIcerik"></div>
-    </div>
-  </div>
-
-  <!-- KAYDIRMA DÜĞMELERİ (TV KUMANDASI İÇİN) -->
-  <div class="kaydir">
-    <button type="button" id="kaydirYukari" title="Yukarı" aria-label="Yukarı kaydır"><i class="fa-solid fa-chevron-up"></i></button>
-    <button type="button" id="kaydirAsagi" title="Aşağı" aria-label="Aşağı kaydır"><i class="fa-solid fa-chevron-down"></i></button>
-  </div>
 
   <div id="toastNotification" class="toast">
     <i class="fa-solid fa-circle-info" style="color: #38BDF8; font-size: 1.2rem;"></i>
@@ -365,15 +325,9 @@
     const AY_ADLARI_KISA = ["Oca", "Şub", "Mar", "Nis", "May", "Haz", "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara"];
     const AYLIK_EN_ESKI_YIL = 1995;
     const AYLIK_MAKS_YIL_SAYISI = 10;
-    let aylikSeciliVarlik = ""; // aylık sekmede en son seçilen varlık
+    let aylikSeciliVarlik = ""; 
 
-    // VARLIK SEÇİCİ DURUMU
     const SABIT_VARLIKLAR = ["DOLAR", "EURO", "GR ALTIN", "GR GÜMÜŞ", "NASDAQ", "S&P 500"];
-    let vsGeriCagri = null;   // seçim yapılınca çağrılacak fonksiyon
-    let vsMevcut = "";        // o an seçili varlık
-    let vsHarf = "";          // seçili baş harf
-    let vsListe = [];         // şu an ekrandaki seçilebilir varlıklar (data-i bu diziyi gösterir)
-    let vsAramaIlk = "";      // arama sonucunun ilk varlığı (Enter ile seçmek için)
 
     async function apiRequest(payload) {
       try {
@@ -392,9 +346,6 @@
     document.addEventListener("DOMContentLoaded", function() {
       aylikSecicileriHazirla();
       aylikOnAyar(10, false);
-      varlikSeciciKur();
-      kaydirmaDugmeleriniKur();
-
       veriCekHizliAcilis();
 
       fpBaslangic = flatpickr("#tarihBaslangic", {
@@ -423,12 +374,10 @@
         }
       });
 
-      // Dönem seçicileri değişince: önce 10 yıl kuralına göre düzelt, sonra (varlık seçiliyse) yeniden hesapla
       ['aylikBasAy', 'aylikBasYil', 'aylikBitAy', 'aylikBitYil'].forEach(function(id) {
         document.getElementById(id).addEventListener('change', aylikDegisti);
       });
 
-      // Aylık tablo: hücreye tıklayınca/dokununca detay göster
       document.getElementById('aylikContainer').addEventListener('click', function(e) {
         const td = (e.target && e.target.closest) ? e.target.closest('td') : null;
         if (!td || !td.dataset || !td.dataset.bilgi) return;
@@ -450,24 +399,33 @@
       setTimeout(() => toast.classList.remove('show'), 4000);
     }
 
-    // ===================== KAYDIRMA (TV KUMANDASI) =====================
-
-    function sayfaKaydir(dy) {
-      const overlay = document.getElementById('vsOverlay');
-      if (overlay.classList.contains('acik')) {
-        overlay.scrollTop = overlay.scrollTop + dy;
-      } else if (aktifSekme === 'aylik') {
-        const mevcut = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0;
-        window.scrollTo(0, mevcut + dy);
-      } else {
-        const tc = document.getElementById('tableContainer');
-        tc.scrollTop = tc.scrollTop + dy;
+    function varlikSelectleriDoldur() {
+      const selAylik = document.getElementById('aylikVarlikSelect');
+      if (!selAylik || globalAssets.length === 0) return;
+      
+      const sabitler = SABIT_VARLIKLAR.filter(a => globalAssets.includes(a));
+      const hisseler = globalAssets.filter(a => !SABIT_VARLIKLAR.includes(a));
+      
+      // Aylık Select Opsiyonlarını oluşturma
+      let html = '<option value="" disabled selected>VARLIK SEÇ</option>';
+      if (sabitler.length > 0) {
+          html += '<optgroup label="HIZLI SEÇİM">';
+          sabitler.forEach(a => { html += `<option value="${a}">${a}</option>`; });
+          html += '</optgroup>';
       }
+      if (hisseler.length > 0) {
+          html += '<optgroup label="HİSSELER">';
+          hisseler.forEach(a => { html += `<option value="${a}">${a}</option>`; });
+          html += '</optgroup>';
+      }
+      selAylik.innerHTML = html;
     }
 
-    function kaydirmaDugmeleriniKur() {
-      document.getElementById('kaydirYukari').addEventListener('click', function() { sayfaKaydir(-Math.round(window.innerHeight * 0.6)); });
-      document.getElementById('kaydirAsagi').addEventListener('click', function() { sayfaKaydir(Math.round(window.innerHeight * 0.6)); });
+    // Modal yerine native Select seçildiğinde çalışır
+    function aylikVarlikSecildi(selectEl) {
+        if(!selectEl.value) return;
+        aylikSeciliVarlik = selectEl.value;
+        aylikSorguBaslat();
     }
 
     function veriCekHizliAcilis() {
@@ -477,6 +435,7 @@
           
           globalYillar = response.yillar;
           globalAssets = response.assets;
+          varlikSelectleriDoldur();
           
           document.getElementById('lastUpdateText').innerText = response.lastUpdate;
           document.getElementById('assetCountText').innerText = (response.assets.length > 0) ? response.assets.length + " VARLIK" : "Yüklendi";
@@ -484,7 +443,6 @@
           aylikSonVeriAyarla(response.lastUpdate);
           aylikOnAyar(10, false);
           
-          // Veri geldiğinde kullanıcı çoktan başka sekmeye geçmişse tabloyu yanlış çizmeyi engeller
           if (aktifSekme === 'yillar') {
              tabloyuCiz(globalYillar);
           }
@@ -494,7 +452,7 @@
     }
 
     function googleSorgusuTetikle() {
-      let islemSekmesi = aktifSekme; // İsteğin hangi sekmede başlatıldığını hafızaya alıyoruz
+      let islemSekmesi = aktifSekme;
       let bas = sekmeTarihleri[islemSekmesi].bas;
       let bitis = sekmeTarihleri[islemSekmesi].bitis;
       
@@ -519,7 +477,6 @@
            }
            cacheVeriler[islemSekmesi] = res.satirlar; 
            
-           // İstek döndüğünde kullanıcı hala aynı sekmedeyse tabloyu günceller
            if (aktifSekme === islemSekmesi) {
                tabloyuCiz(res.satirlar);
                gosterToast("Hesaplandı: " + res.basKullanilan + " → " + res.bitKullanilan, "#10B981");
@@ -530,10 +487,8 @@
         });
     }
 
-    // Yıllar / iki tarih sekmesinde bir satırın varlığını değiştirir
     function varlikDegistir(tr, dataIndex, yeniVarlik) {
       tr.classList.add('row-loading');
-
       let bas = (aktifSekme === 'yillar') ? "" : sekmeTarihleri[aktifSekme].bas;
       let bit = (aktifSekme === 'yillar') ? "" : sekmeTarihleri[aktifSekme].bitis;
 
@@ -541,9 +496,7 @@
       .then(res => {
           tr.classList.remove('row-loading');
           if(aktifSekme === 'yillar') {
-              if(res.yillar) {
-                  globalYillar = res.yillar; 
-              }
+              if(res.yillar) { globalYillar = res.yillar; }
               tabloyuCiz(globalYillar);
               gosterToast("Hisse değiştirildi!", "#10B981");
           } else if (aktifSekme === 'tarih') {
@@ -614,26 +567,38 @@
               td.style.fontWeight = "900";
               td.classList.add("sabit-varlik");
             } else {
-              // Açılır liste yerine: düğmeye basınca varlık seçici açılır
+              // TV Dostu Hücre İçi Native Select Tasarımı
               let wrapper = document.createElement('div');
               wrapper.className = 'select-wrapper';
 
-              let btn = document.createElement('button');
-              btn.type = 'button';
-              btn.className = 'asset-btn';
-              btn.appendChild(document.createTextNode(hucreVerisi));
-              let icon = document.createElement('i');
-              icon.className = 'fa-solid fa-chevron-down';
-              btn.appendChild(icon);
+              let sel = document.createElement('select');
+              sel.className = 'asset-select';
+              
+              const sabitler = SABIT_VARLIKLAR.filter(a => globalAssets.includes(a));
+              const hisseler = globalAssets.filter(a => !SABIT_VARLIKLAR.includes(a));
 
-              btn.onclick = function() {
-                varlikSeciciAc(hucreVerisi, function(yeniVarlik) {
-                  if (yeniVarlik === hucreVerisi) return;
+              if(sabitler.length > 0) {
+                  let og = document.createElement('optgroup');
+                  og.label = "HIZLI SEÇİM";
+                  sabitler.forEach(a => { let o = document.createElement('option'); o.value = a; o.textContent = a; og.appendChild(o); });
+                  sel.appendChild(og);
+              }
+              if(hisseler.length > 0) {
+                  let og = document.createElement('optgroup');
+                  og.label = "HİSSELER";
+                  hisseler.forEach(a => { let o = document.createElement('option'); o.value = a; o.textContent = a; og.appendChild(o); });
+                  sel.appendChild(og);
+              }
+              
+              sel.value = hucreVerisi;
+              
+              sel.onchange = function(e) {
+                  let yeniVarlik = e.target.value;
+                  if(yeniVarlik === hucreVerisi) return;
                   varlikDegistir(tr, i, yeniVarlik);
-                });
               };
 
-              wrapper.appendChild(btn);
+              wrapper.appendChild(sel);
               td.appendChild(wrapper);
             }
 
@@ -695,8 +660,6 @@
       }
     }
 
-    // ===================== ORTAK YARDIMCILAR =====================
-
     function htmlKacis(s) {
       return String(s).replace(/[&<>"']/g, function(c) {
         return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
@@ -707,202 +670,6 @@
       return (n < 10 ? "0" : "") + n;
     }
 
-    // Arama için normalize: Türkçe büyük harf + aksan sadeleştirme (i/İ/ı, ç, ğ, ö, ş, ü fark etmez)
-    function aramaNorm(s) {
-      return String(s || "").toLocaleUpperCase('tr-TR')
-        .replace(/İ/g, 'I').replace(/Ç/g, 'C').replace(/Ğ/g, 'G')
-        .replace(/Ö/g, 'O').replace(/Ş/g, 'S').replace(/Ü/g, 'U')
-        .replace(/\s+/g, ' ').trim();
-    }
-
-    // Varlık listesinde (tam eşleşme) arar; bulursa gerçek adını döndürür
-    function varlikBul(deger) {
-      const n = aramaNorm(deger);
-      if (!n || !globalAssets) return null;
-      for (let i = 0; i < globalAssets.length; i++) {
-        if (aramaNorm(globalAssets[i]) === n) return globalAssets[i];
-      }
-      return null;
-    }
-
-    // ===================== VARLIK SEÇİCİ =====================
-    // Hızlı seçim düğmeleri + baş harfe göre gruplama + isteğe bağlı arama.
-    // Tüm düğmeler gerçek <button>: TV kumandasının yön tuşlarıyla gezilebilir, dokunmatikte büyük hedefler.
-
-    function vsBasHarf(ad) {
-      return aramaNorm(ad).charAt(0);
-    }
-
-    function varlikSeciciAc(mevcut, geriCagri) {
-      if (!globalAssets || globalAssets.length === 0) {
-        gosterToast("Varlık listesi henüz yüklenmedi, birkaç saniye sonra tekrar deneyin.", "#FACC15");
-        return;
-      }
-      vsGeriCagri = geriCagri;
-      vsMevcut = mevcut || "";
-      // Mevcut varlık bir hisse ise, onun harfiyle açılır
-      vsHarf = (vsMevcut && SABIT_VARLIKLAR.indexOf(vsMevcut) === -1) ? vsBasHarf(vsMevcut) : "";
-
-      const arama = document.getElementById('vsArama');
-      arama.value = "";
-
-      document.getElementById('vsOverlay').classList.add('acik');
-      document.body.classList.add('modal-acik');
-      document.getElementById('vsOverlay').scrollTop = 0;
-
-      vsCiz();
-
-      // Fare olan cihazlarda doğrudan yazılabilsin; dokunmatik/TV'de ekran klavyesi açılmasın
-      if (window.matchMedia && window.matchMedia('(hover: hover)').matches) {
-        setTimeout(function() { try { arama.focus(); } catch (e) {} }, 30);
-      } else {
-        setTimeout(function() {
-          const hedef = document.querySelector('#vsIcerik .vs-btn.secili') || document.querySelector('#vsIcerik .vs-chip');
-          if (hedef) { try { hedef.focus(); } catch (e) {} }
-        }, 30);
-      }
-    }
-
-    function varlikSeciciKapat() {
-      document.getElementById('vsOverlay').classList.remove('acik');
-      document.body.classList.remove('modal-acik');
-      vsGeriCagri = null;
-    }
-
-    function vsCiz() {
-      const kap = document.getElementById('vsIcerik');
-      const q = aramaNorm(document.getElementById('vsArama').value);
-
-      const sabitler = SABIT_VARLIKLAR.filter(function(a) { return globalAssets.indexOf(a) !== -1; });
-      const hisseler = globalAssets.filter(function(a) { return SABIT_VARLIKLAR.indexOf(a) === -1; });
-
-      // Baş harf grupları (A, B, C ... Ç harfi C'nin içinde, İ harfi I'nın içinde toplanır)
-      const harfSayac = {};
-      hisseler.forEach(function(a) {
-        const h = vsBasHarf(a);
-        harfSayac[h] = (harfSayac[h] || 0) + 1;
-      });
-      const harfler = Object.keys(harfSayac).sort();
-
-      vsListe = [];
-      vsAramaIlk = "";
-      const p = [];
-
-      // 1) Hızlı seçim
-      if (sabitler.length > 0) {
-        p.push('<div class="vs-bolum">HIZLI SEÇİM</div><div>');
-        sabitler.forEach(function(ad) {
-          const idx = vsListe.length;
-          vsListe.push(ad);
-          p.push('<button type="button" class="vs-chip" data-i="' + idx + '">' + htmlKacis(ad) + '</button>');
-        });
-        p.push('</div>');
-      }
-
-      // 2) Baş harfler
-      p.push('<div class="vs-bolum" id="vsHarfBolum">HİSSELER – BAŞ HARFE GÖRE (' + hisseler.length + ')</div><div>');
-      harfler.forEach(function(h) {
-        p.push('<button type="button" class="vs-harf' + ((h === vsHarf && !q) ? ' aktif' : '') + '" data-h="' + htmlKacis(h) + '">' + htmlKacis(h) + '<small>' + harfSayac[h] + '</small></button>');
-      });
-      p.push('</div>');
-
-      // 3) Sonuçlar
-      let sonuc = [];
-      let baslik = "";
-      if (q) {
-        sonuc = globalAssets.filter(function(a) { return aramaNorm(a).indexOf(q) !== -1; });
-        baslik = 'ARAMA SONUCU (' + sonuc.length + ')';
-        if (sonuc.length > 0) vsAramaIlk = sonuc[0];
-      } else if (vsHarf) {
-        sonuc = hisseler.filter(function(a) { return vsBasHarf(a) === vsHarf; });
-        baslik = vsHarf + ' İLE BAŞLAYANLAR (' + sonuc.length + ')';
-      }
-
-      p.push('<div class="vs-bolum" id="vsSonucBolum">' + (baslik || 'SEÇİM') + '</div>');
-      if (!q && !vsHarf) {
-        p.push('<div class="vs-bos">Yukarıdan bir baş harf seçin; o harfle başlayan hisseler burada listelenir.</div>');
-      } else if (sonuc.length === 0) {
-        p.push('<div class="vs-bos">Sonuç bulunamadı.</div>');
-      } else {
-        p.push('<div class="vs-grid">');
-        sonuc.forEach(function(ad) {
-          const idx = vsListe.length;
-          vsListe.push(ad);
-          p.push('<button type="button" class="vs-btn' + (ad === vsMevcut ? ' secili' : '') + '" data-i="' + idx + '">' + htmlKacis(ad) + '</button>');
-        });
-        p.push('</div>');
-      }
-
-      kap.innerHTML = p.join('');
-    }
-
-    function vsSec(ad) {
-      const cb = vsGeriCagri;
-      varlikSeciciKapat();
-      if (cb) cb(ad);
-    }
-
-    function varlikSeciciKur() {
-      const overlay = document.getElementById('vsOverlay');
-      const arama = document.getElementById('vsArama');
-
-      document.getElementById('vsKapatBtn').addEventListener('click', varlikSeciciKapat);
-
-      // Arka plana (kutunun dışına) basınca kapat
-      overlay.addEventListener('click', function(e) {
-        if (e.target === overlay) { varlikSeciciKapat(); return; }
-
-        const btn = e.target.closest ? e.target.closest('button') : null;
-        if (!btn || !overlay.contains(btn)) return;
-
-        if (btn.hasAttribute('data-h')) {
-          vsHarf = btn.getAttribute('data-h');
-          arama.value = "";
-          vsCiz();
-          // Harf düğmeleri ve sonuçlar birlikte görünsün diye harf bölümüne kaydır
-          const b = document.getElementById('vsHarfBolum');
-          if (b) overlay.scrollTop = Math.max(0, b.offsetTop - 8);
-          // Odağı seçilen harfte tut (kumanda gezintisi bozulmasın)
-          const yeni = overlay.querySelector('.vs-harf.aktif');
-          if (yeni) { try { yeni.focus(); } catch (err) {} }
-          return;
-        }
-
-        if (btn.hasAttribute('data-i')) {
-          const idx = parseInt(btn.getAttribute('data-i'), 10);
-          if (!isNaN(idx) && vsListe[idx]) vsSec(vsListe[idx]);
-        }
-      });
-
-      arama.addEventListener('input', function() {
-        vsHarf = "";
-        vsCiz();
-      });
-
-      arama.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          if (vsAramaIlk) vsSec(vsAramaIlk);
-        }
-      });
-
-      document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && overlay.classList.contains('acik')) varlikSeciciKapat();
-      });
-    }
-
-    // ===================== AYLIK GETİRİ SEKMESİ =====================
-
-    // "VARLIK SEÇ" düğmesi: seçici açılır, seçilince otomatik hesaplanır
-    function aylikVarlikSec() {
-      varlikSeciciAc(aylikSeciliVarlik, function(ad) {
-        aylikSeciliVarlik = ad;
-        document.getElementById('aylikVarlikAd').textContent = ad;
-        aylikSorguBaslat();
-      });
-    }
-
-    // Ay ve yıl seçicilerinin seçeneklerini oluşturur
     function aylikSecicileriHazirla() {
       const buYil = new Date().getFullYear();
 
@@ -929,13 +696,11 @@
       });
     }
 
-    // "13.11.2026" biçimindeki son veri tarihinden son veri ayını çıkarır
     function aylikSonVeriAyarla(metin) {
       const p = String(metin || "").match(/(\d{2})\.(\d{2})\.(\d{4})/);
       if (p) aylikSonVeri = { y: parseInt(p[3], 10), m: parseInt(p[2], 10) };
     }
 
-    // Seçicileri ay indekslerine (yıl*12 + ay-1) göre yazar
     function aylikSeciciYaz(basIdx, bitIdx) {
       const basY = Math.max(AYLIK_EN_ESKI_YIL, Math.floor(basIdx / 12));
       document.getElementById('aylikBasYil').value = String(basY);
@@ -944,7 +709,6 @@
       document.getElementById('aylikBitAy').value = String((bitIdx % 12) + 1);
     }
 
-    // Kısayol: son veri ayında biten, "yil" takvim yılı satırı gösteren dönem (başlangıç = ilk yılın Ocak'ı)
     function aylikOnAyar(yil, tetikle) {
       const bitIdx = aylikSonVeri.y * 12 + (aylikSonVeri.m - 1);
       const basIdx = (aylikSonVeri.y - (yil - 1)) * 12;
@@ -952,7 +716,6 @@
       if (tetikle) aylikDegisti();
     }
 
-    // Seçilen dönemi kurallara göre düzeltir: bitiş son veriyi geçemez, başlangıç <= bitiş, en fazla 10 takvim yılı
     function aylikDonemiDuzelt(degisenId) {
       const basY = parseInt(document.getElementById('aylikBasYil').value, 10);
       const basA = parseInt(document.getElementById('aylikBasAy').value, 10);
@@ -990,19 +753,16 @@
       if (mesaj) gosterToast(mesaj, "#FACC15");
     }
 
-    // Seçici değişince: dönemi düzelt, bir varlık seçiliyse otomatik yeniden hesapla
     function aylikDegisti(e) {
       aylikDonemiDuzelt(e && e.target ? e.target.id : '');
       if (!aylikSeciliVarlik || !globalAssets || globalAssets.length === 0) return;
       aylikSorguBaslat();
     }
 
-    // Uzun biçim (masaüstü): %-18,91
     function fmtGetiri(g) {
       return (g < 0) ? "%-" + Math.abs(g).toFixed(2).replace(".", ",") : "%" + g.toFixed(2).replace(".", ",");
     }
 
-    // Kısa biçim (mobil): % işareti yok; |g| < 10 ise 1 ondalık, değilse tam sayı
     function fmtKisa(g) {
       const mutlak = Math.abs(g);
       const metin = (mutlak < 10) ? mutlak.toFixed(1).replace(".", ",") : String(Math.round(mutlak));
@@ -1027,11 +787,10 @@
     }
 
     function aylikSorguBaslat() {
-      if (!aylikSeciliVarlik) { aylikMesajGoster("Lütfen önce \"VARLIK SEÇ\" düğmesiyle bir hisse veya varlık seçin.", false, true); return; }
+      if (!aylikSeciliVarlik) { aylikMesajGoster("Lütfen önce listeden bir varlık seçin.", false, true); return; }
       if (!globalAssets || globalAssets.length === 0) { aylikMesajGoster("Varlık listesi henüz yüklenmedi, birkaç saniye sonra tekrar deneyin.", false, true); return; }
 
       const eslesen = aylikSeciliVarlik;
-
       aylikDonemiDuzelt('');
 
       const basY = parseInt(document.getElementById('aylikBasYil').value, 10);
@@ -1053,7 +812,7 @@
 
       apiRequest({ action: 'aylikGetiri', varlik: eslesen, basAy: basStr, bitAy: bitStr })
         .then(res => {
-          if (istekNo !== aylikIstekNo) return; // daha yeni bir sorgu başlatıldıysa eski cevabı yok say
+          if (istekNo !== aylikIstekNo) return; 
           if (!res || res.hata) { aylikMesajGoster((res && res.hata) ? res.hata : "Hata oluştu.", false, true); return; }
           cacheAylik[anahtar] = res;
           aylikCiz(res);
@@ -1074,13 +833,10 @@
       if (a.durum !== 'ok') return '<td class="ay-bos">-</td>';
 
       const poz = a.getiri >= 0;
-
-      // Başlangıç: ayın 1'i (fiyat başka bir günün kapanışıysa köşeli parantezde gösterilir)
       let basMetin = a.bas;
       if (a.arz) basMetin += ' (ARZ)';
       else if (a.basFiyatTarih && a.basFiyatTarih !== a.bas) basMetin += ' [' + a.basFiyatTarih + ' kapanışı]';
 
-      // Bitiş: ayın son günü (fiyat başka bir günün kapanışıysa köşeli parantezde gösterilir)
       let bitMetin = a.bit;
       if (a.bitFiyatTarih && a.bitFiyatTarih !== a.bit) bitMetin += ' [' + a.bitFiyatTarih + ' kapanışı]';
 
@@ -1139,20 +895,16 @@
       html += '</tbody></table>';
 
       html += '<div id="aylikDetay" class="aylik-detay">Bir hücreye tıklayın veya dokunun: kullanılan tarihler ve fiyatlar burada görünür.</div>';
-      html += '<div class="aylik-not">Her ayın getirisi daima takvim ayına göre gösterilir: başlangıç ayın 1’i, bitiş ayın son günüdür (28/29/30/31). Fiyat o güne ait değilse (hafta sonu/tatil) önceki son kapanış fiyatı esas alınır ve hücre detayında "[tarih kapanışı]" olarak görünür. Getiri = son / ilk - 1; fiyatlar uygulamanın kendi veritabanından okunur. Kesikli çerçeve: ay henüz tamamlanmadı (bitiş olarak son veri tarihi gösterilir). "(ARZ)": varlık ay içinde işlem görmeye başladı, başlangıç ilk işlem günüdür. "-": yeterli veri yok. "YIL (BİLEŞİK)": o yılın aylık getirilerinin bileşiği (aylar arası geçiş getirisi dahil değildir). Mobilde değerler % işaretsiz ve yuvarlanmış gösterilir.</div>';
+      html += '<div class="aylik-not">Her ayın getirisi daima takvim ayına göre gösterilir. Fiyatlar uygulamanın kendi veritabanından okunur.</div>';
 
       c.innerHTML = html;
     }
-
-    // ===================== SEKME YÖNETİMİ =====================
 
     function sekmeDegistir(hedef) {
       if(aktifSekme === hedef) return;
       aktifSekme = hedef;
 
-      // Sekme değişince sayfa her zaman en üste dönsün
       window.scrollTo(0, 0);
-
       document.body.classList.toggle('aylik-modu', hedef === 'aylik');
 
       document.getElementById('btnYillar').className = (hedef === 'yillar') ? 'tab-btn active' : 'tab-btn inactive';
