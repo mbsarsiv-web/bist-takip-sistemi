@@ -106,29 +106,30 @@
     body.aylik-modu .tab-buttons { margin-bottom: 6px; }
     body.aylik-modu .tab-btn { padding: 4px 6px; font-size: 0.8rem; }
 
-    /* Kontrol paneli: 2 net satır.
-       1. SATIR: varlık seçimi + HESAPLA + SON 5 YIL + SON 10 YIL
-       2. SATIR: başlangıç / bitiş ay-yıl seçicileri */
-    .aylik-panel { background: #111820; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 8px; display: none; flex-direction: column; justify-content: center; align-items: center; gap: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); position: relative; z-index: 40; }
-    .aylik-satir { display: flex; flex-direction: row; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px 14px; width: 100%; }
-    .aylik-grup { display: flex; align-items: center; justify-content: center; gap: 6px; }
+    /* KONTROL PANELİ: TÜM SEÇİM VE FİLTRELER TEK SATIRDA
+       [Varlık ▾] [HESAPLA] [SON 5 YIL] [SON 10 YIL]  BAŞ: [Ay ▾][Yıl ▾] → BİT: [Ay ▾][Yıl ▾] */
+    .aylik-panel { background: #111820; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 8px; display: none; flex-direction: row; flex-wrap: nowrap; justify-content: center; align-items: center; gap: 8px 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); position: relative; z-index: 40; }
+    .aylik-grup { display: flex; flex-direction: row; flex-wrap: nowrap; align-items: center; justify-content: center; gap: 6px; flex-shrink: 0; }
     .aylik-panel label { color: var(--gold); font-weight: 900; font-size: 0.85rem; display: flex; align-items: center; gap: 5px; margin: 0; white-space: nowrap; }
-    .aylik-select { background-color: #0a0e14; border: 1px solid var(--border-color); color: white; padding: 5px 6px; border-radius: 6px; font-family: 'Inter', sans-serif; font-weight: 800; font-size: 0.85rem; outline: none; cursor: pointer; transition: all 0.3s ease; color-scheme: dark; }
+    .aylik-select { background-color: #0a0e14; border: 1px solid var(--border-color); color: white; padding: 6px 5px; border-radius: 6px; font-family: 'Inter', sans-serif; font-weight: 800; font-size: 0.9rem; outline: none; cursor: pointer; transition: all 0.3s ease; color-scheme: dark; }
     .aylik-select:focus, .aylik-select:hover { border-color: var(--gold); box-shadow: 0 0 8px rgba(250, 204, 21, 0.2); }
     .aylik-select option { background-color: var(--bg-panel); color: white; }
     .aylik-ayrac { color: #475569; font-weight: 900; margin: 0 2px; }
     
-    .aylik-btn { background-color: #0F766E; border: 1px solid #14B8A6; color: white; padding: 6px 14px; border-radius: 6px; font-family: 'Inter', sans-serif; font-weight: 900; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: 0.2s; white-space: nowrap; }
+    .aylik-btn { background-color: #0F766E; border: 1px solid #14B8A6; color: white; padding: 7px 12px; border-radius: 6px; font-family: 'Inter', sans-serif; font-weight: 900; font-size: 0.88rem; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: 0.2s; white-space: nowrap; }
     .aylik-btn:hover { background-color: #0D9488; }
     
     /* Native SELECT (Smart TV uyumlu, aylık sekme üst panel) */
-    .aylik-varlik-btn { background-color: #0a0e14; border: 2px solid var(--gold); color: white; padding: 6px 12px; border-radius: 8px; font-family: 'Inter', sans-serif; font-weight: 900; font-size: 1rem; cursor: pointer; display: flex; align-items: center; gap: 8px; min-width: 170px; transition: 0.2s; text-align: center; appearance: auto;}
+    .aylik-varlik-btn { background-color: #0a0e14; border: 2px solid var(--gold); color: white; padding: 6px 8px; border-radius: 8px; font-family: 'Inter', sans-serif; font-weight: 900; font-size: 0.95rem; cursor: pointer; display: flex; align-items: center; gap: 8px; width: 150px; transition: 0.2s; text-align: center; appearance: auto;}
     .aylik-varlik-btn:hover { background-color: rgba(250, 204, 21, 0.1); }
     .aylik-varlik-btn option, .aylik-varlik-btn optgroup { background-color: var(--bg-panel); color: white; text-align: left; }
     
-    .aylik-preset { background-color: #0a0e14; border: 1px solid var(--border-color); color: #CBD5E1; padding: 7px 14px; border-radius: 6px; font-family: 'Inter', sans-serif; font-weight: 800; font-size: 0.82rem; cursor: pointer; transition: 0.2s; white-space: nowrap; }
+    .aylik-preset { background-color: #0a0e14; border: 1px solid var(--border-color); color: #CBD5E1; padding: 7px 10px; border-radius: 6px; font-family: 'Inter', sans-serif; font-weight: 800; font-size: 0.85rem; cursor: pointer; transition: 0.2s; white-space: nowrap; }
     .aylik-preset:hover { border-color: var(--gold); color: var(--gold); }
-    .lbl-kisa { display: none; }
+
+    /* Tek satıra sığması için etiketler kısa: BAŞ / BİT */
+    .lbl-uzun { display: none; }
+    .lbl-kisa { display: inline; }
 
     #aylikContainer { display: none; padding: 10px 12px; }
     .aylik-hint { text-align: center; padding: 30px; color: #94A3B8; font-size: 1rem; font-weight: 600; }
@@ -146,7 +147,7 @@
     .aylik-chip .v.neg { color: var(--red-accent); }
     .aylik-chip .s { font-size: 0.58rem; color: var(--gold); font-weight: 800; }
 
-    /* Tablo: daha ferah (satır yüksekliği ve yazı boyutu artırıldı) */
+    /* Tablo: ferah (satır yüksekliği ve yazı boyutu artırılmış) */
     .mode-aylik { width: 100%; max-width: 1250px; margin: 0 auto; table-layout: fixed; }
     .mode-aylik th { font-size: 0.85rem; padding: 9px 2px; white-space: nowrap; letter-spacing: 0; }
     .mode-aylik td { padding: 11px 2px; font-size: 0.92rem; font-weight: 900; white-space: nowrap; overflow: hidden; border: 1px solid rgba(255,255,255,0.04); cursor: pointer; }
@@ -163,6 +164,11 @@
     .v-kisa, .th-kisa { display: none; }
     .aylik-detay { text-align: center; color: var(--blue-accent); font-size: 0.82rem; font-weight: 800; margin: 12px 6px 4px 6px; min-height: 1.2em; }
     .aylik-not { text-align: center; color: #64748B; font-size: 0.68rem; font-weight: 600; margin: 4px 8px 12px 8px; line-height: 1.4; }
+
+    /* Dar ekranlarda (telefon vb.) tek satıra sığmazsa alt satıra kırılmasına izin ver */
+    @media (max-width: 1000px) {
+      .aylik-panel { flex-wrap: wrap; }
+    }
 
     @media (max-height: 720px) {
       .top-header { padding: 4px 10px; margin-bottom: 5px; } .header-title { font-size: 1.1rem; } .tab-buttons { margin-bottom: 5px; } .tab-btn { padding: 4px 6px; font-size: 0.8rem; }
@@ -186,13 +192,10 @@
       .mode-tarih th:nth-child(2), .mode-tarih td:nth-child(2) { padding-left: 10px !important; } .mode-tarih th:nth-child(3), .mode-tarih td:nth-child(3) { padding-left: 2px !important; }
       .asset-select { font-size: 0.95rem !important; padding: 4px;} .sabit-varlik { font-size: 0.95rem !important; }
 
-      /* Aylık getiri: mobil */
+      /* Aylık getiri: mobil (dar ekranda satırlara kırılır) */
       .aylik-panel { padding: 6px; gap: 5px; margin-bottom: 5px; }
-      .aylik-satir { gap: 5px 6px; }
-      .aylik-grup { gap: 4px; }
-      .aylik-varlik-btn { flex: 1; min-width: 0; font-size: 0.95rem; padding: 8px 8px; }
-      .lbl-uzun { display: none; }
-      .lbl-kisa { display: inline; }
+      .aylik-grup { gap: 4px; width: 100%; }
+      .aylik-varlik-btn { flex: 1; width: auto; min-width: 0; font-size: 0.95rem; padding: 8px 8px; }
       .aylik-panel label { font-size: 0.7rem; gap: 3px; }
       .aylik-select { padding: 5px 2px; font-size: 0.74rem; }
       .aylik-ayrac { margin: 0; font-size: 0.7rem; }
@@ -259,33 +262,28 @@
       </div>
     </div>
 
+    <!-- TEK SATIR: varlık + HESAPLA + SON 5 YIL + SON 10 YIL + BAŞ ay/yıl → BİT ay/yıl -->
     <div id="aylikPanel" class="aylik-panel">
-      <!-- 1. SATIR: varlık + HESAPLA + SON 5 YIL + SON 10 YIL -->
-      <div class="aylik-satir s-ust">
-        <div class="aylik-grup g-varlik">
-          <select id="aylikVarlikSelect" class="aylik-varlik-btn" onchange="aylikVarlikSecildi(this)">
-            <option value="" disabled selected>VARLIK SEÇ</option>
-          </select>
-          <button type="button" id="aylikGetirBtn" class="aylik-btn" onclick="aylikSorguBaslat()">
-            <i class="fa-solid fa-calculator"></i> HESAPLA
-          </button>
-        </div>
-        <div class="aylik-grup g-preset">
-          <button type="button" class="aylik-preset" onclick="aylikOnAyar(5, true)">SON 5 YIL</button>
-          <button type="button" class="aylik-preset" onclick="aylikOnAyar(10, true)">SON 10 YIL</button>
-        </div>
+      <div class="aylik-grup g-varlik">
+        <select id="aylikVarlikSelect" class="aylik-varlik-btn" onchange="aylikVarlikSecildi(this)">
+          <option value="" disabled selected>VARLIK SEÇ</option>
+        </select>
+        <button type="button" id="aylikGetirBtn" class="aylik-btn" onclick="aylikSorguBaslat()">
+          <i class="fa-solid fa-calculator"></i> HESAPLA
+        </button>
       </div>
-      <!-- 2. SATIR: dönem seçicileri -->
-      <div class="aylik-satir s-alt">
-        <div class="aylik-grup g-donem">
-          <label><i class="fa-solid fa-calendar-day"></i><span class="lbl-uzun">BAŞLANGIÇ:</span><span class="lbl-kisa">BAŞ:</span></label>
-          <select id="aylikBasAy" class="aylik-select"></select>
-          <select id="aylikBasYil" class="aylik-select"></select>
-          <span class="aylik-ayrac">→</span>
-          <label><i class="fa-solid fa-calendar-check"></i><span class="lbl-uzun">BİTİŞ:</span><span class="lbl-kisa">BİT:</span></label>
-          <select id="aylikBitAy" class="aylik-select"></select>
-          <select id="aylikBitYil" class="aylik-select"></select>
-        </div>
+      <div class="aylik-grup g-preset">
+        <button type="button" class="aylik-preset" onclick="aylikOnAyar(5, true)">SON 5 YIL</button>
+        <button type="button" class="aylik-preset" onclick="aylikOnAyar(10, true)">SON 10 YIL</button>
+      </div>
+      <div class="aylik-grup g-donem">
+        <label><i class="fa-solid fa-calendar-day"></i><span class="lbl-uzun">BAŞLANGIÇ:</span><span class="lbl-kisa">BAŞ:</span></label>
+        <select id="aylikBasAy" class="aylik-select"></select>
+        <select id="aylikBasYil" class="aylik-select"></select>
+        <span class="aylik-ayrac">→</span>
+        <label><i class="fa-solid fa-calendar-check"></i><span class="lbl-uzun">BİTİŞ:</span><span class="lbl-kisa">BİT:</span></label>
+        <select id="aylikBitAy" class="aylik-select"></select>
+        <select id="aylikBitYil" class="aylik-select"></select>
       </div>
     </div>
 
