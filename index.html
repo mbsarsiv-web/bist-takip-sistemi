@@ -860,10 +860,20 @@
              '<span class="v-uzun">' + fmtGetiri(a.getiri) + '</span><span class="v-kisa">' + fmtKisa(a.getiri) + '</span></td>';
     }
 
-    function aylikToplamHucre(g, yil) {
-      if (g === null || g === undefined) return '<td class="ay-toplam ay-bos">-</td>';
-      const bilgi = yil + ' yıllık (aylık getirilerin bileşiği)  •  ' + fmtGetiri(g);
-      return '<td class="ay-toplam ' + (g >= 0 ? 'poz' : 'neg') + '" data-bilgi="' + htmlKacis(bilgi) + '" title="' + htmlKacis(bilgi) + '">' +
+    // YILLIK KESİN GETİRİ HÜCRESİ: yılın ilk fiyatı (01 Ocak açılışı) → yılın son fiyatı (31 Aralık kapanışı)
+    function aylikToplamHucre(yb, yil) {
+      if (!yb || yb.getiri === null || yb.getiri === undefined) return '<td class="ay-toplam ay-bos">-</td>';
+
+      const g = yb.getiri;
+      let basMetin = yb.bas;
+      if (yb.arz) basMetin += ' (ARZ)';
+      else if (yb.basFiyatTarih && yb.basFiyatTarih !== yb.bas) basMetin += ' [' + yb.basFiyatTarih + ' kapanışı]';
+
+      let bitMetin = yb.bit;
+      if (yb.bitFiyatTarih && yb.bitFiyatTarih !== yb.bit) bitMetin += ' [' + yb.bitFiyatTarih + ' kapanışı]';
+
+      const bilgi = yil + ' YILLIK  •  ' + basMetin + ' (' + fmtFiyat(yb.basFiyat) + ') → ' + bitMetin + ' (' + fmtFiyat(yb.bitFiyat) + ')  •  ' + fmtGetiri(g) + (yb.kismi ? '  •  YIL HENÜZ TAMAMLANMADI' : '');
+      return '<td class="ay-toplam ' + (g >= 0 ? 'poz' : 'neg') + (yb.kismi ? ' kismi' : '') + '" data-bilgi="' + htmlKacis(bilgi) + '" title="' + htmlKacis(bilgi) + '">' +
              '<span class="v-uzun">' + fmtGetiri(g) + '</span><span class="v-kisa">' + fmtKisa(g) + '</span></td>';
     }
 
@@ -947,12 +957,12 @@
       html += '<div id="aylikTabloKutu" class="aylik-tablo-kutu">';
       html += '<table id="aylikTable" class="mode-aylik"><thead><tr><th class="ay-yil">YIL</th>';
       AY_ADLARI.forEach(a => { html += '<th>' + a + '</th>'; });
-      html += '<th class="ay-toplam"><span class="th-uzun">YIL (BİLEŞİK)</span><span class="th-kisa">YILLIK</span></th></tr></thead><tbody>';
+      html += '<th class="ay-toplam"><span class="th-uzun">YILLIK (01.01 → 31.12)</span><span class="th-kisa">YILLIK</span></th></tr></thead><tbody>';
 
       (res.satirlar || []).forEach(s => {
         html += '<tr><td class="ay-yil">' + s.yil + '</td>';
         s.aylar.forEach((a, mIdx) => { html += aylikHucre(a, s.yil, mIdx); });
-        html += aylikToplamHucre(s.yillik, s.yil);
+        html += aylikToplamHucre(s.yillikBilgi, s.yil);
         html += '</tr>';
       });
 
