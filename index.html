@@ -197,12 +197,15 @@
       /* Aylık getiri: mobil (dar ekranda satırlara kırılır; otomatik sığdırma yapılmaz) */
       .aylik-panel { padding: 6px; gap: 5px; margin-bottom: 5px; }
       .aylik-grup { gap: 4px; width: 100%; }
-      .aylik-varlik-btn { flex: 1; width: auto; min-width: 0; font-size: 0.95rem; padding: 8px 8px; }
+      /* Üst satır: [Varlık ▾ (daraltılmış)] [HESAPLA] [SON 5 YIL] [SON 10 YIL] */
+      .aylik-grup.g-varlik { flex: 1 1 0; width: auto; min-width: 0; flex-shrink: 1; }
+      .aylik-grup.g-preset { flex: 0 0 auto; width: auto; gap: 4px; }
+      .aylik-varlik-btn { flex: 1; width: auto; min-width: 0; font-size: 0.85rem; padding: 7px 4px; }
       .aylik-panel label { font-size: 0.7rem; gap: 3px; }
       .aylik-select { padding: 5px 2px; font-size: 0.74rem; }
       .aylik-ayrac { margin: 0; font-size: 0.7rem; }
-      .aylik-preset { padding: 7px 8px; font-size: 0.68rem; }
-      .aylik-btn { padding: 7px 8px; font-size: 0.74rem; }
+      .aylik-preset { padding: 8px 5px; font-size: 0.62rem; }
+      .aylik-btn { padding: 8px 6px; font-size: 0.66rem; gap: 4px; }
       #aylikContainer { padding: 5px 3px; }
       .aylik-ust { flex-direction: column; gap: 4px; margin-bottom: 5px; }
       .aylik-baslik { text-align: center; font-size: 0.95rem; }
@@ -957,7 +960,7 @@
       html += '<div id="aylikTabloKutu" class="aylik-tablo-kutu">';
       html += '<table id="aylikTable" class="mode-aylik"><thead><tr><th class="ay-yil">YIL</th>';
       AY_ADLARI.forEach(a => { html += '<th>' + a + '</th>'; });
-      html += '<th class="ay-toplam"><span class="th-uzun">YILLIK (01.01 → 31.12)</span><span class="th-kisa">YILLIK</span></th></tr></thead><tbody>';
+      html += '<th class="ay-toplam"><span class="th-uzun">YILLIK</span><span class="th-kisa">YILLIK</span></th></tr></thead><tbody>';
 
       (res.satirlar || []).forEach(s => {
         html += '<tr><td class="ay-yil">' + s.yil + '</td>';
