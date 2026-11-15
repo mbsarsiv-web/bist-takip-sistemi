@@ -2,19 +2,39 @@ name: BIST Robotu Otopilot
 
 on:
   schedule:
-    - cron: '18 20 * * *' # Türkiye saati ile 23:18
-    - cron: '49 22 * * *' # Türkiye saati ile 01:49
-  workflow_dispatch: # GitHub panelinden manuel çalıştırma butonu
+    - cron: '18 20 * * *' # Türkiye saati ile 23:18 (günlük güncelleme)
+    - cron: '49 22 * * *' # Türkiye saati ile 01:49 (bakım)
+    - cron: '0 1 * * 0'   # Türkiye saati ile Pazar 04:00 (haftalık geçmiş yenileme)
+  workflow_dispatch: # GitHub panelinden isteğe bağlı manuel çalıştırma (sistemin çalışması için gerekmez)
+    inputs:
+      islem:
+        description: 'Çalıştırılacak motor'
+        required: true
+        default: 'guncelle'
+        type: choice
+        options:
+          - guncelle
+          - bakim
+          - haftalik
+
+# Aynı anda yalnızca bir görev tabloya yazar; diğeri sırada bekler (çakışma koruması)
+concurrency:
+  group: bist-veritabani
+  cancel-in-progress: false
+
+permissions:
+  contents: write
 
 jobs:
   motoru_calistir:
     runs-on: ubuntu-latest
+    timeout-minutes: 240
     steps:
       - name: Kodları İndir
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Python Ortamını Kur
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
@@ -27,9 +47,23 @@ jobs:
         run: echo "$GOOGLE_CREDS" > google_creds.json
 
       - name: Güncelleme Motorunu Çalıştır
-        if: github.event.schedule == '18 20 * * *' || github.event_name == 'workflow_dispatch'
+        if: github.event.schedule == '18 20 * * *' || (github.event_name == 'workflow_dispatch' && github.event.inputs.islem == 'guncelle')
         run: python main.py guncelle
-        
+
       - name: Bakım Motorunu Çalıştır
-        if: github.event.schedule == '49 22 * * *'
+        if: github.event.schedule == '49 22 * * *' || (github.event_name == 'workflow_dispatch' && github.event.inputs.islem == 'bakim')
         run: python main.py bakim
+
+      - name: Haftalık Geçmiş Yenileme Motorunu Çalıştır
+        if: github.event.schedule == '0 1 * * 0' || (github.event_name == 'workflow_dispatch' && github.event.inputs.islem == 'haftalik')
+        run: python main.py haftalik
+
+      - name: Depoya Hareket Kaydı Düş (60 gün hareketsizlikte zamanlanmış görevlerin durmasını önler)
+        if: github.event.schedule == '0 1 * * 0'
+        run: |
+          date -u +"%Y-%m-%d %H:%M UTC" > son_haftalik_calisma.txt
+          git config user.name "bist-robotu"
+          git config user.email "bist-robotu@users.noreply.github.com"
+          git add son_haftalik_calisma.txt
+          git commit -m "Haftalık çalışma kaydı" || echo "Kaydedilecek değişiklik yok"
+          git push
