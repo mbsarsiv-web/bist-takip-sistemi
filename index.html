@@ -59,16 +59,16 @@
     .mode-tarih { width: 100%; max-width: 420px; margin: 0 auto; table-layout: fixed; }
     
     .mode-tarih th, .mode-tarih td { overflow: hidden; text-overflow: ellipsis; }
-    .mode-tarih th:nth-child(1), .mode-tarih td:nth-child(1) { width: 15%; text-align: center !important; }
-    .mode-tarih th:nth-child(2), .mode-tarih td:nth-child(2) { width: 40%; text-align: left !important; padding: 4px 5px !important; padding-left: 20px !important; }
-    .mode-tarih th:nth-child(3), .mode-tarih td:nth-child(3) { width: 45%; text-align: center !important; padding: 4px 5px !important; }
+    .mode-tarih th:nth-child(1), .mode-tarih td:nth-child(1) { width: 12%; text-align: center !important; }
+    .mode-tarih th:nth-child(2), .mode-tarih td:nth-child(2) { width: 46%; text-align: left !important; padding: 4px 5px !important; padding-left: 12px !important; }
+    .mode-tarih th:nth-child(3), .mode-tarih td:nth-child(3) { width: 42%; text-align: center !important; padding: 4px 5px !important; }
     .mode-tarih th { font-size: 1.15rem; padding: 4px 5px !important; }
     .mode-tarih td { font-size: 1.0rem; padding: 1px 5px !important; white-space: nowrap; }
     
     .select-wrapper { display: inline-flex; align-items: center; justify-content: flex-start !important; gap: 6px; width: 100%; margin: 0; }
     
     /* Native SELECT (Smart TV uyumlu, hücre içi) */
-    .asset-select { background-color: #0a0e14; border: 1px solid var(--border-color); color: var(--blue-accent); font-family: 'Inter', sans-serif; font-weight: 900; font-size: 1.05rem; padding: 6px; border-radius: 6px; cursor: pointer; outline: none; width: 100%; }
+    .asset-select { background-color: #0a0e14; border: 1px solid var(--border-color); color: var(--blue-accent); font-family: 'Inter', sans-serif; font-weight: 900; font-size: 1.05rem; padding: 6px 2px 6px 6px; border-radius: 6px; cursor: pointer; outline: none; width: 100%; min-width: 0; box-sizing: border-box; text-overflow: clip; }
     .asset-select:hover { background-color: #1a222d; }
     .asset-select option, .asset-select optgroup { background-color: var(--bg-panel); color: white; }
     
@@ -85,7 +85,9 @@
     .col-getiri.negative { color: var(--red-accent); }
     
     .mode-yillar th:nth-child(1), .mode-yillar td:nth-child(1) { position: sticky; left: 0; z-index: 2; background-color: var(--bg-panel); width: 50px; min-width: 50px; }
-    .mode-yillar th:nth-child(2), .mode-yillar td:nth-child(2) { position: sticky; left: 50px; z-index: 2; background-color: var(--bg-panel); box-shadow: 2px 0 8px rgba(0,0,0,0.3); width: 120px; min-width: 120px; }
+    .mode-yillar th:nth-child(2), .mode-yillar td:nth-child(2) { position: sticky; left: 50px; z-index: 2; background-color: var(--bg-panel); box-shadow: 2px 0 8px rgba(0,0,0,0.3); width: 170px; min-width: 170px; }
+    .mode-yillar td.col-varlik { padding: 4px 6px !important; }
+    .mode-yillar th.col-varlik { padding-left: 12px !important; }
     .mode-yillar th:nth-child(1), .mode-yillar th:nth-child(2) { background-color: #141b24; }
     tbody tr:hover td { background-color: rgba(255, 255, 255, 0.05); }
     .mode-yillar tbody tr:hover td:nth-child(1), .mode-yillar tbody tr:hover td:nth-child(2) { background-color: #1a222d; }
@@ -192,7 +194,10 @@
       .mode-yillar { width: max-content; margin: 0 auto; } .mode-yillar th, .mode-yillar td { padding: 6px 8px; } .col-varlik { padding-left: 10px !important; }
       .mode-tarih { max-width: 100% !important; margin: 0 auto !important; } .mode-tarih th { font-size: 0.95rem !important; padding: 4px 2px !important; } .mode-tarih td { font-size: 0.95rem !important; padding: 1px 2px !important; }
       .mode-tarih th:nth-child(2), .mode-tarih td:nth-child(2) { padding-left: 10px !important; } .mode-tarih th:nth-child(3), .mode-tarih td:nth-child(3) { padding-left: 2px !important; }
-      .asset-select { font-size: 0.95rem !important; padding: 4px;} .sabit-varlik { font-size: 0.95rem !important; }
+      .asset-select { font-size: 0.85rem !important; padding: 4px 1px 4px 4px;} .sabit-varlik { font-size: 0.95rem !important; }
+      .mode-yillar th:nth-child(2), .mode-yillar td:nth-child(2) { width: 140px; min-width: 140px; }
+      .mode-yillar td.col-varlik { padding: 4px 3px !important; }
+      .mode-yillar th.col-varlik { padding-left: 8px !important; }
 
       /* Aylık getiri: mobil (dar ekranda satırlara kırılır; otomatik sığdırma yapılmaz) */
       .aylik-panel { padding: 6px; gap: 5px; margin-bottom: 5px; }
