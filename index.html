@@ -28,11 +28,7 @@
 
     button:focus, select:focus, input:focus { outline: 3px solid var(--gold) !important; outline-offset: 2px !important; }
 
-    /* DATE CONTROLS UPDATED */
-    .date-controls { background: #111820; padding: 12px 25px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 10px; display: none; flex-direction: column; gap: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.3);}
-    .date-inputs { display: flex; gap: 20px; justify-content: center; align-items: center; width: 100%; flex-wrap: wrap; }
-    .options-group { width: 100%; text-align: center; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--panel-border); }
-    
+    .date-controls { background: #111820; padding: 8px 25px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 10px; display: none; justify-content: center; align-items: center; gap: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.3);}
     .date-group { display: flex; align-items: center; gap: 8px; }
     .date-controls label { color: var(--gold); font-weight: 900; font-size: 0.95rem; display: flex; align-items: center; gap: 6px; margin: 0; }
     .date-input { background-color: #0a0e14 !important; border: 1px solid var(--border-color) !important; color: white !important; padding: 6px 15px !important; border-radius: 6px !important; font-family: 'Inter', sans-serif !important; font-weight: 800 !important; font-size: 1.0rem !important; outline: none !important; cursor: pointer !important; transition: all 0.3s ease !important; text-align: center; width: 140px; box-sizing: border-box;}
@@ -181,8 +177,7 @@
       .tab-buttons { flex-wrap: wrap; gap: 5px; margin-bottom: 6px; }
       .tab-btn { flex: 1 1 30%; margin: 0; font-size: 0.68rem; padding: 5px 3px; gap: 4px; line-height: 1.1; text-align: center; }
       body.aylik-modu .tab-btn { padding: 4px 3px; font-size: 0.66rem; }
-      .date-controls { padding: 10px; gap: 10px; } .date-inputs { gap: 10px; } .options-group { margin-top: 10px; padding-top: 10px; }
-      .date-group { flex-direction: column; width: 48%; gap: 6px; }
+      .date-controls { justify-content: space-between; padding: 10px; gap: 10px; } .date-group { flex-direction: column; width: 48%; gap: 6px; }
       .date-controls label { width: 100%; justify-content: center; font-size: 0.75rem; } .date-input { width: 100% !important; padding: 8px 5px !important; font-size: 0.9rem !important; }
       .mode-yillar { width: max-content; margin: 0 auto; } .mode-yillar th, .mode-yillar td { padding: 6px 8px; } .col-varlik { padding-left: 10px !important; }
       .mode-tarih { max-width: 100% !important; margin: 0 auto !important; } .mode-tarih th { font-size: 0.95rem !important; padding: 4px 2px !important; } .mode-tarih td { font-size: 0.95rem !important; padding: 1px 2px !important; }
@@ -252,21 +247,13 @@
     </div>
 
     <div id="datePanel" class="date-controls">
-      <div class="date-inputs">
-        <div class="date-group">
-          <label><i class="fa-solid fa-calendar-day"></i> BAŞLANGIÇ:</label>
-          <input type="text" id="tarihBaslangic" class="date-input" placeholder="Tarih Seç">
-        </div>
-        <div class="date-group">
-          <label><i class="fa-solid fa-calendar-check"></i> BİTİŞ:</label>
-          <input type="text" id="tarihBitis" class="date-input" placeholder="Tarih Seç">
-        </div>
+      <div class="date-group">
+        <label><i class="fa-solid fa-calendar-day"></i> BAŞLANGIÇ:</label>
+        <input type="text" id="tarihBaslangic" class="date-input" placeholder="Tarih Seç">
       </div>
-      <div class="options-group">
-        <label style="cursor: pointer; font-size: 0.82rem; color: #94A3B8; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; transition: color 0.2s;" onmouseover="this.style.color='#E2E8F0'" onmouseout="this.style.color='#94A3B8'">
-          <input type="checkbox" id="chkFinnetBaz" checked style="accent-color: var(--gold); width: 16px; height: 16px; cursor: pointer;">
-          Finnet Yöntemi (Başlangıçtan Önceki Kapanışı Baz Al)
-        </label>
+      <div class="date-group">
+        <label><i class="fa-solid fa-calendar-check"></i> BİTİŞ:</label>
+        <input type="text" id="tarihBitis" class="date-input" placeholder="Tarih Seç">
       </div>
     </div>
 
@@ -391,15 +378,6 @@
         }
       });
 
-      document.getElementById('chkFinnetBaz').addEventListener('change', function() {
-        cacheVeriler['tarih'] = null;
-        cacheVeriler['top10'] = null;
-        cacheVeriler['bottom10'] = null;
-        if (aktifSekme !== 'yillar' && aktifSekme !== 'aylik') {
-          googleSorgusuTetikle();
-        }
-      });
-
       ['aylikBasAy', 'aylikBasYil', 'aylikBitAy', 'aylikBitYil'].forEach(function(id) {
         document.getElementById(id).addEventListener('change', aylikDegisti);
       });
@@ -482,13 +460,11 @@
       let islemSekmesi = aktifSekme;
       let bas = sekmeTarihleri[islemSekmesi].bas;
       let bitis = sekmeTarihleri[islemSekmesi].bitis;
-      let finnetBaz = document.getElementById('chkFinnetBaz') ? document.getElementById('chkFinnetBaz').checked : true;
       
       if (!bas || !bitis) return;
       
-      let cacheKey = islemSekmesi + "_" + finnetBaz;
-      if (cacheVeriler[cacheKey]) {
-         if (aktifSekme === islemSekmesi) { tabloyuCiz(cacheVeriler[cacheKey]); }
+      if (cacheVeriler[islemSekmesi]) {
+         if (aktifSekme === islemSekmesi) { tabloyuCiz(cacheVeriler[islemSekmesi]); }
          return;
       }
 
@@ -498,13 +474,13 @@
       if (islemSekmesi === 'top10') islem = 'enIyi10';
       if (islemSekmesi === 'bottom10') islem = 'enKotu10';
 
-      apiRequest({ action: islem, bas: bas, bitis: bitis, finnetBaz: finnetBaz })
+      apiRequest({ action: islem, bas: bas, bitis: bitis })
         .then(res => {
            if(res.hata) { 
                if (aktifSekme === islemSekmesi) bosTabloGoster(res.hata); 
                return; 
            }
-           cacheVeriler[cacheKey] = res.satirlar; 
+           cacheVeriler[islemSekmesi] = res.satirlar; 
            
            if (aktifSekme === islemSekmesi) {
                tabloyuCiz(res.satirlar);
@@ -518,7 +494,11 @@
 
     function varlikDegistir(tr, dataIndex, yeniVarlik) {
       tr.classList.add('row-loading');
-      apiRequest({ action: 'varlikGuncelle', sekme: aktifSekme, dataIndex: dataIndex, yeniVarlik: yeniVarlik })
+      
+      let bas = (aktifSekme === 'yillar') ? "" : sekmeTarihleri[aktifSekme].bas;
+      let bit = (aktifSekme === 'yillar') ? "" : sekmeTarihleri[aktifSekme].bitis;
+
+      apiRequest({ action: 'varlikGuncelle', sekme: aktifSekme, dataIndex: dataIndex, yeniVarlik: yeniVarlik, bas: bas, bitis: bit })
       .then(res => {
           tr.classList.remove('row-loading');
           if(aktifSekme === 'yillar') {
@@ -526,8 +506,7 @@
               tabloyuCiz(globalYillar);
               gosterToast("Hisse değiştirildi!", "#10B981");
           } else if (aktifSekme === 'tarih') {
-              cacheVeriler['tarih_true'] = null; 
-              cacheVeriler['tarih_false'] = null; 
+              cacheVeriler['tarih'] = null; 
               googleSorgusuTetikle();
           }
       }).catch(err => {
