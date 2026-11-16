@@ -26,16 +26,18 @@
     .tab-btn.inactive { background-color: var(--bg-panel); }
     .tab-btn.inactive:hover { background-color: #1E293B; }
 
-    /* SMART TV OPTİMİZASYONLARI: odaklanan her alan net görünmeli */
     button:focus, select:focus, input:focus { outline: 3px solid var(--gold) !important; outline-offset: 2px !important; }
 
-    .date-controls { background: #111820; padding: 8px 25px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 10px; display: none; justify-content: center; align-items: center; gap: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.3);}
+    /* DATE CONTROLS UPDATED */
+    .date-controls { background: #111820; padding: 12px 25px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 10px; display: none; flex-direction: column; gap: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.3);}
+    .date-inputs { display: flex; gap: 20px; justify-content: center; align-items: center; width: 100%; flex-wrap: wrap; }
+    .options-group { width: 100%; text-align: center; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--panel-border); }
+    
     .date-group { display: flex; align-items: center; gap: 8px; }
     .date-controls label { color: var(--gold); font-weight: 900; font-size: 0.95rem; display: flex; align-items: center; gap: 6px; margin: 0; }
     .date-input { background-color: #0a0e14 !important; border: 1px solid var(--border-color) !important; color: white !important; padding: 6px 15px !important; border-radius: 6px !important; font-family: 'Inter', sans-serif !important; font-weight: 800 !important; font-size: 1.0rem !important; outline: none !important; cursor: pointer !important; transition: all 0.3s ease !important; text-align: center; width: 140px; box-sizing: border-box;}
     .date-input:focus, .date-input:hover { border-color: var(--gold) !important; box-shadow: 0 0 8px rgba(250, 204, 21, 0.2) !important; }
     
-    /* FLATPICKR DARK MODE FIX */
     .flatpickr-calendar { background: #111820 !important; border: 1px solid #2D3748 !important; box-shadow: 0 10px 25px rgba(0,0,0,0.8) !important; font-family: 'Inter', sans-serif !important; }
     .flatpickr-day { color: #E2E8F0 !important; }
     .flatpickr-day.prevMonthDay, .flatpickr-day.nextMonthDay { color: #475569 !important; }
@@ -67,7 +69,6 @@
     
     .select-wrapper { display: inline-flex; align-items: center; justify-content: flex-start !important; gap: 6px; width: 100%; margin: 0; }
     
-    /* Native SELECT (Smart TV uyumlu, hücre içi) */
     .asset-select { background-color: #0a0e14; border: 1px solid var(--border-color); color: var(--blue-accent); font-family: 'Inter', sans-serif; font-weight: 900; font-size: 1.05rem; padding: 6px 2px 6px 6px; border-radius: 6px; cursor: pointer; outline: none; width: 100%; min-width: 0; box-sizing: border-box; text-overflow: clip; }
     .asset-select:hover { background-color: #1a222d; }
     .asset-select option, .asset-select optgroup { background-color: var(--bg-panel); color: white; }
@@ -98,9 +99,6 @@
     .toast { position: fixed; bottom: 20px; right: 20px; background: #111820; border-left: 4px solid #10B981; color: white; padding: 15px 20px; border-radius: 6px; box-shadow: 0 10px 25px rgba(0,0,0,0.8); display: flex; align-items: center; gap: 12px; font-weight: 700; opacity: 0; transform: translateY(20px); transition: all 0.4s ease; z-index: 9999; pointer-events: none; }
     .toast.show { opacity: 1; transform: translateY(0); }
 
-    /* ===== AYLIK GETİRİ SEKMESİ (TEK EKRAN, KAYDIRMASIZ) =====
-       Üst başlık, sekmeler, kontrol paneli ve özet kompakt tutulur; tablo ise kalan yüksekliğe
-       JavaScript (aylikSigdir) ile otomatik sığdırılır: satır yüksekliği ve yazı boyutu ekrana göre ayarlanır. */
     body.aylik-modu { display: block; height: auto; min-height: 100vh; overflow-y: auto; overflow-x: hidden; }
     body.aylik-modu .main-content { display: block; height: auto; overflow: visible; padding-top: 3px; padding-bottom: 3px; }
     body.aylik-modu #aylikContainer { overflow: visible; flex: none; border: none; box-shadow: none; background: transparent; }
@@ -111,8 +109,6 @@
     body.aylik-modu .tab-buttons { margin-bottom: 4px; gap: 6px; }
     body.aylik-modu .tab-btn { padding: 3px 6px; font-size: 0.78rem; }
 
-    /* KONTROL PANELİ: TÜM SEÇİM VE FİLTRELER TEK SATIRDA
-       [Varlık ▾] [HESAPLA] [SON 5 YIL] [SON 10 YIL]  BAŞ: [Ay ▾][Yıl ▾] → BİT: [Ay ▾][Yıl ▾] */
     .aylik-panel { background: #111820; padding: 4px 10px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 4px; display: none; flex-direction: row; flex-wrap: nowrap; justify-content: center; align-items: center; gap: 8px 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); position: relative; z-index: 40; }
     .aylik-grup { display: flex; flex-direction: row; flex-wrap: nowrap; align-items: center; justify-content: center; gap: 6px; flex-shrink: 0; }
     .aylik-panel label { color: var(--gold); font-weight: 900; font-size: 0.85rem; display: flex; align-items: center; gap: 5px; margin: 0; white-space: nowrap; }
@@ -124,7 +120,6 @@
     .aylik-btn { background-color: #0F766E; border: 1px solid #14B8A6; color: white; padding: 5px 12px; border-radius: 6px; font-family: 'Inter', sans-serif; font-weight: 900; font-size: 0.88rem; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: 0.2s; white-space: nowrap; }
     .aylik-btn:hover { background-color: #0D9488; }
     
-    /* Native SELECT (Smart TV uyumlu, aylık sekme üst panel) */
     .aylik-varlik-btn { background-color: #0a0e14; border: 2px solid var(--gold); color: white; padding: 4px 8px; border-radius: 8px; font-family: 'Inter', sans-serif; font-weight: 900; font-size: 0.95rem; cursor: pointer; display: flex; align-items: center; gap: 8px; width: 150px; transition: 0.2s; text-align: center; appearance: auto;}
     .aylik-varlik-btn:hover { background-color: rgba(250, 204, 21, 0.1); }
     .aylik-varlik-btn option, .aylik-varlik-btn optgroup { background-color: var(--bg-panel); color: white; text-align: left; }
@@ -132,7 +127,6 @@
     .aylik-preset { background-color: #0a0e14; border: 1px solid var(--border-color); color: #CBD5E1; padding: 5px 10px; border-radius: 6px; font-family: 'Inter', sans-serif; font-weight: 800; font-size: 0.85rem; cursor: pointer; transition: 0.2s; white-space: nowrap; }
     .aylik-preset:hover { border-color: var(--gold); color: var(--gold); }
 
-    /* Tek satıra sığması için etiketler kısa: BAŞ / BİT */
     .lbl-uzun { display: none; }
     .lbl-kisa { display: inline; }
 
@@ -152,7 +146,6 @@
     .aylik-chip .v.neg { color: var(--red-accent); }
     .aylik-chip .s { font-size: 0.56rem; color: var(--gold); font-weight: 800; }
 
-    /* Tablo kutusu: yüksekliği JavaScript ile kalan alana sığdırılır */
     .aylik-tablo-kutu { width: 100%; }
     .mode-aylik { width: 100%; max-width: 1250px; margin: 0 auto; table-layout: fixed; }
     .mode-aylik th { font-size: 0.85rem; padding: 1px 2px; white-space: nowrap; letter-spacing: 0; }
@@ -171,7 +164,6 @@
     .aylik-detay { text-align: center; color: var(--blue-accent); font-size: 0.78rem; font-weight: 800; margin: 5px 6px 2px 6px; min-height: 1.2em; line-height: 1.2; }
     .aylik-not { display: none; }
 
-    /* Dar ekranlarda (telefon vb.) tek satıra sığmazsa alt satıra kırılmasına izin ver */
     @media (max-width: 1000px) {
       .aylik-panel { flex-wrap: wrap; }
     }
@@ -189,7 +181,8 @@
       .tab-buttons { flex-wrap: wrap; gap: 5px; margin-bottom: 6px; }
       .tab-btn { flex: 1 1 30%; margin: 0; font-size: 0.68rem; padding: 5px 3px; gap: 4px; line-height: 1.1; text-align: center; }
       body.aylik-modu .tab-btn { padding: 4px 3px; font-size: 0.66rem; }
-      .date-controls { justify-content: space-between; padding: 10px; gap: 10px; } .date-group { flex-direction: column; width: 48%; gap: 6px; }
+      .date-controls { padding: 10px; gap: 10px; } .date-inputs { gap: 10px; } .options-group { margin-top: 10px; padding-top: 10px; }
+      .date-group { flex-direction: column; width: 48%; gap: 6px; }
       .date-controls label { width: 100%; justify-content: center; font-size: 0.75rem; } .date-input { width: 100% !important; padding: 8px 5px !important; font-size: 0.9rem !important; }
       .mode-yillar { width: max-content; margin: 0 auto; } .mode-yillar th, .mode-yillar td { padding: 6px 8px; } .col-varlik { padding-left: 10px !important; }
       .mode-tarih { max-width: 100% !important; margin: 0 auto !important; } .mode-tarih th { font-size: 0.95rem !important; padding: 4px 2px !important; } .mode-tarih td { font-size: 0.95rem !important; padding: 1px 2px !important; }
@@ -199,10 +192,8 @@
       .mode-yillar td.col-varlik { padding: 4px 3px !important; }
       .mode-yillar th.col-varlik { padding-left: 8px !important; }
 
-      /* Aylık getiri: mobil (dar ekranda satırlara kırılır; otomatik sığdırma yapılmaz) */
       .aylik-panel { padding: 6px; gap: 5px; margin-bottom: 5px; }
       .aylik-grup { gap: 4px; width: 100%; }
-      /* Üst satır: [Varlık ▾ (daraltılmış)] [HESAPLA] [SON 5 YIL] [SON 10 YIL] */
       .aylik-grup.g-varlik { flex: 1 1 0; width: auto; min-width: 0; flex-shrink: 1; }
       .aylik-grup.g-preset { flex: 0 0 auto; width: auto; gap: 4px; }
       .aylik-varlik-btn { flex: 1; width: auto; min-width: 0; font-size: 0.85rem; padding: 7px 4px; }
@@ -261,17 +252,24 @@
     </div>
 
     <div id="datePanel" class="date-controls">
-      <div class="date-group">
-        <label><i class="fa-solid fa-calendar-day"></i> BAŞLANGIÇ:</label>
-        <input type="text" id="tarihBaslangic" class="date-input" placeholder="Tarih Seç">
+      <div class="date-inputs">
+        <div class="date-group">
+          <label><i class="fa-solid fa-calendar-day"></i> BAŞLANGIÇ:</label>
+          <input type="text" id="tarihBaslangic" class="date-input" placeholder="Tarih Seç">
+        </div>
+        <div class="date-group">
+          <label><i class="fa-solid fa-calendar-check"></i> BİTİŞ:</label>
+          <input type="text" id="tarihBitis" class="date-input" placeholder="Tarih Seç">
+        </div>
       </div>
-      <div class="date-group">
-        <label><i class="fa-solid fa-calendar-check"></i> BİTİŞ:</label>
-        <input type="text" id="tarihBitis" class="date-input" placeholder="Tarih Seç">
+      <div class="options-group">
+        <label style="cursor: pointer; font-size: 0.82rem; color: #94A3B8; display: inline-flex; align-items: center; gap: 8px; font-weight: 700; transition: color 0.2s;" onmouseover="this.style.color='#E2E8F0'" onmouseout="this.style.color='#94A3B8'">
+          <input type="checkbox" id="chkFinnetBaz" checked style="accent-color: var(--gold); width: 16px; height: 16px; cursor: pointer;">
+          Finnet Yöntemi (Başlangıçtan Önceki Kapanışı Baz Al)
+        </label>
       </div>
     </div>
 
-    <!-- TEK SATIR: varlık + HESAPLA + SON 5 YIL + SON 10 YIL + BAŞ ay/yıl → BİT ay/yıl -->
     <div id="aylikPanel" class="aylik-panel">
       <div class="aylik-grup g-varlik">
         <select id="aylikVarlikSelect" class="aylik-varlik-btn" onchange="aylikVarlikSecildi(this)">
@@ -393,6 +391,15 @@
         }
       });
 
+      document.getElementById('chkFinnetBaz').addEventListener('change', function() {
+        cacheVeriler['tarih'] = null;
+        cacheVeriler['top10'] = null;
+        cacheVeriler['bottom10'] = null;
+        if (aktifSekme !== 'yillar' && aktifSekme !== 'aylik') {
+          googleSorgusuTetikle();
+        }
+      });
+
       ['aylikBasAy', 'aylikBasYil', 'aylikBitAy', 'aylikBitYil'].forEach(function(id) {
         document.getElementById(id).addEventListener('change', aylikDegisti);
       });
@@ -408,7 +415,6 @@
         td.classList.add('secili');
       });
 
-      // Ekran boyutu değişince / sayfa (yazı tipleri dahil) tamamen yüklenince aylık tabloyu yeniden sığdır
       window.addEventListener('resize', aylikSigdir);
       window.addEventListener('load', function() { setTimeout(aylikSigdir, 100); });
     });
@@ -429,7 +435,6 @@
       const sabitler = SABIT_VARLIKLAR.filter(a => globalAssets.includes(a));
       const hisseler = globalAssets.filter(a => !SABIT_VARLIKLAR.includes(a));
       
-      // Aylık Select Opsiyonlarını oluşturma
       let html = '<option value="" disabled selected>VARLIK SEÇ</option>';
       if (sabitler.length > 0) {
           html += '<optgroup label="HIZLI SEÇİM">';
@@ -444,7 +449,6 @@
       selAylik.innerHTML = html;
     }
 
-    // Native Select seçildiğinde çalışır
     function aylikVarlikSecildi(selectEl) {
         if(!selectEl.value) return;
         aylikSeciliVarlik = selectEl.value;
@@ -478,11 +482,13 @@
       let islemSekmesi = aktifSekme;
       let bas = sekmeTarihleri[islemSekmesi].bas;
       let bitis = sekmeTarihleri[islemSekmesi].bitis;
+      let finnetBaz = document.getElementById('chkFinnetBaz') ? document.getElementById('chkFinnetBaz').checked : true;
       
       if (!bas || !bitis) return;
       
-      if (cacheVeriler[islemSekmesi]) {
-         if (aktifSekme === islemSekmesi) { tabloyuCiz(cacheVeriler[islemSekmesi]); }
+      let cacheKey = islemSekmesi + "_" + finnetBaz;
+      if (cacheVeriler[cacheKey]) {
+         if (aktifSekme === islemSekmesi) { tabloyuCiz(cacheVeriler[cacheKey]); }
          return;
       }
 
@@ -492,13 +498,13 @@
       if (islemSekmesi === 'top10') islem = 'enIyi10';
       if (islemSekmesi === 'bottom10') islem = 'enKotu10';
 
-      apiRequest({ action: islem, bas: bas, bitis: bitis })
+      apiRequest({ action: islem, bas: bas, bitis: bitis, finnetBaz: finnetBaz })
         .then(res => {
            if(res.hata) { 
                if (aktifSekme === islemSekmesi) bosTabloGoster(res.hata); 
                return; 
            }
-           cacheVeriler[islemSekmesi] = res.satirlar; 
+           cacheVeriler[cacheKey] = res.satirlar; 
            
            if (aktifSekme === islemSekmesi) {
                tabloyuCiz(res.satirlar);
@@ -512,10 +518,7 @@
 
     function varlikDegistir(tr, dataIndex, yeniVarlik) {
       tr.classList.add('row-loading');
-      let bas = (aktifSekme === 'yillar') ? "" : sekmeTarihleri[aktifSekme].bas;
-      let bit = (aktifSekme === 'yillar') ? "" : sekmeTarihleri[aktifSekme].bitis;
-
-      apiRequest({ action: 'varlikGuncelle', sekme: aktifSekme, dataIndex: dataIndex, yeniVarlik: yeniVarlik, bas: bas, bitis: bit })
+      apiRequest({ action: 'varlikGuncelle', sekme: aktifSekme, dataIndex: dataIndex, yeniVarlik: yeniVarlik })
       .then(res => {
           tr.classList.remove('row-loading');
           if(aktifSekme === 'yillar') {
@@ -523,7 +526,8 @@
               tabloyuCiz(globalYillar);
               gosterToast("Hisse değiştirildi!", "#10B981");
           } else if (aktifSekme === 'tarih') {
-              cacheVeriler['tarih'] = null; 
+              cacheVeriler['tarih_true'] = null; 
+              cacheVeriler['tarih_false'] = null; 
               googleSorgusuTetikle();
           }
       }).catch(err => {
@@ -590,7 +594,6 @@
               td.style.fontWeight = "900";
               td.classList.add("sabit-varlik");
             } else {
-              // TV Dostu Hücre İçi Native Select Tasarımı
               let wrapper = document.createElement('div');
               wrapper.className = 'select-wrapper';
 
@@ -868,7 +871,6 @@
              '<span class="v-uzun">' + fmtGetiri(a.getiri) + '</span><span class="v-kisa">' + fmtKisa(a.getiri) + '</span></td>';
     }
 
-    // YILLIK KESİN GETİRİ HÜCRESİ: yılın ilk fiyatı (01 Ocak açılışı) → yılın son fiyatı (31 Aralık kapanışı)
     function aylikToplamHucre(yb, yil) {
       if (!yb || yb.getiri === null || yb.getiri === undefined) return '<td class="ay-toplam ay-bos">-</td>';
 
@@ -892,9 +894,6 @@
              '<span class="v-uzun">' + fmtGetiri(g) + '</span><span class="v-kisa">' + fmtKisa(g) + '</span></td>';
     }
 
-    // AYLIK TABLOYU EKRANA SIĞDIR (kaydırma gerektirmez)
-    // Tablonun üstünde kalan alan (başlık, sekmeler, panel, özet) ölçülür; kalan yükseklik satırlara eşit bölünür
-    // ve satır yüksekliğine göre yazı boyutu ayarlanır. Dar ekranlarda (telefon) uygulanmaz, normal akış kalır.
     function aylikSigdir() {
       if (aktifSekme !== 'aylik') return;
       const kutu = document.getElementById('aylikTabloKutu');
@@ -904,7 +903,6 @@
       const hucreler = tablo.querySelectorAll('td, th');
       const satirlar = tablo.rows;
 
-      // Mobil: sığdırma yok, satır/yazı stillerini CSS'e bırak
       if (window.innerWidth <= 768) {
         tablo.style.height = '';
         for (let i = 0; i < satirlar.length; i++) satirlar[i].style.height = '';
@@ -918,7 +916,7 @@
       const detayYuk = detay ? (detay.offsetHeight + 10) : 0;
       const kalan = window.innerHeight - mutlakUst - detayYuk - 12;
 
-      const n = satirlar.length; // başlık + yıl satırları + ORT. satırı
+      const n = satirlar.length;
       if (n === 0) return;
 
       let satirYuk = kalan / n;
@@ -927,7 +925,6 @@
       tablo.style.height = Math.floor(satirYuk * n) + 'px';
       for (let i = 0; i < satirlar.length; i++) satirlar[i].style.height = Math.floor(satirYuk) + 'px';
 
-      // Yazı boyutu: satır yüksekliğine ve sütun genişliğine göre
       const hucreGenislik = tablo.offsetWidth * 0.07;
       let fs = Math.min(satirYuk * 0.44, hucreGenislik / 6.3, 20);
       fs = Math.max(fs, 8);
@@ -983,7 +980,6 @@
 
       c.innerHTML = html;
 
-      // Tabloyu ekrana sığdır (yazı tipleri geç yüklenirse tekrar ölç)
       aylikSigdir();
       setTimeout(aylikSigdir, 80);
       setTimeout(aylikSigdir, 400);
@@ -1017,7 +1013,6 @@
         tableContainer.style.display = 'none';
         aylikPanel.style.display = 'flex';
         aylikContainer.style.display = 'block';
-        // Daha önce hesaplanmış bir tablo varsa, görünür olduktan sonra ekrana yeniden sığdır
         setTimeout(aylikSigdir, 30);
         setTimeout(aylikSigdir, 300);
         return;
