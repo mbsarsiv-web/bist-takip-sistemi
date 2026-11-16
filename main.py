@@ -22,23 +22,40 @@ YFINANCE_SUTUNLAR = ['DOLAR', 'EURO', 'GR ALTIN', 'GR GÜMÜŞ', 'NASDAQ', 'S&P 
 # ======================================================================
 # Günlük motor ile AYNI alan kullanılır (tutarlılık için). Alan adını değiştirmek gerekirse yalnızca burası değişir.
 FIYAT_ALANI = "HGDG_KAPANIS"
-# Teşhis amaçlı karşılaştırılan ikinci alan (log'da iki alanın farklı olup olmadığı raporlanır, tabloya yazılmaz)
+# Teşhis amaçlı karşılaştırılan ikinci alan (ham kapanış)
 ALT_FIYAT_ALANI = "HG_KAPANIS"
 
-# Haftalık motorun tabloya yazacağı geçmiş fiyat serisinin yöntemi:
-#   "ISYATIRIM" : İş Yatırım'ın düzeltilmiş kapanışı (HGDG_KAPANIS). Mevcut davranış.
+# Haftalık motorun tabloya yazacağı geçmiş fiyat serisinin yöntemi.
+# Kod değiştirmeden seçilir: GitHub > Settings > Secrets and variables > Actions > Variables > FIYAT_YONTEMI
+# (workflow'u elle çalıştırırken "yontem" listesinden de seçilebilir). Değer yoksa ISYATIRIM kullanılır.
+#   "ISYATIRIM" : İş Yatırım'ın düzeltilmiş kapanışı (HGDG_KAPANIS).
 #   "SERMAYE"   : Ham kapanış (HG_KAPANIS) x (o günkü SERMAYE / en güncel SERMAYE).
-#                 Yalnızca 'python main.py finnet ...' çıktısında bu yöntem Finnet'e en yakın çıkarsa kullanın.
-FIYAT_YONTEMI = "ISYATIRIM"
+#   "HIBRIT"    : İş Yatırım düzeltmesi korunur; sermaye artışıyla eşleşen BEDELSİZ olaylarında
+#                 İş Yatırım'ın çarpanı yerine kesin sermaye oranı kullanılır. Bedelli/diğer olaylara dokunulmaz.
+# Hangisinin seçileceğine 'finnet' motorunun raporu karar verir.
+_GECERLI_YONTEMLER = ("ISYATIRIM", "SERMAYE", "HIBRIT")
+FIYAT_YONTEMI = os.environ.get("FIYAT_YONTEMI", "ISYATIRIM").strip().upper()
+if FIYAT_YONTEMI not in _GECERLI_YONTEMLER:
+    print(f"[!] Geçersiz FIYAT_YONTEMI '{FIYAT_YONTEMI}', ISYATIRIM kullanılıyor.", flush=True)
+    FIYAT_YONTEMI = "ISYATIRIM"
 
 HAFTALIK_PARCA_YIL = 5               # Geçmiş, kaç yıllık parçalar hâlinde çekilir
-HAFTALIK_TOLERANS_MUTLAK = 0.0001    # Yuvarlama farkı toleransı (TL) - Finnet uyumu için yüksek hassasiyet
-HAFTALIK_TOLERANS_ORAN = 0.0005      # Yuvarlama farkı toleransı (oran, %0,05) - Finnet uyumu için yüksek hassasiyet
+HAFTALIK_TOLERANS_MUTLAK = 0.0001    # Eşleşme/çapa kontrolü toleransı (TL)
+HAFTALIK_TOLERANS_ORAN = 0.0005      # Eşleşme/çapa kontrolü toleransı (oran, %0,05)
+# Değişiklik tespiti için çok daha hassas tolerans: eski sürümlerden kalan yuvarlanmış değerler de düzeltilir.
+# (Tabloya 6 ondalık yazıldığı için yuvarlama hatası en fazla 5e-7'dir; bu tolerans onun üzerindedir.)
+HAFTALIK_TOLERANS_HASSAS_MUTLAK = 0.000002
+HAFTALIK_TOLERANS_HASSAS_ORAN = 0.00002
 HAFTALIK_MIN_KAPSAMA = 0.8           # Yeni veri, eski kayıtların en az %80'ini kapsamalı; yoksa hisse atlanır
 HAFTALIK_MAX_YAZILACAK_HISSE = 350   # Tek çalışmada en fazla bu kadar hissenin sütunu yeniden yazılır (güvenlik tavanı)
 HAFTALIK_YAZMA_GRUBU = 15            # Tek yazma isteğinde en fazla bu kadar sütun
 HAFTALIK_OKUMA_GRUBU = 40            # Tek okuma/çekme turunda en fazla bu kadar hisse
 GUNLUK_SAYFA_ADI = "Düzeltme Günlüğü"
+
+HIBRIT_PENCERE_GUN = 45              # Fiyat düzeltme olayı ile sermaye değişimi arasında izin verilen en fazla gün farkı
+
+# Seçilen yöntem uygulanamadığında (örn. SERMAYE verisi yok) İş Yatırım serisine dönülen hisseler
+_YONTEM_GERI_DONUS = []
 
 
 def _backoff_bekle(deneme_no, taban=1.5, tavan=20.0):
@@ -198,7 +215,7 @@ def guncelleme_motoru():
         sheet, headers, tarih_to_row, last_valid_row_idx, last_date_str = baglanti_ve_bilgi_getir()
         if not last_date_str: return
 
-        # --- GÜN İÇİ SIFIRLAMA MANTIĞI EKLENDİ ---
+        # --- GÜN İÇİ SIFIRLAMA MANTIĞI ---
         last_date = datetime.datetime.strptime(last_date_str, "%d.%m.%Y")
         today = datetime.datetime.now()
         
@@ -414,6 +431,63 @@ def sermaye_duzeltmeli_seri(satirlar):
     if ref <= 0: return None
     return {d: ham[d] * sermaye_o_gun(d) / ref for d in ham_gunler}
 
+def hibrit_olay_analizi(satirlar):
+    """İş Yatırım'ın fiyat düzeltme olaylarını SERMAYE değişimleriyle eşleştirir.
+    Çarpan = olay gününden ÖNCEKİ fiyatlara uygulanan düzeltme çarpanıdır (0,5 = eski fiyatlar yarıya indirilmiş).
+    Bir fiyat olayının çarpanı, yakın tarihli bir sermaye artışının (1 / sermaye oranı) değerine yeterince yakınsa
+    olay BEDELSİZ sayılır ve kesin sermaye oranı kullanılır. Yakın değilse (örn. bedelli) olay DIGER sayılır.
+    Dönüş: (duz, ham, ser, eslesmeler) ya da veri eksikse None.
+    eslesmeler: [(tarih, is_carpani, sermaye_carpani_veya_None, sinif)]"""
+    duz = seri_cikar(satirlar, FIYAT_ALANI)
+    ham = seri_cikar(satirlar, ALT_FIYAT_ALANI)
+    ser = seri_cikar(satirlar, 'SERMAYE')
+    if not duz or not ham or not ser: return None
+
+    fiyat_olaylari = _olaylari_bul(duz, ham)
+    sermaye_olaylari = _sermaye_olaylari(ser)
+    kullanilan = set()
+    eslesmeler = []
+
+    for d, onceki, f_eski, f_yeni, oran in fiyat_olaylari:
+        c_is = 1.0 / oran
+        gurultu = 0.005 / ham[d] + 0.005 / ham[onceki]
+        tol = min(0.10, max(0.01, 3.0 * gurultu))
+        en_iyi = None
+        for k, (sd, s_eski, s_yeni, s_oran) in enumerate(sermaye_olaylari):
+            if k in kullanilan: continue
+            if abs((sd - d).days) > HIBRIT_PENCERE_GUN: continue
+            c_s = s_eski / s_yeni
+            sapma = abs(c_is / c_s - 1.0)
+            if sapma <= tol and (en_iyi is None or sapma < en_iyi[0]):
+                en_iyi = (sapma, k, c_s)
+        if en_iyi is not None:
+            kullanilan.add(en_iyi[1])
+            eslesmeler.append((d, c_is, en_iyi[2], 'BEDELSIZ'))
+        else:
+            eslesmeler.append((d, c_is, None, 'DIGER'))
+
+    return duz, ham, ser, eslesmeler
+
+def hibrit_duzeltmeli_seri(satirlar):
+    """İş Yatırım düzeltilmiş serisi + bedelsiz olaylarında kesin oran düzeltmesi. Veri eksikse None."""
+    sonuc = hibrit_olay_analizi(satirlar)
+    if sonuc is None: return None
+    duz, ham, ser, eslesmeler = sonuc
+    duzeltmeler = sorted((d, c_s / c_is) for d, c_is, c_s, sinif in eslesmeler if sinif == 'BEDELSIZ')
+    if not duzeltmeler: return dict(duz)
+
+    gunler = sorted(duz)
+    seri = {}
+    idx = len(duzeltmeler) - 1
+    kum = 1.0
+    for g in reversed(gunler):
+        # Olay gününden ÖNCEKİ günler etkilenir: tarihi g'den büyük tüm olayların düzeltmesi uygulanır
+        while idx >= 0 and duzeltmeler[idx][0] > g:
+            kum *= duzeltmeler[idx][1]
+            idx -= 1
+        seri[g] = duz[g] * kum
+    return seri
+
 def haftalik_hisse_satirlari(stock, parcalar):
     """Tüm parçaları birleştirir. Herhangi bir parça alınamazsa None döner."""
     tum = []
@@ -432,10 +506,18 @@ def haftalik_hisse_gecmisi(stock, parcalar):
     if FIYAT_YONTEMI == "SERMAYE":
         sdz = sermaye_duzeltmeli_seri(satirlar)
         if sdz: fiyat = sdz
+        else: _YONTEM_GERI_DONUS.append(stock)
+    elif FIYAT_YONTEMI == "HIBRIT":
+        hdz = hibrit_duzeltmeli_seri(satirlar)
+        if hdz: fiyat = hdz
+        else: _YONTEM_GERI_DONUS.append(stock)
     return fiyat, alt
 
 def _tolerans(x):
     return max(HAFTALIK_TOLERANS_MUTLAK, HAFTALIK_TOLERANS_ORAN * abs(x))
+
+def _tolerans_hassas(x):
+    return max(HAFTALIK_TOLERANS_HASSAS_MUTLAK, HAFTALIK_TOLERANS_HASSAS_ORAN * abs(x))
 
 def haftalik_karsilastir(tarihler, eski, ham, yeni):
     n = len(tarihler)
@@ -456,7 +538,7 @@ def haftalik_karsilastir(tarihler, eski, ham, yeni):
         if abs(eski[capa] - capa_yeni) > _tolerans(capa_yeni):
             return {'durum': 'atla', 'neden': f'en son ortak gün uyuşmuyor ({tarihler[capa].strftime("%d.%m.%Y")}: tablo={eski[capa]} yeni={capa_yeni})'}
 
-    farkli = [i for i in ortak if abs(eski[i] - yeni[tarihler[i]]) > _tolerans(yeni[tarihler[i]])]
+    farkli = [i for i in ortak if abs(eski[i] - yeni[tarihler[i]]) > _tolerans_hassas(yeni[tarihler[i]])]
     doldurulacak = [i for i in range(n) if tarihler[i] is not None and eski[i] is None and tarihler[i] in yeni and tarihler[i].weekday() < 5]
 
     if not farkli and not doldurulacak:
@@ -633,9 +715,11 @@ def haftalik_motoru():
 
         sure = int(time.time() - baslangic)
         print("=" * 60, flush=True)
-        print(f"[HAFTALIK ÖZET] Değişmeyen: {sayac['degismedi']} | Güncellenen: {sayac['guncelle']} | Atlanan: {sayac['atla']} | Alınamayan: {sayac['cekilemedi']} | Süre: {sure // 60} dk {sure % 60} sn", flush=True)
+        print(f"[HAFTALIK ÖZET] Yöntem: {FIYAT_YONTEMI} | Değişmeyen: {sayac['degismedi']} | Güncellenen: {sayac['guncelle']} | Atlanan: {sayac['atla']} | Alınamayan: {sayac['cekilemedi']} | Süre: {sure // 60} dk {sure % 60} sn", flush=True)
+        if _YONTEM_GERI_DONUS:
+            print(f"[UYARI] {len(_YONTEM_GERI_DONUS)} hissede {FIYAT_YONTEMI} yöntemi uygulanamadı (SERMAYE verisi yok), İş Yatırım serisi kullanıldı. Örnek: {', '.join(sorted(set(_YONTEM_GERI_DONUS))[:10])}", flush=True)
         if tavan_asildi:
-            print(f"[UYARI] Güvenlik tavanı ({HAFTALIK_MAX_YAZILACAK_HISSE}) aşıldı, kalan hisseler gelecek haftaya ertelendi.", flush=True)
+            print(f"[UYARI] Güvenlik tavanı ({HAFTALIK_MAX_YAZILACAK_HISSE}) aşıldı, kalan hisseler gelecek haftaya ertelendi (haftalik motoru elle tekrar çalıştırarak hemen tamamlayabilirsiniz).", flush=True)
         if teshis_adet:
             print(f"[ALAN TEŞHİSİ] {teshis_adet} hissede {FIYAT_ALANI} ile {ALT_FIYAT_ALANI} farklı. Örnekler:", flush=True)
             for o in teshis_ornek: print("   " + o, flush=True)
@@ -736,7 +820,7 @@ def teshis_motoru(hisse_metni, bas_str, bit_str):
         satir_tarihi = {row: datetime.datetime.strptime(t, "%d.%m.%Y").date() for t, row in tarih_to_row.items()}
         bugun = datetime.datetime.now().date()
 
-        print(f"[TEŞHİS] Tablodaki son tarih: {son_tarih_str} | Fiyat alanı: {FIYAT_ALANI} (düzeltilmiş) / {ALT_FIYAT_ALANI} (ham)", flush=True)
+        print(f"[TEŞHİS] Tablodaki son tarih: {son_tarih_str} | Fiyat alanı: {FIYAT_ALANI} (düzeltilmiş) / {ALT_FIYAT_ALANI} (ham) | Yöntem: {FIYAT_YONTEMI}", flush=True)
 
         for hisse in hisseler:
             print("=" * 100, flush=True)
@@ -776,7 +860,7 @@ def teshis_motoru(hisse_metni, bas_str, bit_str):
             print("\n  --- GETİRİ KARŞILAŞTIRMASI ---", flush=True)
             print("  (A) Başlangıç günü kapanışı baz alınır  |  (B) Başlangıçtan ÖNCEKİ son kapanış baz alınır", flush=True)
             for ad, seri in [("TABLO (uygulamanın kullandığı veri)", tablo),
-                             ("İŞ YATIRIM DÜZELTİLMİŞ (" + FIYAT_ALANI + ")", duz),
+                             ("SEÇİLİ YÖNTEM SERİSİ (" + FIYAT_YONTEMI + ")", duz),
                              ("İŞ YATIRIM HAM (" + ALT_FIYAT_ALANI + ")", ham)]:
                 son = _o_gun_veya_oncesi(seri, bit)
                 print(_getiri_satiri(ad + " (A)", _o_gun_veya_oncesi(seri, bas), son), flush=True)
@@ -825,6 +909,7 @@ def teshis_motoru(hisse_metni, bas_str, bit_str):
 # Kullanım: python main.py finnet "AKSA:2904.75,FROTO:1587.29" 13-11-2019 13-11-2026
 # 'KOD:değer' -> değer, Finnet'teki "% Değ. Kapanış" rakamıdır. Değer yazılmazsa yalnızca seriler yazdırılır.
 # Getiri bazı Finnet ile aynıdır: başlangıç tarihinden ÖNCEKİ son kapanış.
+# Aday yöntemler: İş Yatırım düzeltilmiş, sermaye düzeltmeli, hibrit. Finnet'e en yakın olan raporlanır.
 # ======================================================================
 
 def _getiri_hesapla(seri, bas, bit):
@@ -884,39 +969,43 @@ def finnet_motoru(hisse_metni, bas_str, bit_str):
             ham = seri_cikar(satirlar, ALT_FIYAT_ALANI)
             ser = seri_cikar(satirlar, 'SERMAYE')
             sdz = sermaye_duzeltmeli_seri(satirlar)
+            hib = hibrit_olay_analizi(satirlar)
+            hdz = hibrit_duzeltmeli_seri(satirlar)
             if not ser:
-                print("  UYARI: İş Yatırım yanıtında SERMAYE alanı yok/boş; sermaye düzeltmeli yöntem hesaplanamaz.", flush=True)
+                print("  UYARI: İş Yatırım yanıtında SERMAYE alanı yok/boş; SERMAYE ve HİBRİT yöntemleri hesaplanamaz.", flush=True)
 
+            # (kısa ad, uzun ad, seri, yöntem adayı mı)
             adaylar = [
-                ("TABLO (uygulamanın kullandığı veri)", tablo),
-                ("İŞ YATIRIM DÜZELTİLMİŞ (" + FIYAT_ALANI + ")", duz),
-                ("SERMAYE DÜZELTMELİ (ham x sermaye oranı)", sdz or {}),
-                ("İŞ YATIRIM HAM (" + ALT_FIYAT_ALANI + ")", ham),
+                ("TABLO", "TABLO (uygulamanın kullandığı veri)", tablo, False),
+                ("DÜZ", "İŞ YATIRIM DÜZELTİLMİŞ (" + FIYAT_ALANI + ")", duz, True),
+                ("SER", "SERMAYE DÜZELTMELİ (ham x sermaye oranı)", sdz or {}, True),
+                ("HİB", "HİBRİT (İş Yatırım + kesin bedelsiz oranı)", hdz or {}, True),
+                ("HAM", "İŞ YATIRIM HAM (" + ALT_FIYAT_ALANI + ")", ham, False),
             ]
 
             print("\n  --- GETİRİ KARŞILAŞTIRMASI (baz = başlangıçtan önceki son kapanış) ---", flush=True)
             en_yakin = None
-            for ad, seri in adaylar:
+            for kisa, ad, seri, aday in adaylar:
                 sonuc = _getiri_hesapla(seri, bas, bit)
                 if sonuc is None:
-                    print(f"  {ad:<48}: hesaplanamadı", flush=True)
+                    print(f"  {ad:<52}: hesaplanamadı", flush=True)
                     continue
                 g, baz, son = sonuc
                 fark_metin = ""
                 if referans is not None:
                     fark = g - referans
                     fark_metin = f"   Finnet farkı: {fark:+,.2f} puan"
-                    if not ad.startswith("İŞ YATIRIM HAM") and (en_yakin is None or abs(fark) < en_yakin[1]):
+                    if aday and (en_yakin is None or abs(fark) < en_yakin[1]):
                         en_yakin = (ad, abs(fark))
-                print(f"  {ad:<48}: %{g:>10,.2f}{fark_metin}   [{baz[0].strftime('%d.%m.%Y')} {baz[1]:.4f} -> {son[0].strftime('%d.%m.%Y')} {son[1]:.4f}]", flush=True)
+                print(f"  {ad:<52}: %{g:>10,.2f}{fark_metin}   [{baz[0].strftime('%d.%m.%Y')} {baz[1]:.4f} -> {son[0].strftime('%d.%m.%Y')} {son[1]:.4f}]", flush=True)
 
             son_duz = _o_gun_veya_oncesi(duz, bit)
             if referans is not None and son_duz:
                 ima = son_duz[1] / (1 + referans / 100.0)
                 parcalar_metin = []
-                for ad, seri in adaylar:
+                for kisa, ad, seri, aday in adaylar:
                     b = _kesin_oncesi(seri, bas) if seri else None
-                    parcalar_metin.append(f"{ad.split(' ')[0]}={_fmt(b[1]) if b else '-'}")
+                    parcalar_metin.append(f"{kisa}={_fmt(b[1]) if b else '-'}")
                 print(f"\n  Finnet'in ima ettiği önceki kapanış ≈ {ima:.4f}  |  bizim bazlar: " + " | ".join(parcalar_metin), flush=True)
 
             if en_yakin is not None:
@@ -934,12 +1023,20 @@ def finnet_motoru(hisse_metni, bas_str, bit_str):
             for d, onceki, f_eski, f_yeni, oran in duz_olaylari[-40:]:
                 print(f"  {d.strftime('%d.%m.%Y'):<12} çarpan {1.0 / oran:.4f}   ham {ham[onceki]:.2f} -> {ham[d]:.2f}", flush=True)
 
+            if hib:
+                hib_olaylari = [e for e in hib[3] if e[0] >= esik_tarih]
+                print(f"\n  --- HİBRİT EŞLEŞTİRME: İŞ YATIRIM OLAYI ↔ SERMAYE DEĞİŞİMİ (toplam {len(hib_olaylari)}) ---", flush=True)
+                for d, c_is, c_s, sinif in hib_olaylari[-40:]:
+                    c_s_metin = f"{c_s:.4f}" if c_s is not None else "-"
+                    print(f"  {d.strftime('%d.%m.%Y'):<12} İş Yatırım çarpanı {c_is:.4f} | sermaye çarpanı {c_s_metin} | {sinif}", flush=True)
+
         print("=" * 110, flush=True)
         if galibiyet:
             print("[FINNET ÖZET] Finnet'e en yakın çıkan yöntem sayıları:", flush=True)
             for ad, adet in sorted(galibiyet.items(), key=lambda kv: -kv[1]):
                 print(f"   {adet} hisse: {ad}", flush=True)
-            print("   'SERMAYE DÜZELTMELİ' önde ise main.py içinde FIYAT_YONTEMI = \"SERMAYE\" yapıp 'haftalik' motorunu çalıştırın.", flush=True)
+            print("   Kazanan yöntemi uygulamak için GitHub > Settings > Secrets and variables > Actions > Variables bölümünde", flush=True)
+            print("   FIYAT_YONTEMI değişkenini ISYATIRIM / SERMAYE / HIBRIT olarak ayarlayıp 'haftalik' motorunu çalıştırın.", flush=True)
         print("=" * 110, flush=True)
     except Exception:
         print(traceback.format_exc(), flush=True)
@@ -1091,7 +1188,7 @@ if __name__ == '__main__':
             )
         elif sys.argv[1] == "finnet":
             finnet_motoru(
-                sys.argv[2] if len(sys.argv) > 2 else "AKSA:2904.75,FROTO:1587.29,ISMEN:4891.56,EGPRO:2914.88,TUPRS:2889.05",
+                sys.argv[2] if len(sys.argv) > 2 else "AKSA:2904.75,FROTO:1587.29,DOAS:2972.26,ISMEN:4891.56,EGPRO:2914.88,TUPRS:2889.05",
                 sys.argv[3] if len(sys.argv) > 3 else "13-11-2019",
                 sys.argv[4] if len(sys.argv) > 4 else datetime.datetime.now().strftime("%d-%m-%Y")
             )
