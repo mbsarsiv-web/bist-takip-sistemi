@@ -25,8 +25,8 @@ FIYAT_ALANI = "HGDG_KAPANIS"
 ALT_FIYAT_ALANI = "HG_KAPANIS"
 
 HAFTALIK_PARCA_YIL = 5               # Geçmiş, kaç yıllık parçalar hâlinde çekilir
-HAFTALIK_TOLERANS_MUTLAK = 0.0015    # Yuvarlama farkı toleransı (TL)
-HAFTALIK_TOLERANS_ORAN = 0.003       # Yuvarlama farkı toleransı (oran, %0,3)
+HAFTALIK_TOLERANS_MUTLAK = 0.0001    # Yuvarlama farkı toleransı (TL) - Finnet uyumu için yüksek hassasiyet
+HAFTALIK_TOLERANS_ORAN = 0.0005      # Yuvarlama farkı toleransı (oran, %0,05) - Finnet uyumu için yüksek hassasiyet
 HAFTALIK_MIN_KAPSAMA = 0.8           # Yeni veri, eski kayıtların en az %80'ini kapsamalı; yoksa hisse atlanır
 HAFTALIK_MAX_YAZILACAK_HISSE = 350   # Tek çalışmada en fazla bu kadar hissenin sütunu yeniden yazılır (güvenlik tavanı)
 HAFTALIK_YAZMA_GRUBU = 15            # Tek yazma isteğinde en fazla bu kadar sütun
@@ -143,7 +143,13 @@ def get_yfinance_incremental(start_date, end_date):
 
 def format_fiyat(val):
     if pd.isna(val) or val == "": return ""
-    try: return "{:.3f}".format(float(val)).replace(".", ",")
+    try:
+        # Finnet gibi platformlarla yüzdelik getirilerin kuruşu kuruşuna tutması için
+        # yüksek ondalık hassasiyeti korunur. Sondaki gereksiz sıfırlar atılır.
+        formatted = "{:.6f}".format(float(val)).rstrip('0')
+        if formatted.endswith('.'):
+            formatted = formatted[:-1]
+        return formatted.replace(".", ",")
     except ValueError: return ""
 
 def coklu_tur_bist_onarimi(bist_pivot, max_tur=3):
@@ -313,14 +319,12 @@ def bakim_motoru(taranacak_gun=15):
 
 # ======================================================================
 # HAFTALIK GEÇMİŞ YENİLEME MOTORU
-# Amaç: Bölünme (bedelsiz/bedelli) gibi işlemlerde İş Yatırım geçmiş fiyatları yeniden hesaplar.
-# Bu motor her hissenin tüm geçmişini İş Yatırım'dan baştan çeker, tablodakiyle karşılaştırır
-# ve yalnızca farklı çıkan hissenin sütununu yeniden yazar. Fark yoksa hiçbir şey yazılmaz.
 # ======================================================================
 
 def hassas_yuvarla(val):
-    v = float(val)
-    return round(v, 4) if abs(v) < 1 else round(v, 3)
+    # Geçmiş kurumsal işlemlerin (bölünme vb.) getiriye etkisini 
+    # hassas biçimde yansıtmak için yuvarlama yapılmadan döndürülür.
+    return float(val)
 
 def saklanan_sayi(v):
     """Tablodan okunan hücre değerini pozitif sayıya çevirir; sayı değilse None döner."""
@@ -393,12 +397,6 @@ def _tolerans(x):
     return max(HAFTALIK_TOLERANS_MUTLAK, HAFTALIK_TOLERANS_ORAN * abs(x))
 
 def haftalik_karsilastir(tarihler, eski, ham, yeni):
-    """
-    tarihler : satır sırasına göre tarih listesi (geçersiz satır için None)
-    eski     : tablodaki sayısal fiyatlar (yoksa None)
-    ham      : tablodaki ham hücre değerleri (değişmeyen satırlar aynen geri yazılır)
-    yeni     : İş Yatırım'dan gelen {tarih: fiyat}
-    """
     n = len(tarihler)
     if not yeni: return {'durum': 'degismedi'}
 
@@ -433,7 +431,6 @@ def haftalik_karsilastir(tarihler, eski, ham, yeni):
             if eski[i] is not None and eski[i] > 0: oran = y / eski[i]
             kolon.append([hassas_yuvarla(y)])
         elif d is not None and eski[i] is not None and farkli and oran is not None and d >= yeni_ilk:
-            # İş Yatırım'da o gün yok ama tabloda var: önceki ortak günün oranıyla düzeltilir
             kolon.append([hassas_yuvarla(eski[i] * oran)])
             tahmini += 1
         else:
@@ -450,7 +447,6 @@ def haftalik_karsilastir(tarihler, eski, ham, yeni):
     return {'durum': 'guncelle', 'kolon': kolon, 'ayrinti': ayrinti, 'farkli': len(farkli), 'doldurulan': len(doldurulacak)}
 
 def haftalik_teshis(tarihler, yeni, alt):
-    """HGDG_KAPANIS ile HG_KAPANIS arasında fark var mı? (yalnızca log için)"""
     if not alt or not yeni: return None
     farklar = [(d, yeni[d], alt[d]) for d in sorted(yeni.keys()) if d in alt and abs(yeni[d] - alt[d]) > _tolerans(yeni[d])]
     if not farklar: return None
@@ -612,12 +608,6 @@ def haftalik_motoru():
 
 # ======================================================================
 # TEŞHİS VE ANOMALİ ARAÇLARI
-# - teshis : Seçilen hisseler için, iki tarih arası getirinin hangi fiyatlarla ve hangi yöntemle
-#            hesaplandığını (tablo / İş Yatırım düzeltilmiş / İş Yatırım ham) yan yana gösterir.
-#            Başka bir platformla (ör. Finnet) çıkan farkın nedenini bulmak için kullanılır.
-# - anomali: Tüm tabloyu tarar; art arda iki günde fiyatı günlük limitin (±%10) dışında değişen
-#            noktaları bulur ve KALICI KAYMA (düzeltilmemiş bölünme/kaynak hatası) ile TEK GÜNLÜK SAPMA
-#            olarak ayırıp "Anomali Raporu" sayfasına yazar.
 # ======================================================================
 
 ANOMALI_ALT = 0.89                 # Önceki güne göre bu orandan düşük = şüpheli
@@ -625,7 +615,7 @@ ANOMALI_UST = 1.12                 # Önceki güne göre bu orandan yüksek = ş
 ANOMALI_MAX_GUN_FARKI = 7          # İki fiyat arası en fazla bu kadar gün ise karşılaştırılır
 ANOMALI_MAX_SATIR = 6000           # Rapor sayfasına yazılacak en fazla satır
 ANOMALI_SAYFA_ADI = "Anomali Raporu"
-ANOMALI_DUSUK_FIYAT = 0.05         # Her iki fiyattan biri bunun altındaysa "DÜŞÜK FİYAT" sınıfına alınır (yuvarlama/fiyat adımı gürültüsü olabilir)
+ANOMALI_DUSUK_FIYAT = 0.05         # Her iki fiyattan biri bunun altındaysa "DÜŞÜK FİYAT" sınıfına alınır
 
 def _gun_coz(metin):
     return datetime.datetime.strptime(str(metin).strip(), "%d-%m-%Y").date()
@@ -663,7 +653,6 @@ def _fmt(v):
     return f"{v:.4f}" if v is not None else "-"
 
 def _olaylari_bul(duz, ham):
-    """Düzeltilmiş/ham fiyat oranındaki (düzeltme katsayısındaki) basamakları bulur: her basamak bir kurumsal işlemdir."""
     ortak = sorted(d for d in duz if d in ham)
     olaylar = []
     onceki = None
@@ -671,7 +660,7 @@ def _olaylari_bul(duz, ham):
         if onceki is not None:
             f_yeni = duz[d] / ham[d]
             f_eski = duz[onceki] / ham[onceki]
-            ruido = 0.005 / ham[d] + 0.005 / ham[onceki]   # ham fiyat 2 ondalıklı olduğu için yuvarlama gürültüsü
+            ruido = 0.005 / ham[d] + 0.005 / ham[onceki]
             esik = max(0.003, 2.0 * ruido)
             oran = f_yeni / f_eski
             if abs(oran - 1) > esik:
@@ -753,7 +742,6 @@ def teshis_motoru(hisse_metni, bas_str, bit_str):
                     kontrol.append(f"{etiket} ({d[0].strftime('%d.%m.%Y')}): tablo = İş Yatırım ({karsilik})")
             print("  Tablo / İş Yatırım uyumu: " + " | ".join(kontrol), flush=True)
 
-            # --- Kurumsal işlem (düzeltme) olayları: tüm geçmiş boyunca ---
             olaylar = _olaylari_bul(duz, ham)
             print(f"\n  --- İŞ YATIRIM'IN UYGULADIĞI DÜZELTME OLAYLARI (toplam {len(olaylar)}) ---", flush=True)
             print("  'Çarpan': o tarihten ÖNCEKİ tüm fiyatlara uygulanan düzeltme çarpanı (0,75 = eski fiyatlar %25 düşürülmüş)", flush=True)
@@ -786,10 +774,10 @@ def anomali_motoru():
 
         hisseler = []
         for idx, ad in enumerate(headers):
-            if idx == 0 or not ad or ad in YFINANCE_SUTUNLAR: continue   # döviz/altın/gümüş/endeksler günlük limite tabi değildir
+            if idx == 0 or not ad or ad in YFINANCE_SUTUNLAR: continue
             hisseler.append((ad, idx + 1))
 
-        bulunanlar = []   # (hisse, onceki_t, onceki_v, t, v, oran, gun_farki, tur)
+        bulunanlar = []
         for g in range(0, len(hisseler), HAFTALIK_OKUMA_GRUBU):
             grup = hisseler[g:g + HAFTALIK_OKUMA_GRUBU]
             c1 = min(c for _, c in grup)
@@ -820,7 +808,7 @@ def anomali_motoru():
                 atla = False
                 for k in range(1, len(seri)):
                     if atla:
-                        atla = False   # tek günlük sapmanın geri dönüşü ayrıca sayılmaz
+                        atla = False
                         continue
                     ot, ov = seri[k - 1]
                     t, v = seri[k]
@@ -844,7 +832,7 @@ def anomali_motoru():
         kalici = [x for x in bulunanlar if x[7] == "KALICI KAYMA"]
         tek_gun = [x for x in bulunanlar if x[7] == "TEK GÜNLÜK SAPMA"]
         dusuk = [x for x in bulunanlar if x[7] == "DÜŞÜK FİYAT"]
-        kalici.sort(key=lambda x: x[3], reverse=True)      # en yeni üstte
+        kalici.sort(key=lambda x: x[3], reverse=True)
         tek_gun.sort(key=lambda x: x[3], reverse=True)
         dusuk.sort(key=lambda x: x[3], reverse=True)
         siralanmis = kalici + tek_gun + dusuk
