@@ -610,8 +610,241 @@ def haftalik_motoru():
         sys.exit(1)
 
 
+# ======================================================================
+# TEŞHİS VE ANOMALİ ARAÇLARI
+# - teshis : Seçilen hisseler için, iki tarih arası getirinin hangi fiyatlarla ve hangi yöntemle
+#            hesaplandığını (tablo / İş Yatırım düzeltilmiş / İş Yatırım ham) yan yana gösterir.
+#            Başka bir platformla (ör. Finnet) çıkan farkın nedenini bulmak için kullanılır.
+# - anomali: Tüm tabloyu tarar; art arda iki günde fiyatı günlük limitin (±%10) dışında değişen
+#            noktaları (düzeltilmemiş bölünme, hatalı fiyat vb.) "Anomali Raporu" sayfasına yazar.
+# ======================================================================
+
+ANOMALI_ALT = 0.89                 # Önceki güne göre bu orandan düşük = şüpheli
+ANOMALI_UST = 1.12                 # Önceki güne göre bu orandan yüksek = şüpheli
+ANOMALI_MAX_GUN_FARKI = 7          # İki fiyat arası en fazla bu kadar gün ise karşılaştırılır
+ANOMALI_MAX_SATIR = 1500           # Rapor sayfasına yazılacak en fazla satır
+ANOMALI_SAYFA_ADI = "Anomali Raporu"
+
+def _gun_coz(metin):
+    return datetime.datetime.strptime(str(metin).strip(), "%d-%m-%Y").date()
+
+def _seri_getir(satirlar, alan):
+    seri = {}
+    for s in satirlar:
+        try:
+            d = datetime.datetime.strptime(str(s.get('HGDG_TARIH'))[:10], '%d-%m-%Y').date()
+            v = float(s.get(alan))
+        except (TypeError, ValueError):
+            continue
+        if v > 0: seri[d] = v
+    return seri
+
+def _o_gun_veya_oncesi(seri, d):
+    adaylar = [x for x in seri if x <= d]
+    if not adaylar: return None
+    k = max(adaylar)
+    return k, seri[k]
+
+def _kesin_oncesi(seri, d):
+    adaylar = [x for x in seri if x < d]
+    if not adaylar: return None
+    k = max(adaylar)
+    return k, seri[k]
+
+def _getiri_satiri(etiket, baz, son):
+    if baz is None or son is None or baz[1] <= 0:
+        return f"  {etiket:<62}: hesaplanamadı"
+    g = (son[1] / baz[1] - 1) * 100
+    return f"  {etiket:<62}: %{g:,.2f}   [{baz[0].strftime('%d.%m.%Y')} {baz[1]:.4f} -> {son[0].strftime('%d.%m.%Y')} {son[1]:.4f}]"
+
+def _fmt(v):
+    return f"{v:.4f}" if v is not None else "-"
+
+def teshis_motoru(hisse_metni, bas_str, bit_str):
+    try:
+        bas = _gun_coz(bas_str)
+        bit = _gun_coz(bit_str)
+        hisseler = [h.strip().upper() for h in str(hisse_metni).replace(";", ",").split(",") if h.strip()]
+        sheet, headers, tarih_to_row, son_satir, son_tarih_str = baglanti_ve_bilgi_getir()
+        satir_tarihi = {row: datetime.datetime.strptime(t, "%d.%m.%Y").date() for t, row in tarih_to_row.items()}
+
+        print(f"[TEŞHİS] Tablodaki son tarih: {son_tarih_str} | Fiyat alanı: {FIYAT_ALANI} (düzeltilmiş) / {ALT_FIYAT_ALANI} (ham)", flush=True)
+
+        for hisse in hisseler:
+            print("=" * 100, flush=True)
+            print(f"{hisse} | {bas.strftime('%d.%m.%Y')} -> {bit.strftime('%d.%m.%Y')}", flush=True)
+            if hisse not in headers:
+                print("  Tabloda bu başlık bulunamadı.", flush=True)
+                continue
+
+            col = headers.index(hisse) + 1
+            blok = sheet.get(f"{rowcol_to_a1(2, col)}:{rowcol_to_a1(son_satir, col)}", value_render_option='UNFORMATTED_VALUE')
+            tablo = {}
+            for r in range(2, son_satir + 1):
+                d = satir_tarihi.get(r)
+                if d is None: continue
+                satir = blok[r - 2] if (r - 2) < len(blok) else []
+                v = saklanan_sayi(satir[0]) if satir else None
+                if v is not None: tablo[d] = v
+
+            satirlar = []
+            tamam = True
+            for a, b in [(bas - datetime.timedelta(days=25), bas + datetime.timedelta(days=7)),
+                         (bit - datetime.timedelta(days=12), bit)]:
+                parca, ok = haftalik_parca_cek(hisse, a.strftime('%d-%m-%Y'), b.strftime('%d-%m-%Y'))
+                if not ok: tamam = False
+                satirlar += parca
+            if not tamam:
+                print("  İş Yatırım'dan veri alınamadı.", flush=True)
+                continue
+
+            duz = _seri_getir(satirlar, FIYAT_ALANI)
+            ham = _seri_getir(satirlar, ALT_FIYAT_ALANI)
+
+            def pencere(merkez_bas, merkez_bit):
+                gunler = sorted(set(d for d in list(duz) + list(ham) + list(tablo) if merkez_bas <= d <= merkez_bit))
+                print(f"  {'TARİH':<12}{'TABLO':>14}{'İŞ YAT. DÜZELTİLMİŞ':>22}{'İŞ YAT. HAM':>16}", flush=True)
+                for d in gunler:
+                    print(f"  {d.strftime('%d.%m.%Y'):<12}{_fmt(tablo.get(d)):>14}{_fmt(duz.get(d)):>22}{_fmt(ham.get(d)):>16}", flush=True)
+
+            print("\n  --- BAŞLANGIÇ TARİHİ ÇEVRESİ ---", flush=True)
+            pencere(bas - datetime.timedelta(days=8), bas + datetime.timedelta(days=4))
+            print("\n  --- BİTİŞ TARİHİ ÇEVRESİ ---", flush=True)
+            pencere(bit - datetime.timedelta(days=6), bit)
+
+            print("\n  --- GETİRİ KARŞILAŞTIRMASI ---", flush=True)
+            print("  (A) Başlangıç günü kapanışı baz alınır  |  (B) Başlangıçtan ÖNCEKİ son kapanış baz alınır (Finnet 'Önceki Kapanış' mantığı)", flush=True)
+            for ad, seri in [("TABLO (uygulamanın kullandığı veri)", tablo),
+                             ("İŞ YATIRIM DÜZELTİLMİŞ (" + FIYAT_ALANI + ")", duz),
+                             ("İŞ YATIRIM HAM (" + ALT_FIYAT_ALANI + ")", ham)]:
+                son = _o_gun_veya_oncesi(seri, bit)
+                print(_getiri_satiri(ad + " (A)", _o_gun_veya_oncesi(seri, bas), son), flush=True)
+                print(_getiri_satiri(ad + " (B)", _kesin_oncesi(seri, bas), son), flush=True)
+
+            b_duz = _o_gun_veya_oncesi(duz, bas)
+            b_ham = _o_gun_veya_oncesi(ham, bas)
+            e_duz = _o_gun_veya_oncesi(duz, bit)
+            e_ham = _o_gun_veya_oncesi(ham, bit)
+            if b_duz and b_ham and e_duz and e_ham:
+                print(f"\n  Düzeltme katsayısı (düzeltilmiş/ham): başlangıçta {b_duz[1] / b_ham[1]:.4f} | bitişte {e_duz[1] / e_ham[1]:.4f}", flush=True)
+
+            kontrol = []
+            for etiket, d in [("başlangıç", _o_gun_veya_oncesi(tablo, bas)), ("bitiş", _o_gun_veya_oncesi(tablo, bit))]:
+                if d is None: continue
+                karsilik = duz.get(d[0])
+                if karsilik is None:
+                    kontrol.append(f"{etiket} ({d[0].strftime('%d.%m.%Y')}): İş Yatırım'da bu gün yok")
+                elif abs(d[1] - karsilik) > _tolerans(karsilik):
+                    kontrol.append(f"{etiket} ({d[0].strftime('%d.%m.%Y')}): TABLO={d[1]} İŞ YATIRIM={karsilik}  -> FARKLI")
+                else:
+                    kontrol.append(f"{etiket} ({d[0].strftime('%d.%m.%Y')}): tablo = İş Yatırım ({karsilik})")
+            print("  Tablo / İş Yatırım uyumu: " + " | ".join(kontrol), flush=True)
+
+        print("=" * 100, flush=True)
+    except Exception:
+        print(traceback.format_exc(), flush=True)
+        sys.exit(1)
+
+def anomali_motoru():
+    baslangic = time.time()
+    try:
+        sheet, headers, tarih_to_row, son_satir, son_tarih_str = baglanti_ve_bilgi_getir()
+        if not son_tarih_str:
+            print("[!] Tabloda geçerli tarih bulunamadı.", flush=True)
+            return
+
+        satir_tarihi = {row: datetime.datetime.strptime(t, "%d.%m.%Y").date() for t, row in tarih_to_row.items()}
+        tarihler = [satir_tarihi.get(r) for r in range(2, son_satir + 1)]
+        n = len(tarihler)
+
+        hisseler = []
+        for idx, ad in enumerate(headers):
+            if idx == 0 or not ad: continue
+            hisseler.append((ad, idx + 1))
+
+        bulunanlar = []
+        for g in range(0, len(hisseler), HAFTALIK_OKUMA_GRUBU):
+            grup = hisseler[g:g + HAFTALIK_OKUMA_GRUBU]
+            c1 = min(c for _, c in grup)
+            c2 = max(c for _, c in grup)
+            aralik = f"{rowcol_to_a1(2, c1)}:{rowcol_to_a1(son_satir, c2)}"
+            blok = None
+            for deneme in range(5):
+                try:
+                    blok = sheet.get(aralik, value_render_option='UNFORMATTED_VALUE')
+                    break
+                except Exception as e:
+                    print(f"[!] Okuma hatası (deneme {deneme + 1}): {e}", flush=True)
+                    _backoff_bekle(deneme, taban=5.0, tavan=60.0)
+            if blok is None:
+                raise RuntimeError(f"Tablo okunamadı: {aralik}")
+            time.sleep(1.5)
+
+            for ad, col in grup:
+                j = col - c1
+                onceki_t = None
+                onceki_v = None
+                for r in range(n):
+                    d = tarihler[r]
+                    if d is None: continue
+                    satir = blok[r] if r < len(blok) else []
+                    v = saklanan_sayi(satir[j]) if j < len(satir) else None
+                    if v is None: continue
+                    if onceki_v is not None:
+                        gun_farki = (d - onceki_t).days
+                        oran = v / onceki_v
+                        if gun_farki <= ANOMALI_MAX_GUN_FARKI and (oran < ANOMALI_ALT or oran > ANOMALI_UST):
+                            bulunanlar.append((ad, onceki_t, onceki_v, d, v, oran, gun_farki))
+                    onceki_t = d
+                    onceki_v = v
+            del blok
+            gc.collect()
+            print(f"[ANOMALİ] {min(g + HAFTALIK_OKUMA_GRUBU, len(hisseler))}/{len(hisseler)} sütun tarandı", flush=True)
+
+        # En büyük sapma en üstte
+        import math
+        bulunanlar.sort(key=lambda x: -abs(math.log(x[5])))
+        etkilenen_hisse = len(set(x[0] for x in bulunanlar))
+
+        satirlar = [["HİSSE", "ÖNCEKİ TARİH", "ÖNCEKİ FİYAT", "TARİH", "FİYAT", "ORAN", "GÜN FARKI", "YORUM"]]
+        for ad, ot, ov, t, v, oran, gf in bulunanlar[:ANOMALI_MAX_SATIR]:
+            yorum = "Sert düşüş (bölünme düzeltmesi eksik olabilir)" if oran < ANOMALI_ALT else "Sert yükseliş (ters bölünme veya hatalı veri olabilir)"
+            satirlar.append([ad, ot.strftime("%d.%m.%Y"), round(ov, 4), t.strftime("%d.%m.%Y"), round(v, 4), round(oran, 4), gf, yorum])
+
+        try:
+            ss = sheet.spreadsheet
+            try:
+                ws = ss.worksheet(ANOMALI_SAYFA_ADI)
+                ws.clear()
+            except gspread.exceptions.WorksheetNotFound:
+                ws = ss.add_worksheet(title=ANOMALI_SAYFA_ADI, rows=max(len(satirlar) + 20, 100), cols=8)
+            if ws.row_count < len(satirlar) + 5:
+                ws.resize(rows=len(satirlar) + 20, cols=8)
+            ws.update(values=satirlar, range_name='A1', value_input_option='RAW')
+        except Exception as e:
+            print(f"[!] Anomali Raporu sayfasına yazılamadı: {e}", flush=True)
+
+        sure = int(time.time() - baslangic)
+        print("=" * 60, flush=True)
+        print(f"[ANOMALİ ÖZET] Şüpheli sıçrama: {len(bulunanlar)} | Etkilenen hisse: {etkilenen_hisse} | Süre: {sure // 60} dk {sure % 60} sn", flush=True)
+        for ad, ot, ov, t, v, oran, gf in bulunanlar[:15]:
+            print(f"   {ad}: {ot.strftime('%d.%m.%Y')} {round(ov, 4)} -> {t.strftime('%d.%m.%Y')} {round(v, 4)} (oran {round(oran, 4)})", flush=True)
+        print("=" * 60, flush=True)
+
+    except Exception:
+        print(traceback.format_exc(), flush=True)
+        sys.exit(1)
+
+
 if __name__ == '__main__':
     if len(sys.argv) > 1:
         if sys.argv[1] == "guncelle": guncelleme_motoru()
         elif sys.argv[1] == "bakim": bakim_motoru(15)
         elif sys.argv[1] == "haftalik": haftalik_motoru()
+        elif sys.argv[1] == "anomali": anomali_motoru()
+        elif sys.argv[1] == "teshis":
+            teshis_motoru(
+                sys.argv[2] if len(sys.argv) > 2 else "DOAS,AYGAZ,FROTO",
+                sys.argv[3] if len(sys.argv) > 3 else "13-11-2019",
+                sys.argv[4] if len(sys.argv) > 4 else datetime.datetime.now().strftime("%d-%m-%Y")
+            )
