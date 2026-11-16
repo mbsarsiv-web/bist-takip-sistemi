@@ -625,6 +625,7 @@ ANOMALI_UST = 1.12                 # Önceki güne göre bu orandan yüksek = ş
 ANOMALI_MAX_GUN_FARKI = 7          # İki fiyat arası en fazla bu kadar gün ise karşılaştırılır
 ANOMALI_MAX_SATIR = 6000           # Rapor sayfasına yazılacak en fazla satır
 ANOMALI_SAYFA_ADI = "Anomali Raporu"
+ANOMALI_DUSUK_FIYAT = 0.05         # Her iki fiyattan biri bunun altındaysa "DÜŞÜK FİYAT" sınıfına alınır (yuvarlama/fiyat adımı gürültüsü olabilir)
 
 def _gun_coz(metin):
     return datetime.datetime.strptime(str(metin).strip(), "%d-%m-%Y").date()
@@ -785,7 +786,7 @@ def anomali_motoru():
 
         hisseler = []
         for idx, ad in enumerate(headers):
-            if idx == 0 or not ad: continue
+            if idx == 0 or not ad or ad in YFINANCE_SUTUNLAR: continue   # döviz/altın/gümüş/endeksler günlük limite tabi değildir
             hisseler.append((ad, idx + 1))
 
         bulunanlar = []   # (hisse, onceki_t, onceki_v, t, v, oran, gun_farki, tur)
@@ -833,6 +834,8 @@ def anomali_motoru():
                             if (t2 - t).days <= ANOMALI_MAX_GUN_FARKI and ANOMALI_ALT <= geri <= ANOMALI_UST:
                                 tur = "TEK GÜNLÜK SAPMA"
                                 atla = True
+                        if min(ov, v) < ANOMALI_DUSUK_FIYAT:
+                            tur = "DÜŞÜK FİYAT"
                         bulunanlar.append((ad, ot, ov, t, v, oran, gun_farki, tur))
             del blok
             gc.collect()
@@ -840,13 +843,17 @@ def anomali_motoru():
 
         kalici = [x for x in bulunanlar if x[7] == "KALICI KAYMA"]
         tek_gun = [x for x in bulunanlar if x[7] == "TEK GÜNLÜK SAPMA"]
+        dusuk = [x for x in bulunanlar if x[7] == "DÜŞÜK FİYAT"]
         kalici.sort(key=lambda x: x[3], reverse=True)      # en yeni üstte
         tek_gun.sort(key=lambda x: x[3], reverse=True)
-        siralanmis = kalici + tek_gun
+        dusuk.sort(key=lambda x: x[3], reverse=True)
+        siralanmis = kalici + tek_gun + dusuk
 
         satirlar = [["HİSSE", "ÖNCEKİ TARİH", "ÖNCEKİ FİYAT", "TARİH", "FİYAT", "ORAN", "GÜN FARKI", "TÜR", "YORUM"]]
         for ad, ot, ov, t, v, oran, gf, tur in siralanmis[:ANOMALI_MAX_SATIR]:
-            if tur == "TEK GÜNLÜK SAPMA":
+            if tur == "DÜŞÜK FİYAT":
+                yorum = "Fiyat çok düşük (<0,05 TL): yuvarlama veya fiyat adımı kaynaklı gürültü olabilir"
+            elif tur == "TEK GÜNLÜK SAPMA":
                 yorum = "Tek günlük hatalı fiyat olabilir (ertesi gün eski seviyeye dönüyor)"
             elif oran < ANOMALI_ALT:
                 yorum = "Kalıcı düşüş: düzeltilmemiş bölünme veya kaynak verisi hatası olabilir"
@@ -870,7 +877,8 @@ def anomali_motoru():
         sure = int(time.time() - baslangic)
         yil_siniri = datetime.datetime.now().year - 10
         print("=" * 70, flush=True)
-        print(f"[ANOMALİ ÖZET] Toplam: {len(bulunanlar)} | KALICI KAYMA: {len(kalici)} | TEK GÜNLÜK SAPMA: {len(tek_gun)} | Etkilenen hisse: {len(set(x[0] for x in bulunanlar))} | Süre: {sure // 60} dk {sure % 60} sn", flush=True)
+        print(f"[ANOMALİ ÖZET] Toplam: {len(bulunanlar)} | KALICI KAYMA: {len(kalici)} | TEK GÜNLÜK SAPMA: {len(tek_gun)} | DÜŞÜK FİYAT: {len(dusuk)} | Etkilenen hisse: {len(set(x[0] for x in bulunanlar))} | Süre: {sure // 60} dk {sure % 60} sn", flush=True)
+        print(f"[NORMAL FİYATLI KALICI KAYMALAR] {len(kalici)} olay, {len(set(x[0] for x in kalici))} hisse (gerçek kurumsal işlem veya kaynak hatası adayları)", flush=True)
 
         yil_sayac = {}
         for x in kalici:
