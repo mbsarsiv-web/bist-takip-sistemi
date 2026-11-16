@@ -616,13 +616,14 @@ def haftalik_motoru():
 #            hesaplandığını (tablo / İş Yatırım düzeltilmiş / İş Yatırım ham) yan yana gösterir.
 #            Başka bir platformla (ör. Finnet) çıkan farkın nedenini bulmak için kullanılır.
 # - anomali: Tüm tabloyu tarar; art arda iki günde fiyatı günlük limitin (±%10) dışında değişen
-#            noktaları (düzeltilmemiş bölünme, hatalı fiyat vb.) "Anomali Raporu" sayfasına yazar.
+#            noktaları bulur ve KALICI KAYMA (düzeltilmemiş bölünme/kaynak hatası) ile TEK GÜNLÜK SAPMA
+#            olarak ayırıp "Anomali Raporu" sayfasına yazar.
 # ======================================================================
 
 ANOMALI_ALT = 0.89                 # Önceki güne göre bu orandan düşük = şüpheli
 ANOMALI_UST = 1.12                 # Önceki güne göre bu orandan yüksek = şüpheli
 ANOMALI_MAX_GUN_FARKI = 7          # İki fiyat arası en fazla bu kadar gün ise karşılaştırılır
-ANOMALI_MAX_SATIR = 1500           # Rapor sayfasına yazılacak en fazla satır
+ANOMALI_MAX_SATIR = 6000           # Rapor sayfasına yazılacak en fazla satır
 ANOMALI_SAYFA_ADI = "Anomali Raporu"
 
 def _gun_coz(metin):
@@ -660,6 +661,23 @@ def _getiri_satiri(etiket, baz, son):
 def _fmt(v):
     return f"{v:.4f}" if v is not None else "-"
 
+def _olaylari_bul(duz, ham):
+    """Düzeltilmiş/ham fiyat oranındaki (düzeltme katsayısındaki) basamakları bulur: her basamak bir kurumsal işlemdir."""
+    ortak = sorted(d for d in duz if d in ham)
+    olaylar = []
+    onceki = None
+    for d in ortak:
+        if onceki is not None:
+            f_yeni = duz[d] / ham[d]
+            f_eski = duz[onceki] / ham[onceki]
+            ruido = 0.005 / ham[d] + 0.005 / ham[onceki]   # ham fiyat 2 ondalıklı olduğu için yuvarlama gürültüsü
+            esik = max(0.003, 2.0 * ruido)
+            oran = f_yeni / f_eski
+            if abs(oran - 1) > esik:
+                olaylar.append((d, onceki, f_eski, f_yeni, oran))
+        onceki = d
+    return olaylar
+
 def teshis_motoru(hisse_metni, bas_str, bit_str):
     try:
         bas = _gun_coz(bas_str)
@@ -667,6 +685,7 @@ def teshis_motoru(hisse_metni, bas_str, bit_str):
         hisseler = [h.strip().upper() for h in str(hisse_metni).replace(";", ",").split(",") if h.strip()]
         sheet, headers, tarih_to_row, son_satir, son_tarih_str = baglanti_ve_bilgi_getir()
         satir_tarihi = {row: datetime.datetime.strptime(t, "%d.%m.%Y").date() for t, row in tarih_to_row.items()}
+        bugun = datetime.datetime.now().date()
 
         print(f"[TEŞHİS] Tablodaki son tarih: {son_tarih_str} | Fiyat alanı: {FIYAT_ALANI} (düzeltilmiş) / {ALT_FIYAT_ALANI} (ham)", flush=True)
 
@@ -687,19 +706,12 @@ def teshis_motoru(hisse_metni, bas_str, bit_str):
                 v = saklanan_sayi(satir[0]) if satir else None
                 if v is not None: tablo[d] = v
 
-            satirlar = []
-            tamam = True
-            for a, b in [(bas - datetime.timedelta(days=25), bas + datetime.timedelta(days=7)),
-                         (bit - datetime.timedelta(days=12), bit)]:
-                parca, ok = haftalik_parca_cek(hisse, a.strftime('%d-%m-%Y'), b.strftime('%d-%m-%Y'))
-                if not ok: tamam = False
-                satirlar += parca
-            if not tamam:
+            ilk_t = min(tablo) if tablo else datetime.date(2000, 1, 4)
+            parcalar = haftalik_parcalar(min(ilk_t, bas), max(bit, bugun))
+            duz, ham = haftalik_hisse_gecmisi(hisse, parcalar)
+            if duz is None:
                 print("  İş Yatırım'dan veri alınamadı.", flush=True)
                 continue
-
-            duz = _seri_getir(satirlar, FIYAT_ALANI)
-            ham = _seri_getir(satirlar, ALT_FIYAT_ALANI)
 
             def pencere(merkez_bas, merkez_bit):
                 gunler = sorted(set(d for d in list(duz) + list(ham) + list(tablo) if merkez_bas <= d <= merkez_bit))
@@ -713,7 +725,7 @@ def teshis_motoru(hisse_metni, bas_str, bit_str):
             pencere(bit - datetime.timedelta(days=6), bit)
 
             print("\n  --- GETİRİ KARŞILAŞTIRMASI ---", flush=True)
-            print("  (A) Başlangıç günü kapanışı baz alınır  |  (B) Başlangıçtan ÖNCEKİ son kapanış baz alınır (Finnet 'Önceki Kapanış' mantığı)", flush=True)
+            print("  (A) Başlangıç günü kapanışı baz alınır  |  (B) Başlangıçtan ÖNCEKİ son kapanış baz alınır", flush=True)
             for ad, seri in [("TABLO (uygulamanın kullandığı veri)", tablo),
                              ("İŞ YATIRIM DÜZELTİLMİŞ (" + FIYAT_ALANI + ")", duz),
                              ("İŞ YATIRIM HAM (" + ALT_FIYAT_ALANI + ")", ham)]:
@@ -740,6 +752,20 @@ def teshis_motoru(hisse_metni, bas_str, bit_str):
                     kontrol.append(f"{etiket} ({d[0].strftime('%d.%m.%Y')}): tablo = İş Yatırım ({karsilik})")
             print("  Tablo / İş Yatırım uyumu: " + " | ".join(kontrol), flush=True)
 
+            # --- Kurumsal işlem (düzeltme) olayları: tüm geçmiş boyunca ---
+            olaylar = _olaylari_bul(duz, ham)
+            print(f"\n  --- İŞ YATIRIM'IN UYGULADIĞI DÜZELTME OLAYLARI (toplam {len(olaylar)}) ---", flush=True)
+            print("  'Çarpan': o tarihten ÖNCEKİ tüm fiyatlara uygulanan düzeltme çarpanı (0,75 = eski fiyatlar %25 düşürülmüş)", flush=True)
+            print(f"  {'TARİH':<12}{'ÇARPAN':>10}{'KÜMÜLATİF KATSAYI (önce → sonra)':>36}{'HAM FİYAT (önceki gün → gün)':>34}", flush=True)
+            toplam_carpan = 1.0
+            for d, onceki, f_eski, f_yeni, oran in olaylar[-60:]:
+                carpan = 1.0 / oran
+                print(f"  {d.strftime('%d.%m.%Y'):<12}{carpan:>10.4f}{f'{f_eski:.4f} -> {f_yeni:.4f}':>36}{f'{ham[onceki]:.2f} -> {ham[d]:.2f}':>34}", flush=True)
+            for d, onceki, f_eski, f_yeni, oran in olaylar:
+                toplam_carpan *= 1.0 / oran
+            if olaylar:
+                print(f"  Tüm olayların çarpımı: {toplam_carpan:.4f}", flush=True)
+
         print("=" * 100, flush=True)
     except Exception:
         print(traceback.format_exc(), flush=True)
@@ -762,7 +788,7 @@ def anomali_motoru():
             if idx == 0 or not ad: continue
             hisseler.append((ad, idx + 1))
 
-        bulunanlar = []
+        bulunanlar = []   # (hisse, onceki_t, onceki_v, t, v, oran, gun_farki, tur)
         for g in range(0, len(hisseler), HAFTALIK_OKUMA_GRUBU):
             grup = hisseler[g:g + HAFTALIK_OKUMA_GRUBU]
             c1 = min(c for _, c in grup)
@@ -782,34 +808,51 @@ def anomali_motoru():
 
             for ad, col in grup:
                 j = col - c1
-                onceki_t = None
-                onceki_v = None
+                seri = []
                 for r in range(n):
                     d = tarihler[r]
                     if d is None: continue
                     satir = blok[r] if r < len(blok) else []
                     v = saklanan_sayi(satir[j]) if j < len(satir) else None
-                    if v is None: continue
-                    if onceki_v is not None:
-                        gun_farki = (d - onceki_t).days
-                        oran = v / onceki_v
-                        if gun_farki <= ANOMALI_MAX_GUN_FARKI and (oran < ANOMALI_ALT or oran > ANOMALI_UST):
-                            bulunanlar.append((ad, onceki_t, onceki_v, d, v, oran, gun_farki))
-                    onceki_t = d
-                    onceki_v = v
+                    if v is not None: seri.append((d, v))
+
+                atla = False
+                for k in range(1, len(seri)):
+                    if atla:
+                        atla = False   # tek günlük sapmanın geri dönüşü ayrıca sayılmaz
+                        continue
+                    ot, ov = seri[k - 1]
+                    t, v = seri[k]
+                    gun_farki = (t - ot).days
+                    oran = v / ov
+                    if gun_farki <= ANOMALI_MAX_GUN_FARKI and (oran < ANOMALI_ALT or oran > ANOMALI_UST):
+                        tur = "KALICI KAYMA"
+                        if k + 1 < len(seri):
+                            t2, v2 = seri[k + 1]
+                            geri = v2 / ov
+                            if (t2 - t).days <= ANOMALI_MAX_GUN_FARKI and ANOMALI_ALT <= geri <= ANOMALI_UST:
+                                tur = "TEK GÜNLÜK SAPMA"
+                                atla = True
+                        bulunanlar.append((ad, ot, ov, t, v, oran, gun_farki, tur))
             del blok
             gc.collect()
             print(f"[ANOMALİ] {min(g + HAFTALIK_OKUMA_GRUBU, len(hisseler))}/{len(hisseler)} sütun tarandı", flush=True)
 
-        # En büyük sapma en üstte
-        import math
-        bulunanlar.sort(key=lambda x: -abs(math.log(x[5])))
-        etkilenen_hisse = len(set(x[0] for x in bulunanlar))
+        kalici = [x for x in bulunanlar if x[7] == "KALICI KAYMA"]
+        tek_gun = [x for x in bulunanlar if x[7] == "TEK GÜNLÜK SAPMA"]
+        kalici.sort(key=lambda x: x[3], reverse=True)      # en yeni üstte
+        tek_gun.sort(key=lambda x: x[3], reverse=True)
+        siralanmis = kalici + tek_gun
 
-        satirlar = [["HİSSE", "ÖNCEKİ TARİH", "ÖNCEKİ FİYAT", "TARİH", "FİYAT", "ORAN", "GÜN FARKI", "YORUM"]]
-        for ad, ot, ov, t, v, oran, gf in bulunanlar[:ANOMALI_MAX_SATIR]:
-            yorum = "Sert düşüş (bölünme düzeltmesi eksik olabilir)" if oran < ANOMALI_ALT else "Sert yükseliş (ters bölünme veya hatalı veri olabilir)"
-            satirlar.append([ad, ot.strftime("%d.%m.%Y"), round(ov, 4), t.strftime("%d.%m.%Y"), round(v, 4), round(oran, 4), gf, yorum])
+        satirlar = [["HİSSE", "ÖNCEKİ TARİH", "ÖNCEKİ FİYAT", "TARİH", "FİYAT", "ORAN", "GÜN FARKI", "TÜR", "YORUM"]]
+        for ad, ot, ov, t, v, oran, gf, tur in siralanmis[:ANOMALI_MAX_SATIR]:
+            if tur == "TEK GÜNLÜK SAPMA":
+                yorum = "Tek günlük hatalı fiyat olabilir (ertesi gün eski seviyeye dönüyor)"
+            elif oran < ANOMALI_ALT:
+                yorum = "Kalıcı düşüş: düzeltilmemiş bölünme veya kaynak verisi hatası olabilir"
+            else:
+                yorum = "Kalıcı yükseliş: ters bölünme veya kaynak verisi hatası olabilir"
+            satirlar.append([ad, ot.strftime("%d.%m.%Y"), round(ov, 4), t.strftime("%d.%m.%Y"), round(v, 4), round(oran, 4), gf, tur, yorum])
 
         try:
             ss = sheet.spreadsheet
@@ -817,19 +860,36 @@ def anomali_motoru():
                 ws = ss.worksheet(ANOMALI_SAYFA_ADI)
                 ws.clear()
             except gspread.exceptions.WorksheetNotFound:
-                ws = ss.add_worksheet(title=ANOMALI_SAYFA_ADI, rows=max(len(satirlar) + 20, 100), cols=8)
-            if ws.row_count < len(satirlar) + 5:
-                ws.resize(rows=len(satirlar) + 20, cols=8)
+                ws = ss.add_worksheet(title=ANOMALI_SAYFA_ADI, rows=max(len(satirlar) + 20, 100), cols=9)
+            if ws.row_count < len(satirlar) + 5 or ws.col_count < 9:
+                ws.resize(rows=max(ws.row_count, len(satirlar) + 20), cols=max(ws.col_count, 9))
             ws.update(values=satirlar, range_name='A1', value_input_option='RAW')
         except Exception as e:
             print(f"[!] Anomali Raporu sayfasına yazılamadı: {e}", flush=True)
 
         sure = int(time.time() - baslangic)
-        print("=" * 60, flush=True)
-        print(f"[ANOMALİ ÖZET] Şüpheli sıçrama: {len(bulunanlar)} | Etkilenen hisse: {etkilenen_hisse} | Süre: {sure // 60} dk {sure % 60} sn", flush=True)
-        for ad, ot, ov, t, v, oran, gf in bulunanlar[:15]:
+        yil_siniri = datetime.datetime.now().year - 10
+        print("=" * 70, flush=True)
+        print(f"[ANOMALİ ÖZET] Toplam: {len(bulunanlar)} | KALICI KAYMA: {len(kalici)} | TEK GÜNLÜK SAPMA: {len(tek_gun)} | Etkilenen hisse: {len(set(x[0] for x in bulunanlar))} | Süre: {sure // 60} dk {sure % 60} sn", flush=True)
+
+        yil_sayac = {}
+        for x in kalici:
+            yil_sayac[x[3].year] = yil_sayac.get(x[3].year, 0) + 1
+        print("[KALICI KAYMALARIN YILLARA DAĞILIMI] " + " | ".join(f"{y}:{yil_sayac[y]}" for y in sorted(yil_sayac)), flush=True)
+
+        son10 = [x for x in kalici if x[3].year >= yil_siniri]
+        print(f"[SON 10 YILDAKİ KALICI KAYMA] {len(son10)} olay, {len(set(x[0] for x in son10))} hisse (7-10 yıllık getirileri etkileyebilir)", flush=True)
+
+        hisse_sayac = {}
+        for x in kalici:
+            hisse_sayac[x[0]] = hisse_sayac.get(x[0], 0) + 1
+        en_cok = sorted(hisse_sayac.items(), key=lambda kv: -kv[1])[:10]
+        print("[EN ÇOK KALICI KAYMASI OLAN 10 HİSSE] " + " | ".join(f"{a}:{b}" for a, b in en_cok), flush=True)
+
+        print("[SON 10 YILDAKİ EN YENİ 15 KALICI KAYMA]", flush=True)
+        for ad, ot, ov, t, v, oran, gf, tur in son10[:15]:
             print(f"   {ad}: {ot.strftime('%d.%m.%Y')} {round(ov, 4)} -> {t.strftime('%d.%m.%Y')} {round(v, 4)} (oran {round(oran, 4)})", flush=True)
-        print("=" * 60, flush=True)
+        print("=" * 70, flush=True)
 
     except Exception:
         print(traceback.format_exc(), flush=True)
