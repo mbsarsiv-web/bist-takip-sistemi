@@ -5,7 +5,7 @@ on:
     - cron: '18 20 * * *' # Türkiye saati ile 23:18 (günlük güncelleme)
     - cron: '49 22 * * *' # Türkiye saati ile 01:49 (bakım)
     - cron: '0 1 * * 0'   # Türkiye saati ile Pazar 04:00 (haftalık geçmiş yenileme + anomali taraması)
-  workflow_dispatch: # GitHub panelinden isteğe bağlı manuel çalıştırma (sistemin çalışması için gerekmez)
+  workflow_dispatch:
     inputs:
       islem:
         description: 'Çalıştırılacak motor'
@@ -17,36 +17,7 @@ on:
           - bakim
           - haftalik
           - anomali
-          - teshis
-          - finnet
-      yontem:
-        description: 'Fiyat yöntemi (haftalık/teşhis için). varsayilan = repo değişkeni FIYAT_YONTEMI, o da yoksa ISYATIRIM'
-        required: false
-        default: 'varsayilan'
-        type: choice
-        options:
-          - varsayilan
-          - ISYATIRIM
-          - SERMAYE
-          - HIBRIT
-      hisseler:
-        description: 'Sadece teshis için: hisse kodları (virgülle ayırın)'
-        required: false
-        default: 'DOAS,AYGAZ,FROTO'
-      referanslar:
-        description: 'Sadece finnet için: KOD:FinnetGetirisi çiftleri (virgülle ayırın)'
-        required: false
-        default: 'AKSA:2904.75,FROTO:1587.29,DOAS:2972.26,ISMEN:4891.56,EGPRO:2914.88,TUPRS:2889.05'
-      bas:
-        description: 'Sadece teshis/finnet için: başlangıç tarihi (GG-AA-YYYY)'
-        required: false
-        default: '13-11-2019'
-      bit:
-        description: 'Sadece teshis/finnet için: bitiş tarihi (GG-AA-YYYY)'
-        required: false
-        default: '13-11-2026'
 
-# Aynı anda yalnızca bir görev tabloya yazar; diğeri sırada bekler (çakışma koruması)
 concurrency:
   group: bist-veritabani
   cancel-in-progress: false
@@ -59,8 +30,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 240
     env:
-      # Öncelik: elle seçilen yöntem > repo değişkeni (Settings > Secrets and variables > Actions > Variables) > ISYATIRIM
-      FIYAT_YONTEMI: ${{ (github.event.inputs.yontem != 'varsayilan' && github.event.inputs.yontem) || vars.FIYAT_YONTEMI || 'ISYATIRIM' }}
+      FIYAT_YONTEMI: ${{ vars.FIYAT_YONTEMI || 'ISYATIRIM' }}
     steps:
       - name: Kodları İndir
         uses: actions/checkout@v4
@@ -90,27 +60,11 @@ jobs:
         if: github.event.schedule == '0 1 * * 0' || (github.event_name == 'workflow_dispatch' && github.event.inputs.islem == 'haftalik')
         run: python main.py haftalik
 
-      - name: Anomali Taramasını Çalıştır (haftalık yenilemeden sonra)
+      - name: Anomali Taramasını Çalıştır
         if: ${{ !cancelled() && (github.event.schedule == '0 1 * * 0' || (github.event_name == 'workflow_dispatch' && github.event.inputs.islem == 'anomali')) }}
         run: python main.py anomali
 
-      - name: Teşhis Raporunu Çalıştır
-        if: github.event_name == 'workflow_dispatch' && github.event.inputs.islem == 'teshis'
-        env:
-          TESHIS_HISSELER: ${{ github.event.inputs.hisseler }}
-          TESHIS_BAS: ${{ github.event.inputs.bas }}
-          TESHIS_BIT: ${{ github.event.inputs.bit }}
-        run: python main.py teshis "$TESHIS_HISSELER" "$TESHIS_BAS" "$TESHIS_BIT"
-
-      - name: Finnet Karşılaştırmasını Çalıştır (yöntem seçimi için)
-        if: github.event_name == 'workflow_dispatch' && github.event.inputs.islem == 'finnet'
-        env:
-          FINNET_REFERANSLAR: ${{ github.event.inputs.referanslar }}
-          FINNET_BAS: ${{ github.event.inputs.bas }}
-          FINNET_BIT: ${{ github.event.inputs.bit }}
-        run: python main.py finnet "$FINNET_REFERANSLAR" "$FINNET_BAS" "$FINNET_BIT"
-
-      - name: Depoya Hareket Kaydı Düş (60 gün hareketsizlikte zamanlanmış görevlerin durmasını önler)
+      - name: Depoya Hareket Kaydı Düş
         if: ${{ !cancelled() && github.event.schedule == '0 1 * * 0' }}
         run: |
           date -u +"%Y-%m-%d %H:%M UTC" > son_haftalik_calisma.txt
