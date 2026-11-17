@@ -8,8 +8,7 @@
   <meta http-equiv="Expires" content="-1">
   <title>Getiri Takibi Sistemi</title>
 
-  <!-- Önbellek kırıcı: TV tarayıcıları eski sayfayı saklayabiliyor. Her açılışta adrese benzersiz bir ek yapılır,
-       böylece her zaman en güncel dosya yüklenir. -->
+  <!-- Önbellek kırıcı -->
   <script>
     (function () {
       try {
@@ -22,13 +21,11 @@
     })();
   </script>
 
-  <!-- Hızlı açılış: sunucu bağlantılarını önceden hazırla -->
   <link rel="preconnect" href="https://script.google.com">
   <link rel="preconnect" href="https://script.googleusercontent.com" crossorigin>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
-  <!-- Stiller sayfayı engellemeden yüklenir (ilk görüntü daha hızlı gelir) -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" media="print" onload="this.media='all'">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" media="print" onload="this.media='all'">
@@ -43,10 +40,9 @@
   <style>
     :root { --bg-main: #0a0e14; --bg-panel: #111820; --text-main: #E2E8F0; --gold: #FACC15; --blue-accent: #38BDF8; --green-accent: #10B981; --red-accent: #EF4444; --red-btn: #991B1B; --border-color: #2D3748; --panel-border: #1F2937; }
     
-    /* GÖVDE: Ekrana tam oturur ve taşmaları (kaydırmayı) tamamen yasaklar */
-    body { margin: 0; font-family: 'Inter', sans-serif; background-color: var(--bg-main); color: var(--text-main); display: flex; height: 100vh; height: 100dvh; overflow: hidden; }
+    /* GÖVDE: Ekrana tam oturur. Yazı tipografisinde rakamları dikeyde hizalar (tnum) */
+    body { margin: 0; font-family: 'Inter', sans-serif; background-color: var(--bg-main); color: var(--text-main); display: flex; height: 100vh; height: 100dvh; overflow: hidden; font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
     
-    /* ANA İÇERİK KUTUSU: Esnek yapıdadır. Yukarıdan aşağıya dikey hiyerarşi kurar. Taşma (kaydırma) yasaktır. */
     .main-content { flex: 1; display: flex; flex-direction: column; padding: 5px 15px; max-width: 1400px; margin: 0 auto; width: 100%; box-sizing: border-box; overflow: hidden; min-height: 0; position: relative; }
     
     .top-header { position: relative; display: flex; justify-content: flex-end; align-items: center; background-color: var(--red-btn); padding: 8px 15px; border-radius: 8px; margin-bottom: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); border: 1px solid #FCA5A5; flex-shrink: 0;}
@@ -78,21 +74,29 @@
     span.flatpickr-weekday { color: #38BDF8 !important; }
     .flatpickr-month, .flatpickr-prev-month svg, .flatpickr-next-month svg { color: #E2E8F0 !important; fill: #E2E8F0 !important; }
     
-    /* TABLO KABI: Geriye kalan tüm dikey alanı (flex: 1) alır. İçinden bir şeyin taşmasına izin vermez (overflow: hidden) */
     .table-container { flex: 1; background-color: transparent; border: none; box-shadow: none; display: block; width: 100%; overflow: hidden; position: relative; z-index: 10; min-height: 0;}
     .table-container:focus { outline: none !important; }
     
-    table { border-collapse: collapse; text-align: center; margin: 0 auto; width: 100%; background-color: var(--bg-panel); border-radius: 10px; border: 1px solid var(--panel-border); box-shadow: 0 10px 25px rgba(0,0,0,0.7);}
+    table { border-collapse: collapse; text-align: center; margin: 0 auto; width: 100%; background-color: var(--bg-panel); border-radius: 10px; border: 1px solid var(--panel-border); box-shadow: 0 10px 25px rgba(0,0,0,0.7); border-style: hidden;}
     thead { border-bottom: 3px solid #1E293B; background-color: #141b24; }
     th, td { box-sizing: border-box; vertical-align: middle; }
     th { color: var(--gold); font-weight: 900; letter-spacing: 0.5px; text-shadow: 1px 1px 2px rgba(0,0,0,0.6); }
-    td { border-bottom: 1px solid rgba(255,255,255,0.03); font-weight: 700; }
+    td { font-weight: 700; }
 
-    /* Satır yüksekliği dinamik JS tarafından hesaplanır */
     .mode-yillar td, .mode-tarih td { height: var(--satir, 40px); }
     
-    /* YILLARA GÖRE MODU SÜTUN ORANLARI VE TASARIMI (Başlıklar Düzeltildi) */
+    /* GÜNCELLENMİŞ YILLARA GÖRE MODU (Tasarım Şaheseri) */
     .mode-yillar { width: 100%; table-layout: fixed; margin: 0; }
+    
+    /* Dikey çizgiler (Hücreleri ayırır) */
+    .mode-yillar th, .mode-yillar td { border-right: 1px solid rgba(255,255,255,0.06); border-bottom: 1px solid rgba(255,255,255,0.04); }
+    .mode-yillar th:last-child, .mode-yillar td:last-child { border-right: none; }
+    
+    /* ZEBRA Deseni (Bir koyu, bir açık satır - okunabilirliği %100 artırır) */
+    .mode-yillar tbody tr:nth-child(even) td { background-color: rgba(255,255,255,0.015); }
+    .mode-yillar tbody tr:nth-child(odd) td { background-color: transparent; }
+    .mode-yillar tbody tr:hover td { background-color: rgba(255,255,255,0.06); } /* Hover deseni ezer */
+
     .mode-yillar th { 
         font-size: calc(var(--yazi, 14px) * 0.90); 
         padding: 4px 2px; 
@@ -102,21 +106,18 @@
         letter-spacing: -0.2px;
     }
     .mode-yillar td { 
-        padding: 2px 2px; 
+        padding: 2px; 
         font-size: var(--yazi, 14px); 
         white-space: nowrap;
         overflow: hidden;
+        text-overflow: clip;
     }
     
-    /* 11 Sütunun Ekrana Tam ve Orantılı Dağılımı - "SIRA" ve "VARLIK" Düzeltildi */
-    .mode-yillar th:nth-child(1), .mode-yillar td:nth-child(1) { width: 4.5%; background-color: #141b24; color: var(--gold); text-align: center; } /* SIRA Sütunu genişletildi */
+    .mode-yillar th:nth-child(1), .mode-yillar td:nth-child(1) { width: 4.5%; background-color: #141b24; color: var(--gold); text-align: center; } 
     .mode-yillar th:nth-child(2), .mode-yillar td:nth-child(2) { width: 14.5%; background-color: #141b24; text-align: left !important; padding-left: 8px !important;}
-    
-    /* Geriye kalan 9 sütun ( %81 / 9 = %9.0 ) */
     .mode-yillar th:not(:nth-child(1)):not(:nth-child(2)), 
     .mode-yillar td:not(:nth-child(1)):not(:nth-child(2)) { width: 9%; } 
 
-    /* İki Tarih Arası vb Diğer Modların Stilleri */
     .mode-tarih { width: 100%; max-width: 600px; margin: 0 auto; table-layout: fixed; }
     .mode-tarih th:nth-child(1), .mode-tarih td:nth-child(1) { width: 18%; text-align: center !important; }
     .mode-tarih th:nth-child(2), .mode-tarih td:nth-child(2) { width: 42%; text-align: left !important; padding: 2px 5px !important; padding-left: 12px !important; }
@@ -149,12 +150,14 @@
     }
     
     .sabit-varlik { font-size: var(--yazi-sec, 0.95rem) !important; letter-spacing: -0.2px;}
-    .getiri-wrapper { display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.1; width: 100%; }
+    
+    /* İÇ İÇE GEÇMEYİ ÖNLEYEN WRAPPER KORUMASI */
+    .getiri-wrapper { display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.1; width: 100%; overflow: hidden; text-overflow: clip;}
     .mode-tarih .getiri-wrapper { position: relative; align-items: center !important; flex-direction: row; display: inline-flex;}
     .mode-tarih .getiri-wrapper .kat-val { margin-top: 0; margin-left: 6px; font-size: calc(var(--yazi, 14px) * 0.7); }
     
-    .getiri-val { font-weight: 900; font-size: calc(var(--yazi, 14px) * 0.95); letter-spacing: -0.5px; }
-    .kat-val { font-size: calc(var(--yazi, 14px) * 0.62); color: var(--gold); font-weight: 800; letter-spacing: -0.5px; margin-top: 1px; }
+    .getiri-val { font-weight: 900; letter-spacing: -0.5px; width: 100%; overflow: hidden; text-overflow: clip;}
+    .kat-val { font-size: calc(var(--yazi, 14px) * 0.62); color: var(--gold); font-weight: 800; letter-spacing: -0.5px; margin-top: 1px; width: 100%; overflow: hidden; text-overflow: clip;}
     .mode-tarih .arz-val { position: absolute; left: 100%; margin-left: 8px; font-size: 0.75em; color: #FBBF24; font-weight: 700; white-space: nowrap; }
     
     .col-sira { color: var(--gold); text-align: center; font-size: calc(var(--yazi, 14px) * 0.95) !important; font-weight: 900; }
@@ -162,15 +165,13 @@
     .col-getiri { color: var(--green-accent); font-weight: 800;}
     .col-getiri.negative { color: var(--red-accent); }
     
-    tbody tr:hover td { background-color: rgba(255, 255, 255, 0.05); }
-    
     .loading-state { text-align: center; padding: 30px; color: #94A3B8; font-size: 1rem; font-weight: 600; }
     .loading-state i { color: #10B981; margin-bottom: 10px; font-size: 2rem; }
     .row-loading { opacity: 0.4; pointer-events: none; }
     .toast { position: fixed; bottom: 20px; right: 20px; background: #111820; border-left: 4px solid #10B981; color: white; padding: 15px 20px; border-radius: 6px; box-shadow: 0 10px 25px rgba(0,0,0,0.8); display: flex; align-items: center; gap: 12px; font-weight: 700; opacity: 0; transform: translateY(20px); transition: all 0.4s ease; z-index: 9999; pointer-events: none; }
     .toast.show { opacity: 1; transform: translateY(0); }
 
-    /* Aylık Sekmesi Stilleri (Bozulmadı) */
+    /* Aylık Sekmesi Stilleri */
     body.aylik-modu { display: block; height: auto; min-height: 100vh; overflow-y: auto; overflow-x: hidden; }
     body.aylik-modu .main-content { display: block; height: auto; overflow: visible; padding-top: 3px; padding-bottom: 3px; }
     body.aylik-modu #aylikContainer { overflow: visible; flex: none; border: none; box-shadow: none; background: transparent; }
@@ -266,19 +267,6 @@
       .date-controls { justify-content: space-between; padding: 6px 8px; gap: 8px; margin-bottom: 5px; }
       .date-group { flex-direction: column; width: 48%; gap: 4px; }
       .date-controls label { width: 100%; justify-content: center; font-size: 0.72rem; } .date-input { width: 100% !important; padding: 5px 4px !important; font-size: 0.85rem !important; }
-
-      .mode-tarih { max-width: 100% !important; margin: 0 auto !important; }
-      .mode-tarih th { padding: 3px 2px !important; }
-      .mode-tarih td { padding: 1px 2px !important; }
-      .mode-tarih th:nth-child(2), .mode-tarih td:nth-child(2) { padding-left: 8px !important; }
-      .mode-tarih th:nth-child(3), .mode-tarih td:nth-child(3) { padding-left: 2px !important; }
-      
-      .asset-select {
-        -webkit-appearance: none; -moz-appearance: none; appearance: none;
-        padding: 0 11px 0 4px; text-overflow: clip;
-        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='5' viewBox='0 0 8 5'><path d='M0 0l4 5 4-5z' fill='%2338BDF8'/></svg>");
-        background-repeat: no-repeat; background-position: right 3px center; background-size: 7px 5px;
-      }
     }
   </style>
 </head>
@@ -370,7 +358,7 @@
 
   <script>
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxvISjns0Zle5VYIgTLzkoJa38T7LC20bRAEW9Sm6LZYpcW61PF1pzrcgBAulDV6XNM/exec";
-    const SURUM = "S22-MUKEMMEL-HIZA";
+    const SURUM = "S23-PROFESYONEL-SIK";
 
     const TV_MU = /Web0S|webOS|NetCast|SmartTV|SMART-TV|Tizen|HbbTV|VIDAA|Viera|BRAVIA|Hisense|AndroidTV|Android TV|CrKey|AFTM|GoogleTV|LG Browser|LGE|Opera TV|OPRTV|Maple|NETTV|WebTV|Large Screen/i.test(navigator.userAgent || "") || (window.location.search.indexOf('tv=1') > -1);
     const DOKUNMATIK = ('ontouchstart' in window) || ((navigator.maxTouchPoints || 0) > 0);
@@ -402,7 +390,7 @@
 
     const SABIT_VARLIKLAR = ["DOLAR", "EURO", "GR ALTIN", "GR GÜMÜŞ", "NASDAQ", "S&P 500"];
 
-    const ONBELLEK_ANAHTARI = 'getiriTakibi_anaVeri_v6';
+    const ONBELLEK_ANAHTARI = 'getiriTakibi_anaVeri_v7';
 
     function onbellekOku() {
       try {
@@ -490,7 +478,8 @@
         document.fonts.ready.then(function() { tabloSigdir(); });
       }
     });
-
+    
+    // GÜNCELLENMİŞ Sığdırma Algoritması: Yazı boyutunu hem yüksekliğe hem de GENİŞLİĞE göre hesaplar.
     function tabloSigdir() {
       if (aktifSekme === 'aylik') return;
       
@@ -502,7 +491,6 @@
       const tv = TV_MU;
       const mobil = (!tv && window.innerWidth <= 768);
 
-      // Daha kısıtlı ve güvenli font sınırları (çakışmayı imkansız kılar)
       let oran, alt, ust;
       if (tv) { oran = 0.32; alt = 9; ust = 16; } 
       else if (mobil) { oran = 0.30; alt = 9; ust = 12.5; }
@@ -522,14 +510,24 @@
         return;
       }
 
-      // KESİN DİKEY SIĞDIRMA HESABI
       const baslikYuk = tablo.tHead.offsetHeight;
-      const kalan = kap.clientHeight - baslikYuk - bosluk - 5; 
+      const kullanılabilirYukseklik = Math.max(kap.clientHeight || window.innerHeight * 0.6, 400); 
+      const kalan = kullanılabilirYukseklik - baslikYuk - bosluk - 5; 
       
       let satir = Math.floor(kalan / veriSatir);
-      satir = Math.max(18, Math.min(satir, 55)); // 10. satır dışarı taşmasın diye alt limit çok düşürüldü
+      satir = Math.max(18, Math.min(satir, 55)); 
 
-      let yazi = Math.max(alt, Math.min(Math.round(satir * oran), ust));
+      // 1. Yüksekliğe göre font hesaplama
+      let yaziBoyutuH = Math.max(alt, Math.min(Math.round(satir * oran), ust));
+
+      // 2. YENİ: Genişliğe göre font hesaplama (Verilerin dışarı taşmasını KESİN engeller)
+      let veriSutunGenisligi = kap.clientWidth * 0.09; // %9'luk sütunun piksel genişliği
+      // 9 karakterlik bir veri bloğu (%34728,66) için tolerans hesabı
+      let yaziBoyutuW = Math.floor(veriSutunGenisligi / 5.5); 
+      
+      // Hangi sınır daha küçükse onu kullan (Dar ise küçült, basıksa küçült)
+      let yazi = Math.min(yaziBoyutuH, Math.max(alt, yaziBoyutuW));
+      
       let yaziSec = Math.max(9, yazi * 0.95);
 
       kap.style.setProperty('--satir', satir + 'px');
@@ -800,20 +798,18 @@
                       let katSayisi = (sayisalGetiri / 100) + 1;
                       let formatliKat = (katSayisi % 1 === 0) ? katSayisi : katSayisi.toFixed(1);
                       formatliKat = formatliKat.toString().replace(".", ",");
-                      katHtml = `<span class="kat-val">(${formatliKat} KAT)</span>`;
+                      katHtml = `<div class="kat-val">(${formatliKat} KAT)</div>`;
                   }
               }
 
-              let ustSatir = `<span class="getiri-val">${parts[0]}</span>`;
+              let ustSatir = `<div class="getiri-val">${parts[0]}</div>`;
               if (parts.length > 1) {
                   ustSatir += `<span class="arz-val">${parts[1]}</span>`;
               }
 
               td.innerHTML = `
                 <div class="getiri-wrapper">
-                  <div style="position:relative; display:inline-flex; align-items:center;">
-                    ${ustSatir}
-                  </div>
+                  ${ustSatir}
                   ${katHtml}
                 </div>`;
             }
