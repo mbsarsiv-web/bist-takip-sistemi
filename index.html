@@ -255,6 +255,50 @@
       .date-controls label { font-size: 0.78rem; }
     }
 
+    /* ==========================================================
+       MASAÜSTÜ / TV: İKİ TARİH ARASI - EN İYİ 10 - EN KÖTÜ 10
+       Daha geniş tablo, daha büyük yazı, sıkı ve düzenli satırlar
+       ========================================================== */
+    @media (min-width: 769px) {
+      .mode-tarih { max-width: 860px; border-radius: 12px; overflow: hidden; }
+      .mode-tarih thead { background: linear-gradient(180deg, #18212c 0%, #131a23 100%); }
+
+      .mode-tarih th:nth-child(1), .mode-tarih td:nth-child(1) { width: 14%; }
+      .mode-tarih th:nth-child(2), .mode-tarih td:nth-child(2) { width: 46%; padding: 2px 8px 2px 18px !important; }
+      .mode-tarih th:nth-child(3), .mode-tarih td:nth-child(3) { width: 40%; padding: 2px 8px !important; }
+
+      .mode-tarih th { font-size: calc(var(--yazi, 18px) * 0.82) !important; padding: 9px 6px !important; letter-spacing: 1.2px; text-transform: uppercase; }
+      .mode-tarih td { height: var(--satir, 44px); font-size: var(--yazi, 18px); padding: 2px 8px !important; border-bottom: 1px solid rgba(255,255,255,0.05); }
+
+      .mode-tarih tbody tr:nth-child(even) td { background-color: rgba(255,255,255,0.022); }
+      .mode-tarih tbody tr:hover td { background-color: rgba(56,189,248,0.07); }
+
+      /* Sabitlenmiş satır (GR ALTIN) */
+      .mode-tarih tbody tr.pin-row td { background-color: rgba(250,204,21,0.07) !important; border-top: 1px solid rgba(250,204,21,0.25); border-bottom: none; }
+
+      /* Sıra rozeti */
+      .mode-tarih .rank-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 1.75em; height: 1.75em; padding: 0 4px; box-sizing: border-box; border-radius: 999px; background: rgba(250,204,21,0.10); border: 1px solid rgba(250,204,21,0.30); font-size: 0.82em; font-weight: 900; line-height: 1; }
+      .mode-tarih .rank-badge.r1 { background: #FACC15; color: #1a1300; border-color: #FDE047; box-shadow: 0 0 10px rgba(250,204,21,0.45); }
+      .mode-tarih .rank-badge.r2 { background: #CBD5E1; color: #0f172a; border-color: #E2E8F0; }
+      .mode-tarih .rank-badge.r3 { background: #D97706; color: #1c0f00; border-color: #F59E0B; }
+
+      /* Varlık seçici */
+      .mode-tarih .select-wrapper { max-width: 320px; }
+      .mode-tarih .asset-select {
+        font-size: var(--yazi, 18px); height: calc(var(--satir, 44px) - 12px); max-width: 320px;
+        padding: 0 28px 0 14px; border-radius: 8px; letter-spacing: 0.2px; box-shadow: none;
+        -webkit-appearance: none; -moz-appearance: none; appearance: none;
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 8 5'><path d='M0 0l4 5 4-5z' fill='%2338BDF8'/></svg>");
+        background-repeat: no-repeat; background-position: right 10px center; background-size: 10px 6px;
+      }
+      .mode-tarih .sabit-varlik { font-size: var(--yazi, 18px) !important; letter-spacing: 0.3px; padding-left: 28px !important; }
+
+      /* Getiri rakamı hap tasarımı */
+      .mode-tarih .getiri-wrapper { overflow: visible; width: auto; }
+      .mode-tarih .getiri-val { display: inline-block; width: auto; min-width: 7.2em; padding: 3px 14px; border-radius: 999px; background: rgba(16,185,129,0.12); font-size: calc(var(--yazi, 18px) * 1.02); letter-spacing: 0; box-sizing: border-box; }
+      .mode-tarih .col-getiri.negative .getiri-val { background: rgba(239,68,68,0.13); }
+    }
+
     /* MOBİL İÇİN TAMAMEN SERBEST YATAY KAYDIRMA */
     @media (max-width: 768px) {
       .main-content { padding: 4px; }
@@ -385,7 +429,7 @@
 
   <script>
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxvISjns0Zle5VYIgTLzkoJa38T7LC20bRAEW9Sm6LZYpcW61PF1pzrcgBAulDV6XNM/exec";
-    const SURUM = "S26-ORTA-YOL";
+    const SURUM = "S27-TARIH-DUZEN";
 
     const TV_MU = /Web0S|webOS|NetCast|SmartTV|SMART-TV|Tizen|HbbTV|VIDAA|Viera|BRAVIA|Hisense|AndroidTV|Android TV|CrKey|AFTM|GoogleTV|LG Browser|LGE|Opera TV|OPRTV|Maple|NETTV|WebTV|Large Screen/i.test(navigator.userAgent || "") || (window.location.search.indexOf('tv=1') > -1);
     const DOKUNMATIK = ('ontouchstart' in window) || ((navigator.maxTouchPoints || 0) > 0);
@@ -542,6 +586,17 @@
       const baslikYuk = tablo.tHead.offsetHeight;
       const kullanılabilirYukseklik = Math.max(kap.clientHeight || window.innerHeight * 0.6, 400); 
       const kalan = kullanılabilirYukseklik - baslikYuk - bosluk - 5; 
+
+      // ---- İKİ TARİH ARASI / EN İYİ 10 / EN KÖTÜ 10 (masaüstü & TV) ----
+      if (aktifSekme !== 'yillar' && window.innerWidth > 768) {
+        let satirT = Math.floor(kalan / veriSatir);
+        satirT = Math.max(34, Math.min(satirT, 50));
+        let yaziT = Math.max(15, Math.min(Math.round(satirT * 0.44), 22));
+        kap.style.setProperty('--satir', satirT + 'px');
+        kap.style.setProperty('--yazi', yaziT + 'px');
+        kap.style.setProperty('--yazi-sec', yaziT + 'px');
+        return;
+      }
       
       let satir = Math.floor(kalan / veriSatir);
       satir = Math.max(18, Math.min(satir, 55)); 
@@ -756,13 +811,22 @@
         }
 
         let tr = document.createElement('tr');
+        if (visibleRowData[0] === "📌") tr.classList.add('pin-row');
 
         visibleRowData.forEach((hucreVerisi, index) => {
           let td = document.createElement('td');
 
           if (index === 0) {
             td.className = 'col-sira';
-            td.innerText = (hucreVerisi === "📌" || visibleRowData[0] === "📌") ? "📌" : i;
+            if (hucreVerisi === "📌" || visibleRowData[0] === "📌") {
+              td.innerText = "📌";
+            } else {
+              let rozet = document.createElement('span');
+              rozet.className = 'rank-badge';
+              if (aktifSekme === 'top10' && i <= 3) rozet.classList.add('r' + i);
+              rozet.textContent = i;
+              td.appendChild(rozet);
+            }
           } else if (index === 1) {
             td.className = 'col-varlik';
             if (aktifSekme === 'top10' || aktifSekme === 'bottom10' || visibleRowData[0] === "📌") {
