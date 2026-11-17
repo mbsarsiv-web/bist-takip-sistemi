@@ -398,27 +398,24 @@
   <!-- Ana betik, harici kütüphanelerden ÖNCE çalışır: veri isteği hemen başlar -->
   <script>
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxvISjns0Zle5VYIgTLzkoJa38T7LC20bRAEW9Sm6LZYpcW61PF1pzrcgBAulDV6XNM/exec";
-    const SURUM = "S14";
+    const SURUM = "S15";
 
     // Akıllı TV algılama (adres sonuna ?tv=1 eklenirse zorla TV modu açılır)
     const TV_MU = /Web0S|webOS|NetCast|SmartTV|SMART-TV|Tizen|HbbTV|VIDAA|Viera|BRAVIA|Hisense|AndroidTV|Android TV|CrKey|AFTM|GoogleTV|LG Browser|LGE|Opera TV|OPRTV|Maple|NETTV|WebTV|Large Screen/i.test(navigator.userAgent || "") || (window.location.search.indexOf('tv=1') > -1);
     const DOKUNMATIK = ('ontouchstart' in window) || ((navigator.maxTouchPoints || 0) > 0);
     if (TV_MU) document.body.classList.add('tv-modu');
 
-    // TV kaydırma yönü. Yeni versiyon (v9) ile YÖN_TERS'in varsayılan değeri "DOĞRU" olarak ayarlandı.
-    // Artık kodun kendi doğal yapısında sola gidince sol, sağa gidince sağ görünecek.
-    let YON_TERS = false; 
-    
-    // Eski önbelleklerin sistemi bozmasını önlemek için tamamen yeni bir anahtar
+    // TV Bro için varsayılanı DOĞRUDAN SİZİN İSTEDİĞİNİZ ŞEKİLDE ayarladım (true).
+    let YON_TERS = true; 
     try { 
-      let kayitli = window.localStorage.getItem('getiriTakibi_yon_v10');
-      if (kayitli === '1') { YON_TERS = true; }
+      let kayitli = window.localStorage.getItem('getiriTakibi_yon_v15');
+      if (kayitli === '0') { YON_TERS = false; } 
     } catch (e) {}
     
     function yonDegistir() {
       YON_TERS = !YON_TERS;
-      try { window.localStorage.setItem('getiriTakibi_yon_v10', YON_TERS ? '1' : '0'); } catch (e) {}
-      gosterToast(YON_TERS ? "YÖN DEĞİŞTİ: TERS" : "YÖN DEĞİŞTİ: DOĞAL", "#FACC15");
+      try { window.localStorage.setItem('getiriTakibi_yon_v15', YON_TERS ? '1' : '0'); } catch (e) {}
+      gosterToast(YON_TERS ? "YÖN: TV BRO UYUMLU (TERS)" : "YÖN: STANDART", "#FACC15");
     }
 
     let globalAssets = [];
@@ -546,7 +543,8 @@
       kap.addEventListener('scroll', kaydirDugmeleriniGuncelle);
 
       // ==============================================================
-      // KLAVYE / KUMANDA TUŞLARI İLE KAYDIRMA
+      // KLAVYE / KUMANDA TUŞLARI İLE KAYDIRMA (TV Bro Kumanda Okları İçin)
+      // ÇÖZÜM: Daha önceki sürümde YON_TERS kumanda oklarını kapsamıyordu. Düzeltildi!
       // ==============================================================
       document.addEventListener('keydown', function(e) {
         if (aktifSekme !== 'yillar') return;
@@ -563,13 +561,17 @@
 
         e.preventDefault();
         e.stopPropagation();
-        yatayKaydir(sag ? 1 : -1);
+
+        let adimYonu = sag ? 1 : -1;
+        
+        // EĞER TERS YÖN AKTİFSE, KUMANDA YÖNÜNÜ DE TERS ÇEVİR
+        if (YON_TERS) { adimYonu = -adimYonu; }
+        
+        yatayKaydir(adimYonu);
       }, true);
 
       // ==============================================================
-      // AKILLI TV - KONUM TABANLI KAYDIRMA (SİHİRLİ KUMANDA İÇİN)
-      // ÇÖZÜM: Matematiksel hesaplama tamamen YENİDEN YAZILDI. 
-      // Sola gidince sol, sağa gidince sağ olacak şekilde (normal yönde) kilitlendi.
+      // AKILLI TV - KONUM TABANLI KAYDIRMA (Sanal İmleç İçin)
       // ==============================================================
       if (TV_MU) {
         kap.addEventListener('mousemove', function(e) {
@@ -583,14 +585,9 @@
           if (ekranGenislik <= 0) return;
           
           let oran = e.clientX / ekranGenislik;
-          
-          // Uç noktalara (%10 marj) gelindiğinde tabloyu sonuna kadar dayar.
-          oran = (oran - 0.10) / 0.80;
+          oran = (oran - 0.10) / 0.80; // Uçlara %10 pay
           oran = Math.max(0, Math.min(oran, 1));
           
-          // DOĞAL YÖN: Ekranın solu (oran = 0) -> Tablonun solu (scroll = 0).
-          // Yani sola gidince 6 ay ve 1 Yıl görünecek.
-          // YON_TERS false (varsayılan) ise bu şekilde kalır. True ise tersine döner.
           let nihaiOran = YON_TERS ? (1 - oran) : oran;
           
           kap.scrollLeft = Math.round(nihaiOran * son);
@@ -600,8 +597,11 @@
           if (aktifSekme !== 'yillar') return;
           if (kap.scrollWidth <= kap.clientWidth + 1) return;
           if (kap.scrollHeight > kap.clientHeight + 2) return; 
-          const d = (Math.abs(e.deltaX) > Math.abs(e.deltaY)) ? e.deltaX : e.deltaY;
+          let d = (Math.abs(e.deltaX) > Math.abs(e.deltaY)) ? e.deltaX : e.deltaY;
           if (!d) return;
+
+          if (YON_TERS) { d = -d; }
+
           const once = kap.scrollLeft;
           kap.scrollLeft = Math.max(0, Math.min(once + d, kap.scrollWidth - kap.clientWidth));
           if (kap.scrollLeft !== once) e.preventDefault();
@@ -628,7 +628,7 @@
       }
     });
 
-    // Tabloyu tek adım sağa (+1) ya da sola (-1) kaydırır
+    // Tabloyu tek adım sağa ya da sola kaydırır
     function yatayKaydir(yon) {
       const kap = document.getElementById('tableContainer');
       if (!kap) return;
