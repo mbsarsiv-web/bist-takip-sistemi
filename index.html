@@ -296,7 +296,6 @@
         <div class="dot"></div> SON VERİ: <span style="color: #94A3B8; margin-left: 5px;" id="lastUpdateText">Yükleniyor...</span>
         <span style="color: #475569; margin: 0 8px;">|</span>
         <span style="color: #10B981;" id="assetCountText"><i class="fa-solid fa-spinner fa-spin"></i></span>
-        <span style="color: #475569; margin-left: 6px; font-size: 0.6rem;" id="surumText"></span>
       </div>
     </div>
 
@@ -390,14 +389,17 @@
 
     // ==============================================================
     // İMLEÇ YÖNÜ AYARLARI (TV / fare)
-    // Kural: TABLO İMLEÇ NEREYE GİDİYORSA ORAYA KAYAR.
-    //  - İmleç sağa giderse tablo sağa kayar (soldaki sütunlar görünür).
-    //  - İmleç sola giderse tablo sola kayar (sağdaki sütunlar görünür).
-    //  SURUKLE_YONU : tuşa basılı sürüklemede yön (-1 = tablo imleci takip eder, +1 = tersi)
-    //  KENAR_YONU   : imleç kenara gelince yön    (-1 = tablo imleç tarafına kayar, +1 = tersi)
+    //  SURUKLE_YONU : tuşa basılı sürüklemede yön (+1 / -1)
+    //  KENAR_YONU   : imleç kenara gelince yön    (+1 / -1)
+    // Kodu değiştirmeden denemek için adrese ekleyin, örnek: ?sy=-1&ky=1
+    // (sy = sürükleme yönü, ky = kenar yönü; değerler 1 veya -1)
     // ==============================================================
-    const SURUKLE_YONU = -1;
-    const KENAR_YONU = -1;
+    function yonParametresi(ad, varsayilan) {
+      const m = window.location.search.match(new RegExp('[?&]' + ad + '=(-?1)'));
+      return m ? parseInt(m[1], 10) : varsayilan;
+    }
+    const SURUKLE_YONU = yonParametresi('sy', 1);
+    const KENAR_YONU = yonParametresi('ky', -1);
 
     let globalAssets = [];
     let globalYillar = [];
@@ -465,8 +467,6 @@
 
     // Sayfa içeriği hazır olur olmaz (harici kütüphaneleri beklemeden) başlat
     function hizliBaslat() {
-      const sv = document.getElementById('surumText');
-      if (sv) sv.textContent = SURUM + (TV_MU ? " TV" : "");
       aylikSecicileriHazirla();
       aylikOnAyar(10, false);
       veriCekHizliAcilis();
@@ -553,7 +553,7 @@
       //  1) İmleç tablonun SAĞ kenarına gelince tablo sağa, SOL kenarına
       //     gelince sola kayar (kenara yaklaştıkça hızlanır).
       //  2) Tekerlek aşağı = sağa, yukarı = sola.
-      //  3) Tuşa basılı tutup sürüklerken tablo imleci takip eder (SURUKLE_YONU).
+      //  3) Tuşa basılı tutup sürüklerken yön SURUKLE_YONU ile belirlenir.
       // ==============================================================
       if (TV_MU) {
         let surukle = null;
