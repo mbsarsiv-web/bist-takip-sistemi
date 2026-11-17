@@ -40,7 +40,6 @@
   <style>
     :root { --bg-main: #0a0e14; --bg-panel: #111820; --text-main: #E2E8F0; --gold: #FACC15; --blue-accent: #38BDF8; --green-accent: #10B981; --red-accent: #EF4444; --red-btn: #991B1B; --border-color: #2D3748; --panel-border: #1F2937; }
     
-    /* GÖVDE: Ekrana tam oturur. Yazı tipografisinde rakamları dikeyde hizalar (tnum) */
     body { margin: 0; font-family: 'Inter', sans-serif; background-color: var(--bg-main); color: var(--text-main); display: flex; height: 100vh; height: 100dvh; overflow: hidden; font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
     
     .main-content { flex: 1; display: flex; flex-direction: column; padding: 5px 15px; max-width: 1400px; margin: 0 auto; width: 100%; box-sizing: border-box; overflow: hidden; min-height: 0; position: relative; }
@@ -81,32 +80,30 @@
     thead { border-bottom: 3px solid #1E293B; background-color: #141b24; }
     th, td { box-sizing: border-box; vertical-align: middle; }
     th { color: var(--gold); font-weight: 900; letter-spacing: 0.5px; text-shadow: 1px 1px 2px rgba(0,0,0,0.6); }
-    td { font-weight: 700; }
+    td { border-bottom: 1px solid rgba(255,255,255,0.03); font-weight: 700; }
 
     .mode-yillar td, .mode-tarih td { height: var(--satir, 40px); }
     
-    /* GÜNCELLENMİŞ YILLARA GÖRE MODU (Tasarım Şaheseri) */
+    /* GÜNCELLENMİŞ YILLARA GÖRE MODU (TV İÇİN TEK PARÇA - MOBİL İÇİN KAYDIRMALI) */
     .mode-yillar { width: 100%; table-layout: fixed; margin: 0; }
     
-    /* Dikey çizgiler (Hücreleri ayırır) */
     .mode-yillar th, .mode-yillar td { border-right: 1px solid rgba(255,255,255,0.06); border-bottom: 1px solid rgba(255,255,255,0.04); }
     .mode-yillar th:last-child, .mode-yillar td:last-child { border-right: none; }
     
-    /* ZEBRA Deseni (Bir koyu, bir açık satır - okunabilirliği %100 artırır) */
     .mode-yillar tbody tr:nth-child(even) td { background-color: rgba(255,255,255,0.015); }
     .mode-yillar tbody tr:nth-child(odd) td { background-color: transparent; }
-    .mode-yillar tbody tr:hover td { background-color: rgba(255,255,255,0.06); } /* Hover deseni ezer */
+    .mode-yillar tbody tr:hover td { background-color: rgba(255,255,255,0.06); } 
 
     .mode-yillar th { 
         font-size: calc(var(--yazi, 14px) * 0.90); 
-        padding: 4px 2px; 
+        padding: 4px 1px; 
         white-space: nowrap; 
         overflow: hidden; 
         text-overflow: clip;
         letter-spacing: -0.2px;
     }
     .mode-yillar td { 
-        padding: 2px; 
+        padding: 2px 1px; 
         font-size: var(--yazi, 14px); 
         white-space: nowrap;
         overflow: hidden;
@@ -133,7 +130,7 @@
         font-size: calc(var(--yazi-sec, 14px) * 0.98); 
         height: calc(var(--satir, 34px) - 6px); 
         line-height: normal; letter-spacing: -0.2px; 
-        padding: 0 18px 0 6px; 
+        padding: 0 16px 0 4px; 
         border-radius: 6px; cursor: pointer; outline: none; 
         width: 100%; min-width: 0; box-sizing: border-box; 
         text-overflow: ellipsis; overflow: hidden;
@@ -144,20 +141,20 @@
 
     .tv-modu .asset-select {
       -webkit-appearance: none; -moz-appearance: none; appearance: none;
-      padding: 0 18px 0 4px; text-overflow: ellipsis; overflow: hidden;
+      padding: 0 14px 0 2px; text-overflow: ellipsis; overflow: hidden;
       background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='5' viewBox='0 0 8 5'><path d='M0 0l4 5 4-5z' fill='%2338BDF8'/></svg>");
-      background-repeat: no-repeat; background-position: right 4px center; background-size: 7px 5px;
+      background-repeat: no-repeat; background-position: right 2px center; background-size: 7px 5px;
     }
     
     .sabit-varlik { font-size: var(--yazi-sec, 0.95rem) !important; letter-spacing: -0.2px;}
     
-    /* İÇ İÇE GEÇMEYİ ÖNLEYEN WRAPPER KORUMASI */
-    .getiri-wrapper { display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.1; width: 100%; overflow: hidden; text-overflow: clip;}
+    /* İÇ İÇE GEÇMEYİ ÖNLEYEN SIKIŞTIRILMIŞ GETİRİ TASARIMI */
+    .getiri-wrapper { display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.1; width: 100%; overflow: hidden; text-overflow: clip; padding: 0 1px;}
     .mode-tarih .getiri-wrapper { position: relative; align-items: center !important; flex-direction: row; display: inline-flex;}
     .mode-tarih .getiri-wrapper .kat-val { margin-top: 0; margin-left: 6px; font-size: calc(var(--yazi, 14px) * 0.7); }
     
-    .getiri-val { font-weight: 900; letter-spacing: -0.5px; width: 100%; overflow: hidden; text-overflow: clip;}
-    .kat-val { font-size: calc(var(--yazi, 14px) * 0.62); color: var(--gold); font-weight: 800; letter-spacing: -0.5px; margin-top: 1px; width: 100%; overflow: hidden; text-overflow: clip;}
+    .getiri-val { font-weight: 900; font-size: calc(var(--yazi, 14px) * 0.95); letter-spacing: -0.8px; width: 100%; overflow: hidden; text-overflow: clip; white-space: nowrap;}
+    .kat-val { font-size: calc(var(--yazi, 14px) * 0.60); color: var(--gold); font-weight: 800; letter-spacing: -0.5px; margin-top: 1px; width: 100%; overflow: hidden; text-overflow: clip; white-space: nowrap;}
     .mode-tarih .arz-val { position: absolute; left: 100%; margin-left: 8px; font-size: 0.75em; color: #FBBF24; font-weight: 700; white-space: nowrap; }
     
     .col-sira { color: var(--gold); text-align: center; font-size: calc(var(--yazi, 14px) * 0.95) !important; font-weight: 900; }
@@ -256,6 +253,7 @@
       .date-controls label { font-size: 0.78rem; }
     }
 
+    /* MOBİL İÇİN ÖZGÜRLÜK (TAMAMEN SERBEST YATAY KAYDIRMA) */
     @media (max-width: 768px) {
       .main-content { padding: 4px; }
       .top-header { flex-direction: row; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 6px; padding: 6px 8px; margin-bottom: 6px; }
@@ -267,6 +265,33 @@
       .date-controls { justify-content: space-between; padding: 6px 8px; gap: 8px; margin-bottom: 5px; }
       .date-group { flex-direction: column; width: 48%; gap: 4px; }
       .date-controls label { width: 100%; justify-content: center; font-size: 0.72rem; } .date-input { width: 100% !important; padding: 5px 4px !important; font-size: 0.85rem !important; }
+
+      /* Mobil Tabloyu Taşırma ve Sabitleme (Sticky) */
+      .table-container { overflow-x: auto !important; overflow-y: auto !important; }
+      .mode-yillar { width: max-content !important; table-layout: auto !important; margin: 0; }
+      .mode-yillar th, .mode-yillar td { white-space: nowrap !important; }
+      
+      .mode-yillar th:nth-child(1), .mode-yillar td:nth-child(1) { position: sticky; left: 0; z-index: 5; width: 35px !important; min-width: 35px !important; }
+      .mode-yillar th:nth-child(2), .mode-yillar td:nth-child(2) { position: sticky; left: 35px; z-index: 5; width: 95px !important; min-width: 95px !important; }
+      
+      .mode-yillar th:not(:nth-child(1)):not(:nth-child(2)), 
+      .mode-yillar td:not(:nth-child(1)):not(:nth-child(2)) { width: auto !important; min-width: 80px !important; padding: 4px 8px !important; }
+      
+      .getiri-val { font-size: 0.95rem !important; letter-spacing: -0.5px; }
+      .kat-val { font-size: 0.65rem !important; }
+
+      .mode-tarih { max-width: 100% !important; margin: 0 auto !important; }
+      .mode-tarih th { padding: 3px 2px !important; }
+      .mode-tarih td { padding: 1px 2px !important; }
+      .mode-tarih th:nth-child(2), .mode-tarih td:nth-child(2) { padding-left: 8px !important; }
+      .mode-tarih th:nth-child(3), .mode-tarih td:nth-child(3) { padding-left: 2px !important; }
+      
+      .asset-select {
+        -webkit-appearance: none; -moz-appearance: none; appearance: none;
+        padding: 0 16px 0 4px; text-overflow: clip;
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='5' viewBox='0 0 8 5'><path d='M0 0l4 5 4-5z' fill='%2338BDF8'/></svg>");
+        background-repeat: no-repeat; background-position: right 3px center; background-size: 7px 5px;
+      }
     }
   </style>
 </head>
@@ -358,7 +383,7 @@
 
   <script>
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxvISjns0Zle5VYIgTLzkoJa38T7LC20bRAEW9Sm6LZYpcW61PF1pzrcgBAulDV6XNM/exec";
-    const SURUM = "S23-PROFESYONEL-SIK";
+    const SURUM = "S24-TAM-ÇÖZÜM";
 
     const TV_MU = /Web0S|webOS|NetCast|SmartTV|SMART-TV|Tizen|HbbTV|VIDAA|Viera|BRAVIA|Hisense|AndroidTV|Android TV|CrKey|AFTM|GoogleTV|LG Browser|LGE|Opera TV|OPRTV|Maple|NETTV|WebTV|Large Screen/i.test(navigator.userAgent || "") || (window.location.search.indexOf('tv=1') > -1);
     const DOKUNMATIK = ('ontouchstart' in window) || ((navigator.maxTouchPoints || 0) > 0);
@@ -390,7 +415,7 @@
 
     const SABIT_VARLIKLAR = ["DOLAR", "EURO", "GR ALTIN", "GR GÜMÜŞ", "NASDAQ", "S&P 500"];
 
-    const ONBELLEK_ANAHTARI = 'getiriTakibi_anaVeri_v7';
+    const ONBELLEK_ANAHTARI = 'getiriTakibi_anaVeri_v8';
 
     function onbellekOku() {
       try {
@@ -479,7 +504,6 @@
       }
     });
     
-    // GÜNCELLENMİŞ Sığdırma Algoritması: Yazı boyutunu hem yüksekliğe hem de GENİŞLİĞE göre hesaplar.
     function tabloSigdir() {
       if (aktifSekme === 'aylik') return;
       
@@ -517,17 +541,20 @@
       let satir = Math.floor(kalan / veriSatir);
       satir = Math.max(18, Math.min(satir, 55)); 
 
-      // 1. Yüksekliğe göre font hesaplama
-      let yaziBoyutuH = Math.max(alt, Math.min(Math.round(satir * oran), ust));
+      let yazi = 14;
 
-      // 2. YENİ: Genişliğe göre font hesaplama (Verilerin dışarı taşmasını KESİN engeller)
-      let veriSutunGenisligi = kap.clientWidth * 0.09; // %9'luk sütunun piksel genişliği
-      // 9 karakterlik bir veri bloğu (%34728,66) için tolerans hesabı
-      let yaziBoyutuW = Math.floor(veriSutunGenisligi / 5.5); 
-      
-      // Hangi sınır daha küçükse onu kullan (Dar ise küçült, basıksa küçült)
-      let yazi = Math.min(yaziBoyutuH, Math.max(alt, yaziBoyutuW));
-      
+      if (mobil) {
+          // Mobil dikeyde serbest olduğu için sadece satır yüksekliğine göre font verilir. Genişlik zorlanmaz.
+          yazi = Math.max(11, Math.min(Math.round(satir * 0.35), 15));
+      } else {
+          // TV ve Masaüstü: Hem dikey yüksekliğe hem de HÜCRE GENİŞLİĞİNE göre font hesaplanır (Taşmayı önler)
+          let yaziBoyutuH = Math.max(alt, Math.min(Math.round(satir * oran), ust));
+          let veriSutunGenisligi = kap.clientWidth * 0.09; 
+          let yaziBoyutuW = Math.floor(veriSutunGenisligi / 6.8); // Çok daha katı bir sığdırma çarpanı
+          
+          yazi = Math.min(yaziBoyutuH, Math.max(alt, yaziBoyutuW));
+      }
+
       let yaziSec = Math.max(9, yazi * 0.95);
 
       kap.style.setProperty('--satir', satir + 'px');
@@ -708,7 +735,7 @@
 
       for (let i = 1; i < data.length; i++) {
         let rowData = data[i];
-        let visibleRowData = rowData.slice(0, 11); // Tek parçada da 11 sütun limit
+        let visibleRowData = rowData.slice(0, 11);
 
         if (visibleRowData[0] === "📌") {
           let spacerTr = document.createElement('tr');
