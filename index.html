@@ -8,8 +8,6 @@
   <meta http-equiv="Expires" content="-1">
   <title>Getiri Takibi Sistemi</title>
 
-  <!-- Önbellek kırıcı: TV tarayıcıları eski sayfayı saklayabiliyor. Her açılışta adrese benzersiz bir ek yapılır,
-       böylece her zaman en güncel dosya yüklenir. -->
   <script>
     (function () {
       try {
@@ -22,13 +20,11 @@
     })();
   </script>
 
-  <!-- Hızlı açılış: sunucu bağlantılarını önceden hazırla -->
   <link rel="preconnect" href="https://script.google.com">
   <link rel="preconnect" href="https://script.googleusercontent.com" crossorigin>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
-  <!-- Stiller sayfayı engellemeden yüklenir (ilk görüntü daha hızlı gelir) -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" media="print" onload="this.media='all'">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" media="print" onload="this.media='all'">
@@ -43,7 +39,9 @@
   <style>
     :root { --bg-main: #0a0e14; --bg-panel: #111820; --text-main: #E2E8F0; --gold: #FACC15; --blue-accent: #38BDF8; --green-accent: #10B981; --red-accent: #EF4444; --red-btn: #991B1B; --border-color: #2D3748; --panel-border: #1F2937; }
     body { margin: 0; font-family: 'Inter', sans-serif; background-color: var(--bg-main); color: var(--text-main); display: flex; height: 100vh; height: 100dvh; overflow: hidden; }
-    .main-content { flex: 1; display: flex; flex-direction: column; padding: 5px 15px; max-width: 1400px; margin: 0 auto; width: 100%; box-sizing: border-box; overflow: hidden; min-height: 0; position: relative; }
+    
+    /* YENİ: main-content artık taşmaya izin veriyor ki liste dikeyde (aşağı doğru) inebilsin */
+    .main-content { flex: 1; display: block; overflow-y: auto; overflow-x: hidden; padding: 5px 15px; max-width: 1400px; margin: 0 auto; width: 100%; box-sizing: border-box; }
     
     .top-header { position: relative; display: flex; justify-content: flex-end; align-items: center; background-color: var(--red-btn); padding: 8px 15px; border-radius: 8px; margin-bottom: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); border: 1px solid #FCA5A5; flex-shrink: 0;}
     .header-title { position: absolute; left: 50%; transform: translateX(-50%); font-size: 1.25rem; font-weight: 900; margin: 0; letter-spacing: 1px; color: white; white-space: nowrap; z-index: 1;}
@@ -74,28 +72,38 @@
     span.flatpickr-weekday { color: #38BDF8 !important; }
     .flatpickr-month, .flatpickr-prev-month svg, .flatpickr-next-month svg { color: #E2E8F0 !important; fill: #E2E8F0 !important; }
     
-    .table-container { background-color: var(--bg-panel); border-radius: 10px; border: 1px solid var(--panel-border); box-shadow: 0 10px 20px rgba(0,0,0,0.5); flex: 1; min-height: 0; display: block; width: 100%; overflow-x: auto; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; direction: ltr; position: relative; z-index: 10;}
+    /* YENİ: table-container yatay kaydırmayı yasaklıyor. */
+    .table-container { background-color: transparent; border-radius: 10px; border: none; box-shadow: none; display: block; width: 100%; overflow: visible;}
     .table-container:focus { outline: none !important; }
     
-    table { border-collapse: collapse; text-align: center; margin: 0; width: max-content;}
+    /* YENİ: Tabloyu tam genişliğe yayıyoruz. Sütunlar ekranı eşit bölecek. */
+    table { border-collapse: collapse; text-align: center; margin: 0 auto; width: 100%; background-color: var(--bg-panel); border-radius: 10px; border: 1px solid var(--panel-border); box-shadow: 0 10px 20px rgba(0,0,0,0.5);}
     thead { border-bottom: 2px solid var(--panel-border); background-color: #141b24; }
     th, td { box-sizing: border-box; vertical-align: middle; }
     th { color: var(--gold); font-weight: 900; letter-spacing: 0.5px; }
     td { border-bottom: 1px solid rgba(255,255,255,0.03); font-weight: 700; }
 
-    /* Satır yüksekliği ve yazı boyutları JS (tabloSigdir) tarafından ekrana göre hesaplanır */
-    .mode-yillar td, .mode-tarih td { height: var(--satir, auto); }
+    /* Yıllara Göre Yeni Tek Parça Görünümü */
+    .mode-yillar { width: 100%; table-layout: fixed; margin-bottom: 20px; }
+    .mode-yillar th { font-size: calc(var(--yazi, 15px) * 0.95); padding: 6px; white-space: normal; word-wrap: break-word; }
+    .mode-yillar td { padding: 4px 6px; font-size: var(--yazi, 14px); height: var(--satir, 40px); }
     
-    .mode-yillar { width: max-content; margin: 0; }
-    .mode-yillar th { font-size: calc(var(--yazi, 17px) * 0.95); padding: 4px 6px; white-space: nowrap; min-width: 100px; }
-    .mode-yillar td { padding: 2px 6px; white-space: nowrap; min-width: 100px; }
-    .mode-tarih { width: 100%; max-width: 480px; margin: 0 auto; table-layout: fixed; }
+    /* SIRA ve VARLIK Sütunlarını Sabitleme (Sticky) Artık Gerekmiyor Çünkü Yatay Kaydırma Yok. 
+       Yine de görsel vurgu için arka planı koruduk. */
+    .mode-yillar th:nth-child(1), .mode-yillar td:nth-child(1) { width: 5%; background-color: #141b24; color: var(--gold); }
+    .mode-yillar th:nth-child(2), .mode-yillar td:nth-child(2) { width: 15%; background-color: #141b24; text-align: left !important; padding-left: 10px !important;}
     
+    /* Diğer Sütunların Genişliğini Eşitle */
+    .mode-yillar th:not(:nth-child(1)):not(:nth-child(2)), 
+    .mode-yillar td:not(:nth-child(1)):not(:nth-child(2)) { width: calc(80% / 9); } 
+
+    /* İki Tarih Arası ve Diğer Modların Stilleri Korundu */
+    .mode-tarih { width: 100%; max-width: 600px; margin: 0 auto; table-layout: fixed; }
     .mode-tarih th:nth-child(1), .mode-tarih td:nth-child(1) { width: 18%; text-align: center !important; }
     .mode-tarih th:nth-child(2), .mode-tarih td:nth-child(2) { width: 42%; text-align: left !important; padding: 2px 5px !important; padding-left: 12px !important; }
     .mode-tarih th:nth-child(3), .mode-tarih td:nth-child(3) { width: 40%; text-align: center !important; padding: 2px 5px !important; }
-    .mode-tarih th { font-size: calc(var(--yazi, 17px) * 1.0); padding: 3px 4px !important; letter-spacing: 0; white-space: nowrap; overflow: visible; text-overflow: clip; }
-    .mode-tarih td { font-size: var(--yazi, 1.0rem); padding: 1px 4px !important; white-space: nowrap; }
+    .mode-tarih th { font-size: calc(var(--yazi, 17px) * 1.0); padding: 5px !important; letter-spacing: 0; }
+    .mode-tarih td { font-size: var(--yazi, 1.0rem); padding: 3px 5px !important; height: var(--satir, 45px); }
     
     .select-wrapper { display: inline-flex; align-items: center; justify-content: flex-start !important; gap: 6px; width: 100%; margin: 0; }
     
@@ -103,7 +111,6 @@
     .asset-select:hover { background-color: #1a222d; }
     .asset-select option, .asset-select optgroup { background-color: var(--bg-panel); color: white; }
 
-    /* TV ve mobilde varlık kutusu: yatayda dar, ok küçük, isim her zaman tam görünür */
     .tv-modu .asset-select {
       -webkit-appearance: none; -moz-appearance: none; appearance: none;
       padding: 0 12px 0 5px; text-overflow: clip; overflow: visible;
@@ -112,42 +119,25 @@
     }
     
     .sabit-varlik { font-size: var(--yazi-sec, 0.95rem) !important; }
-    .getiri-wrapper { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.0; width: 100%; }
+    .getiri-wrapper { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.1; width: 100%; }
     .mode-tarih .getiri-wrapper { position: relative; align-items: center !important; }
-    .kat-val { font-size: calc(var(--yazi, 16px) * 0.62); color: var(--gold); font-weight: 900; margin-top: 1px; letter-spacing: 0px; }
-    .getiri-val { font-weight: 900; font-size: var(--yazi, 1rem); }
+    .kat-val { font-size: calc(var(--yazi, 14px) * 0.7); color: var(--gold); font-weight: 900; margin-top: 2px; }
+    .getiri-val { font-weight: 900; }
     .mode-tarih .arz-val { position: absolute; left: 100%; margin-left: 8px; font-size: 0.75em; color: #FBBF24; font-weight: 700; white-space: nowrap; }
     
-    .col-sira { color: var(--gold); text-align: center; font-size: var(--yazi, 1.05rem) !important; font-weight: 900; white-space: nowrap; overflow: visible !important; text-overflow: clip !important; }
-    th.col-sira { font-size: calc(var(--yazi, 17px) * 0.95) !important; min-width: 0; }
-    .col-varlik { text-align: left !important; padding-left: 20px !important; white-space: nowrap; overflow: hidden; }
+    .col-sira { color: var(--gold); text-align: center; font-size: var(--yazi, 1.05rem) !important; font-weight: 900; }
+    .col-varlik { text-align: left !important; padding-left: 10px !important; overflow: hidden; }
     .col-getiri { color: var(--green-accent); font-weight: 800;}
     .col-getiri.negative { color: var(--red-accent); }
     
-    .mode-yillar th:nth-child(1), .mode-yillar td:nth-child(1) { position: sticky; left: 0; z-index: 2; background-color: var(--bg-panel); width: 60px; min-width: 60px; }
-    .mode-yillar th:nth-child(2), .mode-yillar td:nth-child(2) { position: sticky; left: 60px; z-index: 2; background-color: var(--bg-panel); box-shadow: 2px 0 8px rgba(0,0,0,0.3); width: 170px; min-width: 170px; }
-    .mode-yillar td.col-varlik { padding: 2px 6px !important; }
-    .mode-yillar th.col-varlik { padding-left: 12px !important; }
-    .mode-yillar th:nth-child(1), .mode-yillar th:nth-child(2) { background-color: #141b24; }
     tbody tr:hover td { background-color: rgba(255, 255, 255, 0.05); }
-    .mode-yillar tbody tr:hover td:nth-child(1), .mode-yillar tbody tr:hover td:nth-child(2) { background-color: #1a222d; }
 
-    /* AKILLI TV (webOS, Tizen vb.) görünümü: daha dar sütunlar, kumanda ile yatay kaydırma */
-    .tv-modu .mode-yillar th, .tv-modu .mode-yillar td { min-width: 86px; }
-    .tv-modu .mode-yillar th { padding: 3px 4px; }
-    .tv-modu .mode-yillar td { padding: 2px 4px; }
-    .tv-modu .mode-yillar th:nth-child(1), .tv-modu .mode-yillar td:nth-child(1) { width: 46px; min-width: 46px; padding: 2px 2px; }
-    .tv-modu .mode-yillar th:nth-child(2), .tv-modu .mode-yillar td:nth-child(2) { left: 46px; width: 100px; min-width: 100px; }
-    .tv-modu .mode-yillar td.col-varlik { padding: 2px 3px !important; }
-    .tv-modu .mode-yillar th.col-varlik { padding-left: 6px !important; }
-    
-    .tv-modu #tableContainer { touch-action: auto; -webkit-user-select: auto; user-select: auto; }
-
-    /* Orijinal ufak yan butonlar (Mobil ve faresi olmayan cihazlar için) */
-    .kaydir-btn { display: none; position: fixed; top: 50%; margin-top: -24px; width: 48px; height: 48px; border-radius: 50%; background: rgba(153, 27, 27, 0.9); border: 2px solid #F87171; color: #fff; font-family: 'Inter', Arial, sans-serif; font-size: 26px; font-weight: 900; line-height: 1; padding: 0; cursor: pointer; z-index: 60; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.6); }
-    .kaydir-sol { left: 8px; }
-    .kaydir-sag { right: 8px; }
-    body.yillar-kaydir .kaydir-btn { display: flex; }
+    /* TV ve küçük ekranlar için ince ayarlar */
+    .tv-modu .mode-yillar th { font-size: calc(var(--yazi, 14px) * 0.85); padding: 4px; }
+    .tv-modu .mode-yillar td { font-size: calc(var(--yazi, 14px) * 0.9); padding: 3px; }
+    .tv-modu .mode-yillar th:nth-child(1), .tv-modu .mode-yillar td:nth-child(1) { width: 4%; }
+    .tv-modu .mode-yillar th:nth-child(2), .tv-modu .mode-yillar td:nth-child(2) { width: 12%; }
+    .tv-modu .kat-val { font-size: calc(var(--yazi, 12px) * 0.65); }
     
     .loading-state { text-align: center; padding: 30px; color: #94A3B8; font-size: 1rem; font-weight: 600; }
     .loading-state i { color: #10B981; margin-bottom: 10px; font-size: 2rem; }
@@ -226,7 +216,6 @@
 
     @media (max-height: 720px) {
       .top-header { padding: 4px 10px; margin-bottom: 5px; } .header-title { font-size: 1.1rem; } .tab-buttons { margin-bottom: 5px; } .tab-btn { padding: 4px 6px; font-size: 0.8rem; }
-      .table-container { box-shadow: none; }
       .date-controls { padding: 5px 14px; margin-bottom: 5px; }
       .date-input { padding: 3px 8px !important; font-size: 0.9rem !important; }
       .date-controls label { font-size: 0.85rem; }
@@ -252,20 +241,12 @@
       .date-group { flex-direction: column; width: 48%; gap: 4px; }
       .date-controls label { width: 100%; justify-content: center; font-size: 0.72rem; } .date-input { width: 100% !important; padding: 5px 4px !important; font-size: 0.85rem !important; }
 
-      .mode-yillar { width: max-content; margin: 0; }
-      .mode-yillar th { padding: 3px 4px; min-width: 80px; }
-      .mode-yillar td { padding: 2px 4px; min-width: 80px; }
-      .col-varlik { padding-left: 8px !important; }
-      .mode-yillar th:nth-child(1), .mode-yillar td:nth-child(1) { width: 34px; min-width: 34px; padding: 2px 1px; }
-      .mode-yillar th:nth-child(2), .mode-yillar td:nth-child(2) { left: 34px; width: 92px; min-width: 92px; }
-      .mode-yillar td.col-varlik { padding: 2px 2px !important; }
-      .mode-yillar th.col-varlik { padding-left: 6px !important; }
-
       .mode-tarih { max-width: 100% !important; margin: 0 auto !important; }
       .mode-tarih th { padding: 3px 2px !important; }
       .mode-tarih td { padding: 1px 2px !important; }
       .mode-tarih th:nth-child(2), .mode-tarih td:nth-child(2) { padding-left: 8px !important; }
       .mode-tarih th:nth-child(3), .mode-tarih td:nth-child(3) { padding-left: 2px !important; }
+      
       .asset-select {
         -webkit-appearance: none; -moz-appearance: none; appearance: none;
         padding: 0 11px 0 4px; text-overflow: clip;
@@ -356,10 +337,6 @@
     </div>
   </main>
 
-  <!-- Orijinal kenar ok butonları -->
-  <button type="button" id="kaydirSol" class="kaydir-btn kaydir-sol" onclick="yatayKaydir(-1)" aria-label="Sola kaydır">&lt;</button>
-  <button type="button" id="kaydirSag" class="kaydir-btn kaydir-sag" onclick="yatayKaydir(1)" aria-label="Sağa kaydır">&gt;</button>
-
   <div id="toastNotification" class="toast">
     <i class="fa-solid fa-circle-info" style="color: #38BDF8; font-size: 1.2rem;"></i>
     <span id="toastMessage">Bildirim mesajı</span>
@@ -367,7 +344,7 @@
 
   <script>
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxvISjns0Zle5VYIgTLzkoJa38T7LC20bRAEW9Sm6LZYpcW61PF1pzrcgBAulDV6XNM/exec";
-    const SURUM = "S18-KESİN";
+    const SURUM = "S19-TEKPARCA";
 
     const TV_MU = /Web0S|webOS|NetCast|SmartTV|SMART-TV|Tizen|HbbTV|VIDAA|Viera|BRAVIA|Hisense|AndroidTV|Android TV|CrKey|AFTM|GoogleTV|LG Browser|LGE|Opera TV|OPRTV|Maple|NETTV|WebTV|Large Screen/i.test(navigator.userAgent || "") || (window.location.search.indexOf('tv=1') > -1);
     const DOKUNMATIK = ('ontouchstart' in window) || ((navigator.maxTouchPoints || 0) > 0);
@@ -399,7 +376,7 @@
 
     const SABIT_VARLIKLAR = ["DOLAR", "EURO", "GR ALTIN", "GR GÜMÜŞ", "NASDAQ", "S&P 500"];
 
-    const ONBELLEK_ANAHTARI = 'getiriTakibi_anaVeri_v3';
+    const ONBELLEK_ANAHTARI = 'getiriTakibi_anaVeri_v4';
 
     function onbellekOku() {
       try {
@@ -480,150 +457,37 @@
       });
 
       window.addEventListener('resize', aylikSigdir);
-      window.addEventListener('resize', tabloHizaDuzenle);
       window.addEventListener('resize', tabloSigdir);
-      window.addEventListener('orientationchange', function() { setTimeout(tabloSigdir, 200); setTimeout(tabloHizaDuzenle, 200); });
-      window.addEventListener('load', function() { setTimeout(aylikSigdir, 100); setTimeout(tabloHizaDuzenle, 100); setTimeout(tabloSigdir, 100); setTimeout(tabloSigdir, 600); });
+      window.addEventListener('orientationchange', function() { setTimeout(tabloSigdir, 200); });
+      window.addEventListener('load', function() { setTimeout(aylikSigdir, 100); setTimeout(tabloSigdir, 100); setTimeout(tabloSigdir, 600); });
       if (document.fonts && document.fonts.ready) {
-        document.fonts.ready.then(function() { tabloSigdir(); tabloHizaDuzenle(); });
-      }
-
-      const kap = document.getElementById('tableContainer');
-      kap.addEventListener('scroll', kaydirDugmeleriniGuncelle);
-
-      document.addEventListener('keydown', function(e) {
-        if (aktifSekme !== 'yillar') return;
-        const kod = e.keyCode || e.which;
-        const sag = (e.key === 'ArrowRight' || e.key === 'Right' || kod === 39);
-        const sol = (e.key === 'ArrowLeft' || e.key === 'Left' || kod === 37);
-        if (!sag && !sol) return;
-
-        const hedef = e.target;
-        if (hedef && hedef.tagName === 'INPUT') return;
-
-        if (!kap || kap.scrollWidth <= kap.clientWidth + 1) return;
-        e.preventDefault();
-        e.stopPropagation();
-
-        // KESİN ÇÖZÜM: Yön değişkenleri vb hiçbir şeye bakmaksızın doğrudan matematiksel eşleşme
-        let adimYonu = sag ? 1 : -1;
-        yatayKaydir(adimYonu);
-      }, true);
-
-      if (TV_MU) {
-        kap.addEventListener('mousemove', function(e) {
-          if (aktifSekme !== 'yillar') return;
-          const son = kap.scrollWidth - kap.clientWidth;
-          if (son <= 1) return;
-          const t = e.target;
-          if (t && t.closest && t.closest('select, option, button')) return;
-          
-          let ekranGenislik = window.innerWidth || document.documentElement.clientWidth;
-          if (ekranGenislik <= 0) return;
-          
-          // KESİN ÇÖZÜM: Yön değiştiren hiçbir mantık YOK. 
-          // Sola hareket 0'a (6 Ay), sağa hareket sona (15/20 Yıl) gider.
-          let oran = e.clientX / ekranGenislik;
-          oran = (oran - 0.10) / 0.80; // Uçlara %10 pay
-          oran = Math.max(0, Math.min(oran, 1));
-          
-          kap.scrollLeft = Math.round(oran * son);
-        });
-
-        kap.addEventListener('wheel', function(e) {
-          if (aktifSekme !== 'yillar') return;
-          if (kap.scrollWidth <= kap.clientWidth + 1) return;
-          if (kap.scrollHeight > kap.clientHeight + 2) return; 
-          let d = (Math.abs(e.deltaX) > Math.abs(e.deltaY)) ? e.deltaX : e.deltaY;
-          if (!d) return;
-
-          const once = kap.scrollLeft;
-          kap.scrollLeft = Math.max(0, Math.min(once + d, kap.scrollWidth - kap.clientWidth));
-          if (kap.scrollLeft !== once) e.preventDefault();
-        }, { passive: false });
+        document.fonts.ready.then(function() { tabloSigdir(); });
       }
     });
 
-    function yatayKaydir(yon) {
-      const kap = document.getElementById('tableContainer');
-      if (!kap) return;
-      const adim = Math.max(120, Math.round(kap.clientWidth * 0.35));
-      const yeni = kap.scrollLeft + (yon * adim);
-      kap.scrollLeft = Math.max(0, Math.min(yeni, kap.scrollWidth - kap.clientWidth));
-    }
-
-    function kaydirDugmeleriniGuncelle() {
-      const kap = document.getElementById('tableContainer');
-      const goster = !!((TV_MU || !DOKUNMATIK) && aktifSekme === 'yillar' && kap && kap.scrollWidth > kap.clientWidth + 1);
-      document.body.classList.toggle('yillar-kaydir', goster);
-      if (!goster) return;
-      const sol = document.getElementById('kaydirSol');
-      const sag = document.getElementById('kaydirSag');
-      if (sol) sol.style.opacity = (kap.scrollLeft <= 1) ? '0.3' : '0.95';
-      if (sag) sag.style.opacity = (kap.scrollLeft >= kap.scrollWidth - kap.clientWidth - 1) ? '0.3' : '0.95';
-    }
-
-    function tabloHizaDuzenle() {
-      const tablo = document.getElementById('dataTable');
-      const kap = document.getElementById('tableContainer');
-      if (!tablo || !kap) return;
-      if (aktifSekme !== 'yillar') {
-        tablo.style.marginLeft = '';
-        tablo.style.marginRight = '';
-        kaydirDugmeleriniGuncelle();
-        return;
-      }
-      if (tablo.offsetWidth < kap.clientWidth) {
-        tablo.style.marginLeft = 'auto';
-        tablo.style.marginRight = 'auto';
-      } else {
-        tablo.style.marginLeft = '0';
-        tablo.style.marginRight = '0';
-      }
-      kaydirDugmeleriniGuncelle();
-    }
-
+    // Yatay kaydırma özellikleri KALDIRILDI! Artık tablo tek parça dikey listeleniyor.
+    
     function tabloSigdir() {
       if (aktifSekme === 'aylik') return;
-      const kap = document.getElementById('tableContainer');
+      
       const tablo = document.getElementById('dataTable');
       const govde = document.getElementById('tableBody');
-      if (!kap || !tablo || !govde || !tablo.tHead) return;
-      if (kap.clientHeight < 60) return;
-
-      let veriSatir = 0;
-      let bosluk = 0;
-      for (let i = 0; i < govde.rows.length; i++) {
-        const td = govde.rows[i].cells[0];
-        if (td && td.style && td.style.height === '10px') { bosluk += 10; } else { veriSatir++; }
-      }
-
-      if (veriSatir < 3) {
-        kap.style.removeProperty('--satir');
-        kap.style.removeProperty('--yazi');
-        kap.style.removeProperty('--yazi-sec');
-        return;
-      }
-
+      if (!tablo || !govde || !tablo.tHead) return;
+      
+      // Tek parça yapıda "ekrana sığdırma" zorlaması yok. Tablo içeriğine göre aşağı doğru uzayacak.
       const tv = TV_MU;
       const mobil = (!tv && window.innerWidth <= 768);
 
-      const baslikYuk = tablo.tHead.offsetHeight;
-      const kalan = kap.clientHeight - baslikYuk - bosluk - 6;
-      let satir = Math.floor(kalan / veriSatir);
-      satir = Math.max(22, Math.min(satir, mobil ? 44 : 50));
+      let satir = tv ? 36 : (mobil ? 32 : 45);
+      let yazi = tv ? 14 : (mobil ? 12 : 16);
+      let yaziSec = mobil ? 11 : (tv ? 13 : 15);
 
-      let oran, alt, ust;
-      if (tv) { oran = 0.30; alt = 10; ust = 15; }
-      else if (mobil) { oran = 0.31; alt = 10; ust = 13; }
-      else { oran = 0.40; alt = 12; ust = 19; }
-
-      const yazi = Math.max(alt, Math.min(Math.round(satir * oran), ust));
-      const yaziSec = mobil ? Math.max(10, yazi - 1) : yazi;
-
-      kap.style.setProperty('--satir', satir + 'px');
-      kap.style.setProperty('--yazi', yazi + 'px');
-      kap.style.setProperty('--yazi-sec', yaziSec + 'px');
+      const kap = document.getElementById('tableContainer');
+      if(kap) {
+          kap.style.setProperty('--satir', satir + 'px');
+          kap.style.setProperty('--yazi', yazi + 'px');
+          kap.style.setProperty('--yazi-sec', yaziSec + 'px');
+      }
     }
 
     function gosterToast(mesaj, renk = "#10B981") {
@@ -772,11 +636,12 @@
 
     function tabloyuCiz(data) {
       if(!data || data.length === 0) {
-        document.getElementById('tableBody').innerHTML = '<tr><td colspan="15" style="padding: 20px; color: #EF4444; text-align:center;">Veri bulunamadı.</td></tr>';
+        document.getElementById('tableBody').innerHTML = '<tr><td colspan="11" style="padding: 20px; color: #EF4444; text-align:center;">Veri bulunamadı.</td></tr>';
         tabloSigdir();
         return;
       }
 
+      // SADECE İLK 11 SÜTUNU AL (Sıra, Varlık + 9 Adet Yıl Sütunu)
       const headers = data[0].slice(0, 11);
       const headerRow = document.getElementById('tableHeader');
       headerRow.innerHTML = '';
@@ -912,11 +777,6 @@
       }
 
       tabloSigdir();
-      tabloHizaDuzenle();
-      const kap = document.getElementById('tableContainer');
-      if (kap && aktifSekme === 'yillar') kap.scrollLeft = 0;
-      if (kap) kap.scrollTop = 0;
-      kaydirDugmeleriniGuncelle();
     }
 
     function bosTabloGoster(mesaj, yukleniyorMu = false) {
@@ -927,7 +787,6 @@
         document.getElementById('tableBody').innerHTML = '<tr><td colspan="3" style="padding: 20px; color: #FACC15; text-align:center;">' + mesaj + '</td></tr>';
       }
       tabloSigdir();
-      tabloHizaDuzenle();
     }
 
     function htmlKacis(s) {
@@ -1257,7 +1116,6 @@
         tableContainer.style.display = 'none';
         aylikPanel.style.display = 'flex';
         aylikContainer.style.display = 'block';
-        kaydirDugmeleriniGuncelle();
         setTimeout(aylikSigdir, 30);
         setTimeout(aylikSigdir, 300);
         return;
@@ -1290,7 +1148,6 @@
         }
       }
 
-      kaydirDugmeleriniGuncelle();
       setTimeout(tabloSigdir, 50);
       setTimeout(tabloSigdir, 400);
     }
