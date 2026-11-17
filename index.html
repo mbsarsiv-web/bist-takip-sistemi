@@ -537,9 +537,8 @@
       // ==============================================================
       // AKILLI TV (sihirli kumanda / fare) - KONUM TABANLI KAYDIRMA
       //  İmlecin tablo üzerindeki yatay konumu, tablonun kaydırma konumunu belirler:
-      //   - İmleç en solda  -> tablo en başta (SIRA / VARLIK tarafı)
-      //   - İmleç sağa gittikçe tablo da sağa kayar
-      //   - İmleç en sağda  -> tablo en sonda (en uzun süreler)
+      //   - İmleç sağa giderse TABLO SAĞA kayar (soldaki sütunlar, SIRA / VARLIK görünür)
+      //   - İmleç sola giderse TABLO SOLA kayar (sağdaki sütunlar, en uzun süreler görünür)
       //  Zamanlayıcı ya da sürükleme yoktur; yön karışmaz. Varlık listesinin üzerindeyken kaymaz.
       //  Tekerlek: aşağı = sağa, yukarı = sola.
       // ==============================================================
@@ -557,6 +556,7 @@
           let oran = (e.clientX - r.left) / r.width;
           oran = (oran - UC_PAY) / (1 - 2 * UC_PAY);
           oran = Math.max(0, Math.min(oran, 1));
+          oran = 1 - oran; // TABLO İMLECİ TAKİP EDER: imleç sağa -> tablo sağa, imleç sola -> tablo sola
           kap.scrollLeft = Math.round(oran * son);
         });
 
