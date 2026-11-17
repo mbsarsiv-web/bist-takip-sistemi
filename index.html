@@ -550,7 +550,7 @@
         const kod = e.keyCode || e.which;
         const sag = (e.key === 'ArrowRight' || e.key === 'Right' || kod === 39);
         const sol = (e.key === 'ArrowLeft' || e.key === 'Left' || kod === 37);
-        if (!sag && !sol) return;
+        if (!sag && sol) return;
 
         const hedef = e.target;
         if (hedef && hedef.tagName === 'INPUT') return;
@@ -1053,8 +1053,7 @@
           opt.value = String(y);
           opt.textContent = String(y);
           sel.appendChild(opt);
-        });
-      }
+        }
       });
     }
 
