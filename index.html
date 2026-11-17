@@ -143,10 +143,7 @@
     
     .tv-modu #tableContainer { touch-action: auto; -webkit-user-select: auto; user-select: auto; }
 
-    .yon-btn { display: none; background: #000; color: #FACC15; border: 1px solid #FACC15; border-radius: 4px; padding: 3px 9px; font-family: 'Inter', sans-serif; font-weight: 900; font-size: 0.75rem; cursor: pointer; margin-left: 8px; }
-    .tv-modu .yon-btn { display: inline-block; }
-
-    /* Orjinal ufak yan butonlar */
+    /* Orijinal ufak yan butonlar (Mobil ve faresi olmayan cihazlar için) */
     .kaydir-btn { display: none; position: fixed; top: 50%; margin-top: -24px; width: 48px; height: 48px; border-radius: 50%; background: rgba(153, 27, 27, 0.9); border: 2px solid #F87171; color: #fff; font-family: 'Inter', Arial, sans-serif; font-size: 26px; font-weight: 900; line-height: 1; padding: 0; cursor: pointer; z-index: 60; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.6); }
     .kaydir-sol { left: 8px; }
     .kaydir-sag { right: 8px; }
@@ -287,7 +284,6 @@
         <div class="dot"></div> SON VERİ: <span style="color: #94A3B8; margin-left: 5px;" id="lastUpdateText">Yükleniyor...</span>
         <span style="color: #475569; margin: 0 8px;">|</span>
         <span style="color: #10B981;" id="assetCountText"><i class="fa-solid fa-spinner fa-spin"></i></span>
-        <button type="button" id="yonBtn" class="yon-btn" onclick="yonDegistir()">⇄ YÖN</button>
       </div>
     </div>
 
@@ -360,7 +356,7 @@
     </div>
   </main>
 
-  <!-- Orijinal kenar ok butonları (tasarımı bozmayan ufak yuvarlaklar) -->
+  <!-- Orijinal kenar ok butonları -->
   <button type="button" id="kaydirSol" class="kaydir-btn kaydir-sol" onclick="yatayKaydir(-1)" aria-label="Sola kaydır">&lt;</button>
   <button type="button" id="kaydirSag" class="kaydir-btn kaydir-sag" onclick="yatayKaydir(1)" aria-label="Sağa kaydır">&gt;</button>
 
@@ -371,23 +367,11 @@
 
   <script>
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxvISjns0Zle5VYIgTLzkoJa38T7LC20bRAEW9Sm6LZYpcW61PF1pzrcgBAulDV6XNM/exec";
-    const SURUM = "S17-TEMIZ";
+    const SURUM = "S18-KESİN";
 
     const TV_MU = /Web0S|webOS|NetCast|SmartTV|SMART-TV|Tizen|HbbTV|VIDAA|Viera|BRAVIA|Hisense|AndroidTV|Android TV|CrKey|AFTM|GoogleTV|LG Browser|LGE|Opera TV|OPRTV|Maple|NETTV|WebTV|Large Screen/i.test(navigator.userAgent || "") || (window.location.search.indexOf('tv=1') > -1);
     const DOKUNMATIK = ('ontouchstart' in window) || ((navigator.maxTouchPoints || 0) > 0);
     if (TV_MU) document.body.classList.add('tv-modu');
-
-    let YON_TERS = true; 
-    try { 
-      let kayitli = window.localStorage.getItem('getiriTakibi_yon_v15');
-      if (kayitli === '0') { YON_TERS = false; } 
-    } catch (e) {}
-    
-    function yonDegistir() {
-      YON_TERS = !YON_TERS;
-      try { window.localStorage.setItem('getiriTakibi_yon_v15', YON_TERS ? '1' : '0'); } catch (e) {}
-      gosterToast(YON_TERS ? "YÖN: TV BRO UYUMLU (TERS)" : "YÖN: STANDART", "#FACC15");
-    }
 
     let globalAssets = [];
     let globalYillar = [];
@@ -404,7 +388,6 @@
 
     let cacheVeriler = { tarih: null, top10: null, bottom10: null };
 
-    // AYLIK GETİRİ SEKMESİ DURUMU
     let cacheAylik = {};
     let aylikIstekNo = 0;
     let aylikSonVeri = { y: new Date().getFullYear(), m: new Date().getMonth() + 1 };
@@ -416,7 +399,7 @@
 
     const SABIT_VARLIKLAR = ["DOLAR", "EURO", "GR ALTIN", "GR GÜMÜŞ", "NASDAQ", "S&P 500"];
 
-    const ONBELLEK_ANAHTARI = 'getiriTakibi_anaVeri_v2';
+    const ONBELLEK_ANAHTARI = 'getiriTakibi_anaVeri_v3';
 
     function onbellekOku() {
       try {
@@ -510,7 +493,6 @@
 
       document.addEventListener('keydown', function(e) {
         if (aktifSekme !== 'yillar') return;
-
         const kod = e.keyCode || e.which;
         const sag = (e.key === 'ArrowRight' || e.key === 'Right' || kod === 39);
         const sol = (e.key === 'ArrowLeft' || e.key === 'Left' || kod === 37);
@@ -520,14 +502,11 @@
         if (hedef && hedef.tagName === 'INPUT') return;
 
         if (!kap || kap.scrollWidth <= kap.clientWidth + 1) return;
-
         e.preventDefault();
         e.stopPropagation();
 
+        // KESİN ÇÖZÜM: Yön değişkenleri vb hiçbir şeye bakmaksızın doğrudan matematiksel eşleşme
         let adimYonu = sag ? 1 : -1;
-        
-        if (YON_TERS) { adimYonu = -adimYonu; }
-        
         yatayKaydir(adimYonu);
       }, true);
 
@@ -542,13 +521,13 @@
           let ekranGenislik = window.innerWidth || document.documentElement.clientWidth;
           if (ekranGenislik <= 0) return;
           
+          // KESİN ÇÖZÜM: Yön değiştiren hiçbir mantık YOK. 
+          // Sola hareket 0'a (6 Ay), sağa hareket sona (15/20 Yıl) gider.
           let oran = e.clientX / ekranGenislik;
           oran = (oran - 0.10) / 0.80; // Uçlara %10 pay
           oran = Math.max(0, Math.min(oran, 1));
           
-          let nihaiOran = YON_TERS ? (1 - oran) : oran;
-          
-          kap.scrollLeft = Math.round(nihaiOran * son);
+          kap.scrollLeft = Math.round(oran * son);
         });
 
         kap.addEventListener('wheel', function(e) {
@@ -557,8 +536,6 @@
           if (kap.scrollHeight > kap.clientHeight + 2) return; 
           let d = (Math.abs(e.deltaX) > Math.abs(e.deltaY)) ? e.deltaX : e.deltaY;
           if (!d) return;
-
-          if (YON_TERS) { d = -d; }
 
           const once = kap.scrollLeft;
           kap.scrollLeft = Math.max(0, Math.min(once + d, kap.scrollWidth - kap.clientWidth));
