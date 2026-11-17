@@ -117,9 +117,10 @@
     .mode-yillar th:not(:nth-child(1)):not(:nth-child(2)), 
     .mode-yillar td:not(:nth-child(1)):not(:nth-child(2)) { width: 9.1%; } /* %82 / 9 adet = ~%9.1 */
 
-    .mode-tarih { width: 100%; max-width: 600px; margin: 0 auto; table-layout: fixed; }
-    .mode-tarih th:nth-child(1), .mode-tarih td:nth-child(1) { width: 18%; text-align: center !important; }
-    .mode-tarih th:nth-child(2), .mode-tarih td:nth-child(2) { width: 42%; text-align: left !important; padding: 2px 5px !important; padding-left: 12px !important; }
+    /* İKİ TARİH ARASI / EN İYİ - KÖTÜ MODU SIKILAŞTIRILDI */
+    .mode-tarih { width: 100%; max-width: 550px; margin: 0 auto; table-layout: fixed; }
+    .mode-tarih th:nth-child(1), .mode-tarih td:nth-child(1) { width: 15%; text-align: center !important; }
+    .mode-tarih th:nth-child(2), .mode-tarih td:nth-child(2) { width: 45%; text-align: left !important; padding: 2px 5px !important; padding-left: 15px !important; }
     .mode-tarih th:nth-child(3), .mode-tarih td:nth-child(3) { width: 40%; text-align: center !important; padding: 2px 5px !important; }
     .mode-tarih th { font-size: calc(var(--yazi, 17px) * 1.0); padding: 5px !important; letter-spacing: 0; }
     .mode-tarih td { font-size: var(--yazi, 1.0rem); padding: 3px 5px !important; height: var(--satir, 45px); }
@@ -152,7 +153,7 @@
     
     /* İÇ İÇE GEÇMEYİ ÖNLEYEN VE OKUNABİLİR GETİRİ TASARIMI (ORTA YOL) */
     .getiri-wrapper { display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.1; width: 100%; overflow: hidden; text-overflow: clip; padding: 0 1px;}
-    .mode-tarih .getiri-wrapper { position: relative; align-items: center !important; flex-direction: row; display: inline-flex;}
+    .mode-tarih .getiri-wrapper { position: relative; align-items: center !important; justify-content: center; flex-direction: row; display: flex;}
     .mode-tarih .getiri-wrapper .kat-val { margin-top: 0; margin-left: 6px; font-size: calc(var(--yazi, 14px) * 0.7); }
     
     .getiri-val { font-weight: 900; font-size: calc(var(--yazi, 14px) * 0.95); letter-spacing: -0.4px; width: 100%; overflow: hidden; text-overflow: clip; white-space: nowrap;}
@@ -257,15 +258,15 @@
 
     /* ==========================================================
        MASAÜSTÜ / TV: İKİ TARİH ARASI - EN İYİ 10 - EN KÖTÜ 10
-       Daha geniş tablo, daha büyük yazı, sıkı ve düzenli satırlar
+       Sütunları birbiriyle bütünleşik ve sıkı göstermek için
        ========================================================== */
     @media (min-width: 769px) {
-      .mode-tarih { max-width: 860px; border-radius: 12px; overflow: hidden; }
+      .mode-tarih { max-width: 650px; border-radius: 12px; overflow: hidden; margin: 0 auto;}
       .mode-tarih thead { background: linear-gradient(180deg, #18212c 0%, #131a23 100%); }
 
-      .mode-tarih th:nth-child(1), .mode-tarih td:nth-child(1) { width: 14%; }
-      .mode-tarih th:nth-child(2), .mode-tarih td:nth-child(2) { width: 46%; padding: 2px 8px 2px 18px !important; }
-      .mode-tarih th:nth-child(3), .mode-tarih td:nth-child(3) { width: 40%; padding: 2px 8px !important; }
+      .mode-tarih th:nth-child(1), .mode-tarih td:nth-child(1) { width: 15%; text-align: center !important; }
+      .mode-tarih th:nth-child(2), .mode-tarih td:nth-child(2) { width: 45%; padding: 2px 8px 2px 25px !important; text-align: left !important; }
+      .mode-tarih th:nth-child(3), .mode-tarih td:nth-child(3) { width: 40%; padding: 2px 8px !important; text-align: center !important; }
 
       .mode-tarih th { font-size: calc(var(--yazi, 18px) * 0.82) !important; padding: 9px 6px !important; letter-spacing: 1.2px; text-transform: uppercase; }
       .mode-tarih td { height: var(--satir, 44px); font-size: var(--yazi, 18px); padding: 2px 8px !important; border-bottom: 1px solid rgba(255,255,255,0.05); }
@@ -282,20 +283,20 @@
       .mode-tarih .rank-badge.r2 { background: #CBD5E1; color: #0f172a; border-color: #E2E8F0; }
       .mode-tarih .rank-badge.r3 { background: #D97706; color: #1c0f00; border-color: #F59E0B; }
 
-      /* Varlık seçici */
-      .mode-tarih .select-wrapper { max-width: 320px; }
+      /* Varlık seçici (Daraltıldı) */
+      .mode-tarih .select-wrapper { max-width: 220px; }
       .mode-tarih .asset-select {
-        font-size: var(--yazi, 18px); height: calc(var(--satir, 44px) - 12px); max-width: 320px;
+        font-size: var(--yazi, 18px); height: calc(var(--satir, 44px) - 12px); max-width: 220px;
         padding: 0 28px 0 14px; border-radius: 8px; letter-spacing: 0.2px; box-shadow: none;
         -webkit-appearance: none; -moz-appearance: none; appearance: none;
         background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 8 5'><path d='M0 0l4 5 4-5z' fill='%2338BDF8'/></svg>");
         background-repeat: no-repeat; background-position: right 10px center; background-size: 10px 6px;
       }
-      .mode-tarih .sabit-varlik { font-size: var(--yazi, 18px) !important; letter-spacing: 0.3px; padding-left: 28px !important; }
+      .mode-tarih .sabit-varlik { font-size: var(--yazi, 18px) !important; letter-spacing: 0.3px; padding-left: 14px !important; }
 
       /* Getiri rakamı hap tasarımı */
-      .mode-tarih .getiri-wrapper { overflow: visible; width: auto; }
-      .mode-tarih .getiri-val { display: inline-block; width: auto; min-width: 7.2em; padding: 3px 14px; border-radius: 999px; background: rgba(16,185,129,0.12); font-size: calc(var(--yazi, 18px) * 1.02); letter-spacing: 0; box-sizing: border-box; }
+      .mode-tarih .getiri-wrapper { overflow: visible; width: auto; justify-content: center; }
+      .mode-tarih .getiri-val { display: inline-block; width: auto; min-width: 7.2em; padding: 3px 14px; border-radius: 999px; background: rgba(16,185,129,0.12); font-size: calc(var(--yazi, 18px) * 1.02); letter-spacing: 0; box-sizing: border-box; text-align: center;}
       .mode-tarih .col-getiri.negative .getiri-val { background: rgba(239,68,68,0.13); }
     }
 
