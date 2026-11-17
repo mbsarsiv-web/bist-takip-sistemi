@@ -387,20 +387,6 @@
     const DOKUNMATIK = ('ontouchstart' in window) || ((navigator.maxTouchPoints || 0) > 0);
     if (TV_MU) document.body.classList.add('tv-modu');
 
-    // ==============================================================
-    // İMLEÇ YÖNÜ AYARLARI (TV / fare)
-    //  SURUKLE_YONU : tuşa basılı sürüklemede yön (+1 / -1)
-    //  KENAR_YONU   : imleç kenara gelince yön    (+1 / -1)
-    // Kodu değiştirmeden denemek için adrese ekleyin, örnek: ?sy=-1&ky=1
-    // (sy = sürükleme yönü, ky = kenar yönü; değerler 1 veya -1)
-    // ==============================================================
-    function yonParametresi(ad, varsayilan) {
-      const m = window.location.search.match(new RegExp('[?&]' + ad + '=(-?1)'));
-      return m ? parseInt(m[1], 10) : varsayilan;
-    }
-    const SURUKLE_YONU = yonParametresi('sy', 1);
-    const KENAR_YONU = yonParametresi('ky', -1);
-
     let globalAssets = [];
     let globalYillar = [];
     let globalLastUpdate = "";
@@ -549,54 +535,30 @@
       }, true);
 
       // ==============================================================
-      // AKILLI TV (sihirli kumanda / fare)
-      //  1) İmleç tablonun SAĞ kenarına gelince tablo sağa, SOL kenarına
-      //     gelince sola kayar (kenara yaklaştıkça hızlanır).
-      //  2) Tekerlek aşağı = sağa, yukarı = sola.
-      //  3) Tuşa basılı tutup sürüklerken yön SURUKLE_YONU ile belirlenir.
+      // AKILLI TV (sihirli kumanda / fare) - KONUM TABANLI KAYDIRMA
+      //  İmlecin tablo üzerindeki yatay konumu, tablonun kaydırma konumunu belirler:
+      //   - İmleç en solda  -> tablo en başta (SIRA / VARLIK tarafı)
+      //   - İmleç sağa gittikçe tablo da sağa kayar
+      //   - İmleç en sağda  -> tablo en sonda (en uzun süreler)
+      //  Zamanlayıcı ya da sürükleme yoktur; yön karışmaz. Varlık listesinin üzerindeyken kaymaz.
+      //  Tekerlek: aşağı = sağa, yukarı = sola.
       // ==============================================================
       if (TV_MU) {
-        let surukle = null;
-        let kenarYon = 0;
-        let kenarHiz = 10;
-        let kenarZamanlayici = null;
-        const KENAR_BOLGESI = 70;
-
-        function kenarDurdur() {
-          kenarYon = 0;
-          if (kenarZamanlayici) { clearInterval(kenarZamanlayici); kenarZamanlayici = null; }
-        }
-
-        function kenarAdim() {
-          if (aktifSekme !== 'yillar' || !kenarYon) { kenarDurdur(); return; }
-          const son = kap.scrollWidth - kap.clientWidth;
-          if (son <= 1) { kenarDurdur(); return; }
-          if (kenarYon > 0 && kap.scrollLeft >= son) return;
-          if (kenarYon < 0 && kap.scrollLeft <= 0) return;
-          kap.scrollLeft = Math.max(0, Math.min(kap.scrollLeft + kenarYon * kenarHiz, son));
-        }
+        const UC_PAY = 0.06; // iki uçta, tablonun tamamına ulaşmak için ayrılan pay
 
         kap.addEventListener('mousemove', function(e) {
-          if (aktifSekme !== 'yillar' || surukle) { kenarDurdur(); return; }
-          if (kap.scrollWidth <= kap.clientWidth + 1) { kenarDurdur(); return; }
+          if (aktifSekme !== 'yillar') return;
+          const son = kap.scrollWidth - kap.clientWidth;
+          if (son <= 1) return;
+          const t = e.target;
+          if (t && t.closest && t.closest('select, option, button')) return;
           const r = kap.getBoundingClientRect();
-          let yon = 0;
-          let yakinlik = 0;
-          if (e.clientX >= r.right - KENAR_BOLGESI) {
-            yon = 1;
-            yakinlik = (e.clientX - (r.right - KENAR_BOLGESI)) / KENAR_BOLGESI;
-          } else if (e.clientX <= r.left + KENAR_BOLGESI) {
-            yon = -1;
-            yakinlik = ((r.left + KENAR_BOLGESI) - e.clientX) / KENAR_BOLGESI;
-          }
-          if (yon === 0) { kenarDurdur(); return; }
-          yakinlik = Math.max(0, Math.min(yakinlik, 1));
-          kenarHiz = 6 + Math.round(14 * yakinlik);
-          kenarYon = yon * KENAR_YONU;
-          if (!kenarZamanlayici) kenarZamanlayici = setInterval(kenarAdim, 16);
+          if (r.width <= 0) return;
+          let oran = (e.clientX - r.left) / r.width;
+          oran = (oran - UC_PAY) / (1 - 2 * UC_PAY);
+          oran = Math.max(0, Math.min(oran, 1));
+          kap.scrollLeft = Math.round(oran * son);
         });
-
-        kap.addEventListener('mouseleave', kenarDurdur);
 
         kap.addEventListener('wheel', function(e) {
           if (aktifSekme !== 'yillar') return;
@@ -608,24 +570,6 @@
           kap.scrollLeft = Math.max(0, Math.min(once + d, kap.scrollWidth - kap.clientWidth));
           if (kap.scrollLeft !== once) e.preventDefault();
         }, { passive: false });
-
-        kap.addEventListener('mousedown', function(e) {
-          if (aktifSekme !== 'yillar') return;
-          if (e.button !== undefined && e.button !== 0) return;
-          const t = e.target;
-          if (t && t.closest && t.closest('select, button, input, option, a')) return;
-          surukle = { x: e.clientX, sol: kap.scrollLeft };
-          kenarDurdur();
-          e.preventDefault();
-        });
-
-        document.addEventListener('mousemove', function(e) {
-          if (!surukle) return;
-          const yeni = surukle.sol + SURUKLE_YONU * (e.clientX - surukle.x) * 1.5;
-          kap.scrollLeft = Math.max(0, Math.min(yeni, kap.scrollWidth - kap.clientWidth));
-        });
-
-        document.addEventListener('mouseup', function() { surukle = null; });
       }
 
       // ==============================================================
