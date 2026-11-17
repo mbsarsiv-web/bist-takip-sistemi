@@ -142,6 +142,9 @@
     .tv-modu .mode-yillar th.col-varlik { padding-left: 6px !important; }
     .tv-modu #tableContainer { touch-action: none; -webkit-user-select: none; user-select: none; }
 
+    .yon-btn { display: none; background: #000; color: #FACC15; border: 1px solid #FACC15; border-radius: 4px; padding: 3px 9px; font-family: 'Inter', sans-serif; font-weight: 900; font-size: 0.75rem; cursor: pointer; margin-left: 8px; }
+    .tv-modu .yon-btn { display: inline-block; }
+
     .kaydir-btn { display: none; position: fixed; top: 50%; margin-top: -24px; width: 48px; height: 48px; border-radius: 50%; background: rgba(153, 27, 27, 0.9); border: 2px solid #F87171; color: #fff; font-family: 'Inter', Arial, sans-serif; font-size: 26px; font-weight: 900; line-height: 1; padding: 0; cursor: pointer; z-index: 60; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.6); }
     .kaydir-sol { left: 8px; }
     .kaydir-sag { right: 8px; }
@@ -310,6 +313,7 @@
         <div class="dot"></div> SON VERİ: <span style="color: #94A3B8; margin-left: 5px;" id="lastUpdateText">Yükleniyor...</span>
         <span style="color: #475569; margin: 0 8px;">|</span>
         <span style="color: #10B981;" id="assetCountText"><i class="fa-solid fa-spinner fa-spin"></i></span>
+        <button type="button" id="yonBtn" class="yon-btn" onclick="yonDegistir()">⇄ YÖN</button>
       </div>
     </div>
 
@@ -394,12 +398,21 @@
   <!-- Ana betik, harici kütüphanelerden ÖNCE çalışır: veri isteği hemen başlar -->
   <script>
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxvISjns0Zle5VYIgTLzkoJa38T7LC20bRAEW9Sm6LZYpcW61PF1pzrcgBAulDV6XNM/exec";
-    const SURUM = "S10";
+    const SURUM = "S11";
 
     // Akıllı TV algılama (adres sonuna ?tv=1 eklenirse zorla TV modu açılır)
     const TV_MU = /Web0S|webOS|NetCast|SmartTV|SMART-TV|Tizen|HbbTV|VIDAA|Viera|BRAVIA|Hisense|AndroidTV|Android TV|CrKey|AFTM|GoogleTV|LG Browser|LGE|Opera TV|OPRTV|Maple|NETTV|WebTV|Large Screen/i.test(navigator.userAgent || "") || (window.location.search.indexOf('tv=1') > -1);
     const DOKUNMATIK = ('ontouchstart' in window) || ((navigator.maxTouchPoints || 0) > 0);
     if (TV_MU) document.body.classList.add('tv-modu');
+
+    // TV kaydırma yönü. "⇄ YÖN" düğmesine basınca tersine döner ve cihazda hatırlanır.
+    let YON_TERS = false;
+    try { YON_TERS = (window.localStorage.getItem('getiriTakibi_yonTers') === '1'); } catch (e) {}
+    function yonDegistir() {
+      YON_TERS = !YON_TERS;
+      try { window.localStorage.setItem('getiriTakibi_yonTers', YON_TERS ? '1' : '0'); } catch (e) {}
+      gosterToast("Yön değişti. İmleci sağ duvara götürüp deneyin.", "#FACC15");
+    }
 
     let globalAssets = [];
     let globalYillar = [];
@@ -470,8 +483,6 @@
       aylikSecicileriHazirla();
       aylikOnAyar(10, false);
       veriCekHizliAcilis();
-      // Geçici doğrulama: açılışta 4 saniye boyunca hangi sürümün çalıştığını gösterir
-      setTimeout(function() { gosterToast('Çalışan sürüm: ' + SURUM + ' | imleç sağ = 15-20 YIL', '#FACC15'); }, 600);
     }
 
     document.addEventListener("DOMContentLoaded", function() {
@@ -573,6 +584,7 @@
           let oran = (e.clientX - r.left) / r.width;
           oran = (oran - UC_PAY) / (1 - 2 * UC_PAY);
           oran = Math.max(0, Math.min(oran, 1));
+          if (YON_TERS) oran = 1 - oran;
           kap.scrollLeft = Math.round(oran * son);
         });
 
