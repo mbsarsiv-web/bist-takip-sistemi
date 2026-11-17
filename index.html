@@ -11,16 +11,16 @@
 
   <style>
     :root { --bg-main: #0a0e14; --bg-panel: #111820; --text-main: #E2E8F0; --gold: #FACC15; --blue-accent: #38BDF8; --green-accent: #10B981; --red-accent: #EF4444; --red-btn: #991B1B; --border-color: #2D3748; --panel-border: #1F2937; }
-    body { margin: 0; font-family: 'Inter', sans-serif; background-color: var(--bg-main); color: var(--text-main); display: flex; height: 100vh; overflow: hidden; }
-    .main-content { flex: 1; display: flex; flex-direction: column; padding: 5px 15px; max-width: 1400px; margin: 0 auto; width: 100%; box-sizing: border-box; overflow: hidden;}
+    body { margin: 0; font-family: 'Inter', sans-serif; background-color: var(--bg-main); color: var(--text-main); display: flex; height: 100vh; height: 100dvh; overflow: hidden; }
+    .main-content { flex: 1; display: flex; flex-direction: column; padding: 5px 15px; max-width: 1400px; margin: 0 auto; width: 100%; box-sizing: border-box; overflow: hidden; min-height: 0; }
     
-    .top-header { position: relative; display: flex; justify-content: flex-end; align-items: center; background-color: var(--red-btn); padding: 8px 15px; border-radius: 8px; margin-bottom: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); border: 1px solid #FCA5A5;}
+    .top-header { position: relative; display: flex; justify-content: flex-end; align-items: center; background-color: var(--red-btn); padding: 8px 15px; border-radius: 8px; margin-bottom: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); border: 1px solid #FCA5A5; flex-shrink: 0;}
     .header-title { position: absolute; left: 50%; transform: translateX(-50%); font-size: 1.25rem; font-weight: 900; margin: 0; letter-spacing: 1px; color: white; white-space: nowrap; z-index: 1;}
     .update-badge { background-color: #000; padding: 4px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: 800; border: 1px solid #333; display: flex; align-items: center; gap: 6px; z-index: 2;}
     .update-badge .dot { width: 6px; height: 6px; background-color: #22C55E; border-radius: 50%; box-shadow: 0 0 6px #22C55E; animation: pulse 2s infinite; }
     @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
     
-    .tab-buttons { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+    .tab-buttons { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; flex-shrink: 0; }
     .tab-btn { flex: 1; padding: 4px 8px; border-radius: 8px; font-size: 0.9rem; font-weight: 900; cursor: pointer; border: 1px solid var(--border-color); display: flex; justify-content: center; align-items: center; gap: 6px; transition: 0.2s; color: white; font-family: 'Inter', sans-serif; }
     .tab-btn.active { background-color: var(--red-btn); border-color: #F87171; }
     .tab-btn.inactive { background-color: var(--bg-panel); }
@@ -28,7 +28,7 @@
 
     button:focus, select:focus, input:focus { outline: 3px solid var(--gold) !important; outline-offset: 2px !important; }
 
-    .date-controls { background: #111820; padding: 8px 20px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 6px; display: none; justify-content: center; align-items: center; gap: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.3);}
+    .date-controls { background: #111820; padding: 8px 20px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 6px; display: none; justify-content: center; align-items: center; gap: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); flex-shrink: 0;}
     .date-group { display: flex; align-items: center; gap: 8px; }
     .date-controls label { color: var(--gold); font-weight: 900; font-size: 0.95rem; display: flex; align-items: center; gap: 6px; margin: 0; }
     .date-input { background-color: #0a0e14 !important; border: 1px solid var(--border-color) !important; color: white !important; padding: 4px 12px !important; border-radius: 6px !important; font-family: 'Inter', sans-serif !important; font-weight: 800 !important; font-size: 1.0rem !important; outline: none !important; cursor: pointer !important; transition: all 0.3s ease !important; text-align: center; width: 140px; box-sizing: border-box;}
@@ -43,46 +43,51 @@
     span.flatpickr-weekday { color: #38BDF8 !important; }
     .flatpickr-month, .flatpickr-prev-month svg, .flatpickr-next-month svg { color: #E2E8F0 !important; fill: #E2E8F0 !important; }
     
-    .table-container { background-color: var(--bg-panel); border-radius: 10px; border: 1px solid var(--panel-border); box-shadow: 0 10px 20px rgba(0,0,0,0.5); flex: 1; display: block; width: 100%; overflow-x: auto; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+    .table-container { background-color: var(--bg-panel); border-radius: 10px; border: 1px solid var(--panel-border); box-shadow: 0 10px 20px rgba(0,0,0,0.5); flex: 1; min-height: 0; display: block; width: 100%; overflow-x: auto; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; direction: ltr; }
+    .table-container:focus { outline: none !important; }
     
-    table { border-collapse: collapse; text-align: center; margin: 0 auto; width: max-content;}
+    table { border-collapse: collapse; text-align: center; margin: 0; width: max-content;}
     thead { border-bottom: 2px solid var(--panel-border); background-color: #141b24; }
     th, td { box-sizing: border-box; vertical-align: middle; }
     th { color: var(--gold); font-weight: 900; letter-spacing: 0.5px; }
     td { border-bottom: 1px solid rgba(255,255,255,0.03); font-weight: 700; }
+
+    /* Satır yüksekliği ve yazı boyutu JS (tabloSigdir) tarafından ekrana göre hesaplanır */
+    .mode-yillar td, .mode-tarih td { height: var(--satir, auto); }
     
-    .mode-yillar { width: max-content; margin: 0 auto; }
-    .mode-yillar th { font-size: 1.05rem; padding: 4px 6px; white-space: nowrap; min-width: 100px; }
-    .mode-yillar td { padding: 3px 6px; height: auto; white-space: nowrap; min-width: 100px; }
-    .mode-tarih { width: 100%; max-width: 420px; margin: 0 auto; table-layout: fixed; }
+    .mode-yillar { width: max-content; margin: 0; }
+    .mode-yillar th { font-size: calc(var(--yazi, 17px) * 0.95); padding: 4px 6px; white-space: nowrap; min-width: 100px; }
+    .mode-yillar td { padding: 2px 6px; white-space: nowrap; min-width: 100px; }
+    .mode-tarih { width: 100%; max-width: 480px; margin: 0 auto; table-layout: fixed; }
     
-    .mode-tarih th:nth-child(1), .mode-tarih td:nth-child(1) { width: 16%; text-align: center !important; }
-    .mode-tarih th:nth-child(2), .mode-tarih td:nth-child(2) { width: 42%; text-align: left !important; padding: 3px 5px !important; padding-left: 12px !important; }
-    .mode-tarih th:nth-child(3), .mode-tarih td:nth-child(3) { width: 42%; text-align: center !important; padding: 3px 5px !important; }
-    .mode-tarih th { font-size: 1.15rem; padding: 3px 4px !important; }
-    .mode-tarih td { font-size: 1.0rem; padding: 1px 4px !important; white-space: nowrap; }
+    .mode-tarih th:nth-child(1), .mode-tarih td:nth-child(1) { width: 18%; text-align: center !important; }
+    .mode-tarih th:nth-child(2), .mode-tarih td:nth-child(2) { width: 42%; text-align: left !important; padding: 2px 5px !important; padding-left: 12px !important; }
+    .mode-tarih th:nth-child(3), .mode-tarih td:nth-child(3) { width: 40%; text-align: center !important; padding: 2px 5px !important; }
+    .mode-tarih th { font-size: calc(var(--yazi, 17px) * 1.0); padding: 3px 4px !important; letter-spacing: 0; white-space: nowrap; overflow: visible; text-overflow: clip; }
+    .mode-tarih td { font-size: var(--yazi, 1.0rem); padding: 1px 4px !important; white-space: nowrap; }
     
     .select-wrapper { display: inline-flex; align-items: center; justify-content: flex-start !important; gap: 6px; width: 100%; margin: 0; }
     
-    .asset-select { background-color: #0a0e14; border: 1px solid var(--border-color); color: var(--blue-accent); font-family: 'Inter', sans-serif; font-weight: 900; font-size: 0.95rem; padding: 3px 2px 3px 6px; border-radius: 6px; cursor: pointer; outline: none; width: 100%; min-width: 0; box-sizing: border-box; text-overflow: clip; }
+    .asset-select { background-color: #0a0e14; border: 1px solid var(--border-color); color: var(--blue-accent); font-family: 'Inter', sans-serif; font-weight: 900; font-size: var(--yazi, 0.95rem); height: calc(var(--satir, 34px) - 6px); line-height: normal; padding: 0 2px 0 6px; border-radius: 6px; cursor: pointer; outline: none; width: 100%; min-width: 0; box-sizing: border-box; text-overflow: clip; }
     .asset-select:hover { background-color: #1a222d; }
     .asset-select option, .asset-select optgroup { background-color: var(--bg-panel); color: white; }
     
-    .sabit-varlik { font-size: 0.95rem !important; }
+    .sabit-varlik { font-size: var(--yazi, 0.95rem) !important; }
     .getiri-wrapper { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.0; width: 100%; }
     .mode-tarih .getiri-wrapper { position: relative; align-items: center !important; }
-    .kat-val { font-size: 0.70rem; color: var(--gold); font-weight: 900; margin-top: 1px; letter-spacing: 0px; }
-    .getiri-val { font-weight: 900; }
+    .kat-val { font-size: calc(var(--yazi, 16px) * 0.6); color: var(--gold); font-weight: 900; margin-top: 1px; letter-spacing: 0px; }
+    .getiri-val { font-weight: 900; font-size: var(--yazi, 1rem); }
     .mode-tarih .arz-val { position: absolute; left: 100%; margin-left: 8px; font-size: 0.75em; color: #FBBF24; font-weight: 700; white-space: nowrap; }
     
-    .col-sira { color: var(--gold); text-align: center; font-size: 1.05rem !important; font-weight: 900; white-space: nowrap; overflow: visible !important; text-overflow: clip !important; }
+    .col-sira { color: var(--gold); text-align: center; font-size: var(--yazi, 1.05rem) !important; font-weight: 900; white-space: nowrap; overflow: visible !important; text-overflow: clip !important; }
+    th.col-sira { font-size: calc(var(--yazi, 17px) * 0.95) !important; min-width: 0; }
     .col-varlik { text-align: left !important; padding-left: 20px !important; white-space: nowrap; overflow: hidden; }
     .col-getiri { color: var(--green-accent); font-weight: 800;}
     .col-getiri.negative { color: var(--red-accent); }
     
     .mode-yillar th:nth-child(1), .mode-yillar td:nth-child(1) { position: sticky; left: 0; z-index: 2; background-color: var(--bg-panel); width: 60px; min-width: 60px; }
     .mode-yillar th:nth-child(2), .mode-yillar td:nth-child(2) { position: sticky; left: 60px; z-index: 2; background-color: var(--bg-panel); box-shadow: 2px 0 8px rgba(0,0,0,0.3); width: 170px; min-width: 170px; }
-    .mode-yillar td.col-varlik { padding: 3px 6px !important; }
+    .mode-yillar td.col-varlik { padding: 2px 6px !important; }
     .mode-yillar th.col-varlik { padding-left: 12px !important; }
     .mode-yillar th:nth-child(1), .mode-yillar th:nth-child(2) { background-color: #141b24; }
     tbody tr:hover td { background-color: rgba(255, 255, 255, 0.05); }
@@ -163,11 +168,23 @@
       .aylik-panel { flex-wrap: wrap; }
     }
 
+    /* KISA EKRANLAR (TV, yatay telefon, küçük pencereler): üst alanları sıkıştır */
     @media (max-height: 720px) {
       .top-header { padding: 4px 10px; margin-bottom: 5px; } .header-title { font-size: 1.1rem; } .tab-buttons { margin-bottom: 5px; } .tab-btn { padding: 4px 6px; font-size: 0.8rem; }
-      .mode-yillar th { font-size: 0.85rem !important; padding: 2px 4px !important; } .mode-yillar td { padding: 2px 5px !important; height: auto; }
-      .getiri-val { font-size: 0.9rem; } .kat-val { font-size: 0.6rem; } .asset-select { font-size: 0.9rem !important; } .sabit-varlik { font-size: 0.9rem !important; } .table-container { box-shadow: none; }
+      .table-container { box-shadow: none; }
+      .date-controls { padding: 5px 14px; margin-bottom: 5px; }
+      .date-input { padding: 3px 8px !important; font-size: 0.9rem !important; }
+      .date-controls label { font-size: 0.85rem; }
     }
+    @media (max-height: 600px) {
+      .main-content { padding-top: 3px; padding-bottom: 3px; }
+      .top-header { padding: 3px 10px; margin-bottom: 4px; } .header-title { font-size: 0.95rem; } .update-badge { padding: 2px 8px; font-size: 0.68rem; }
+      .tab-buttons { margin-bottom: 4px; gap: 6px; } .tab-btn { padding: 3px 6px; font-size: 0.74rem; gap: 4px; }
+      .date-controls { padding: 3px 12px; margin-bottom: 4px; gap: 14px; }
+      .date-input { padding: 2px 6px !important; font-size: 0.82rem !important; width: 120px; }
+      .date-controls label { font-size: 0.78rem; }
+    }
+
     @media (max-width: 768px) {
       .main-content { padding: 4px; }
       .top-header { flex-direction: row; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 6px; padding: 6px 8px; margin-bottom: 6px; }
@@ -176,16 +193,25 @@
       .tab-buttons { flex-wrap: wrap; gap: 5px; margin-bottom: 6px; }
       .tab-btn { flex: 1 1 30%; margin: 0; font-size: 0.68rem; padding: 5px 3px; gap: 4px; line-height: 1.1; text-align: center; }
       body.aylik-modu .tab-btn { padding: 4px 3px; font-size: 0.66rem; }
-      .date-controls { justify-content: space-between; padding: 10px; gap: 10px; }
-      .date-group { flex-direction: column; width: 48%; gap: 6px; }
-      .date-controls label { width: 100%; justify-content: center; font-size: 0.75rem; } .date-input { width: 100% !important; padding: 8px 5px !important; font-size: 0.9rem !important; }
-      .mode-yillar { width: max-content; margin: 0 auto; } .mode-yillar th, .mode-yillar td { padding: 6px 8px; } .col-varlik { padding-left: 10px !important; }
-      .mode-tarih { max-width: 100% !important; margin: 0 auto !important; } .mode-tarih th { font-size: 0.95rem !important; padding: 4px 2px !important; } .mode-tarih td { font-size: 0.95rem !important; padding: 1px 2px !important; }
-      .mode-tarih th:nth-child(2), .mode-tarih td:nth-child(2) { padding-left: 10px !important; } .mode-tarih th:nth-child(3), .mode-tarih td:nth-child(3) { padding-left: 2px !important; }
-      .asset-select { font-size: 0.85rem !important; padding: 4px 1px 4px 4px;} .sabit-varlik { font-size: 0.95rem !important; }
-      .mode-yillar th:nth-child(2), .mode-yillar td:nth-child(2) { width: 140px; min-width: 140px; }
-      .mode-yillar td.col-varlik { padding: 4px 3px !important; }
+      .date-controls { justify-content: space-between; padding: 6px 8px; gap: 8px; margin-bottom: 5px; }
+      .date-group { flex-direction: column; width: 48%; gap: 4px; }
+      .date-controls label { width: 100%; justify-content: center; font-size: 0.72rem; } .date-input { width: 100% !important; padding: 5px 4px !important; font-size: 0.85rem !important; }
+
+      .mode-yillar { width: max-content; margin: 0; }
+      .mode-yillar th { padding: 3px 5px; min-width: 84px; }
+      .mode-yillar td { padding: 2px 5px; min-width: 84px; }
+      .col-varlik { padding-left: 8px !important; }
+      .mode-yillar th:nth-child(1), .mode-yillar td:nth-child(1) { width: 46px; min-width: 46px; padding: 2px 2px; }
+      .mode-yillar th:nth-child(2), .mode-yillar td:nth-child(2) { left: 46px; width: 116px; min-width: 116px; }
+      .mode-yillar td.col-varlik { padding: 2px 3px !important; }
       .mode-yillar th.col-varlik { padding-left: 8px !important; }
+
+      .mode-tarih { max-width: 100% !important; margin: 0 auto !important; }
+      .mode-tarih th { padding: 3px 2px !important; }
+      .mode-tarih td { padding: 1px 2px !important; }
+      .mode-tarih th:nth-child(2), .mode-tarih td:nth-child(2) { padding-left: 8px !important; }
+      .mode-tarih th:nth-child(3), .mode-tarih td:nth-child(3) { padding-left: 2px !important; }
+      .asset-select { padding: 0 1px 0 4px; }
 
       .aylik-panel { padding: 6px; gap: 5px; margin-bottom: 5px; }
       .aylik-grup { gap: 4px; width: 100%; }
@@ -281,7 +307,7 @@
       </div>
     </div>
 
-    <div id="tableContainer" class="table-container">
+    <div id="tableContainer" class="table-container" tabindex="0">
       <table id="dataTable" class="mode-yillar">
         <thead>
           <tr id="tableHeader"></tr>
@@ -394,8 +420,91 @@
       });
 
       window.addEventListener('resize', aylikSigdir);
-      window.addEventListener('load', function() { setTimeout(aylikSigdir, 100); });
+      window.addEventListener('resize', tabloHizaDuzenle);
+      window.addEventListener('resize', tabloSigdir);
+      window.addEventListener('orientationchange', function() { setTimeout(tabloSigdir, 200); setTimeout(tabloHizaDuzenle, 200); });
+      window.addEventListener('load', function() { setTimeout(aylikSigdir, 100); setTimeout(tabloHizaDuzenle, 100); setTimeout(tabloSigdir, 100); setTimeout(tabloSigdir, 600); });
+      if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(function() { tabloSigdir(); tabloHizaDuzenle(); });
+      }
+
+      // ==============================================================
+      // TV KUMANDASI / KLAVYE: YILLARA GÖRE sekmesinde sağ-sol tuşları
+      // tabloyu yatay kaydırır (açılır listelerin değerini değiştirmez,
+      // odağı yan elemanlara atlatmaz).
+      // ==============================================================
+      document.addEventListener('keydown', function(e) {
+        if (aktifSekme !== 'yillar') return;
+
+        const kod = e.keyCode || e.which;
+        const sag = (e.key === 'ArrowRight' || e.key === 'Right' || kod === 39);
+        const sol = (e.key === 'ArrowLeft' || e.key === 'Left' || kod === 37);
+        if (!sag && !sol) return;
+
+        const hedef = e.target;
+        if (hedef && hedef.tagName === 'INPUT') return;
+
+        const kap = document.getElementById('tableContainer');
+        if (!kap || kap.scrollWidth <= kap.clientWidth + 1) return;
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        const adim = Math.max(120, Math.round(kap.clientWidth * 0.35));
+        const yeni = kap.scrollLeft + (sag ? adim : -adim);
+        kap.scrollLeft = Math.max(0, Math.min(yeni, kap.scrollWidth - kap.clientWidth));
+      }, true);
     });
+
+    // Tablo ekrana sığıyorsa ortala, sığmıyorsa sola hizala (eski TV tarayıcılarında
+    // ortalanmış geniş tablonun sol kısmı ulaşılamaz kalabiliyor).
+    function tabloHizaDuzenle() {
+      const tablo = document.getElementById('dataTable');
+      const kap = document.getElementById('tableContainer');
+      if (!tablo || !kap) return;
+      if (aktifSekme !== 'yillar') { tablo.style.marginLeft = ''; tablo.style.marginRight = ''; return; }
+      if (tablo.offsetWidth < kap.clientWidth) {
+        tablo.style.marginLeft = 'auto';
+        tablo.style.marginRight = 'auto';
+      } else {
+        tablo.style.marginLeft = '0';
+        tablo.style.marginRight = '0';
+      }
+    }
+
+    // Satır yüksekliğini ve yazı boyutunu, mevcut ekran yüksekliğine göre hesaplar:
+    // tüm varlıklar (10 satır + GR ALTIN) dikey olarak tek ekrana sığar.
+    // TV, telefon (dikey/yatay) ve bilgisayarda aynı mantıkla çalışır.
+    function tabloSigdir() {
+      if (aktifSekme === 'aylik') return;
+      const kap = document.getElementById('tableContainer');
+      const tablo = document.getElementById('dataTable');
+      const govde = document.getElementById('tableBody');
+      if (!kap || !tablo || !govde || !tablo.tHead) return;
+      if (kap.clientHeight < 60) return;
+
+      let veriSatir = 0;
+      let bosluk = 0;
+      for (let i = 0; i < govde.rows.length; i++) {
+        const td = govde.rows[i].cells[0];
+        if (td && td.style && td.style.height === '10px') { bosluk += 10; } else { veriSatir++; }
+      }
+
+      if (veriSatir < 3) {
+        kap.style.removeProperty('--satir');
+        kap.style.removeProperty('--yazi');
+        return;
+      }
+
+      const baslikYuk = tablo.tHead.offsetHeight;
+      const kalan = kap.clientHeight - baslikYuk - bosluk - 6;
+      let satir = Math.floor(kalan / veriSatir);
+      satir = Math.max(22, Math.min(satir, 50));
+      const yazi = Math.max(12, Math.min(Math.round(satir * 0.4), 19));
+
+      kap.style.setProperty('--satir', satir + 'px');
+      kap.style.setProperty('--yazi', yazi + 'px');
+    }
 
     function gosterToast(mesaj, renk = "#10B981") {
       const toast = document.getElementById('toastNotification');
@@ -518,6 +627,7 @@
     function tabloyuCiz(data) {
       if(!data || data.length === 0) {
         document.getElementById('tableBody').innerHTML = '<tr><td colspan="15" style="padding: 20px; color: #EF4444; text-align:center;">Veri bulunamadı.</td></tr>';
+        tabloSigdir();
         return;
       }
 
@@ -654,6 +764,13 @@
         });
         tbody.appendChild(tr);
       }
+
+      // Tablo çizildikten sonra: satırları ekrana sığdır, hizayı düzenle, kaydırmayı başa (SIRA/VARLIK tarafına) al
+      tabloSigdir();
+      tabloHizaDuzenle();
+      const kap = document.getElementById('tableContainer');
+      if (kap && aktifSekme === 'yillar') kap.scrollLeft = 0;
+      if (kap) kap.scrollTop = 0;
     }
 
     function bosTabloGoster(mesaj, yukleniyorMu = false) {
@@ -663,6 +780,8 @@
       } else {
         document.getElementById('tableBody').innerHTML = '<tr><td colspan="3" style="padding: 20px; color: #FACC15; text-align:center;">' + mesaj + '</td></tr>';
       }
+      tabloSigdir();
+      tabloHizaDuzenle();
     }
 
     function htmlKacis(s) {
@@ -1008,6 +1127,8 @@
       } else {
         datePanel.style.display = 'flex';
         dataTable.className = 'mode-tarih';
+        dataTable.style.marginLeft = '';
+        dataTable.style.marginRight = '';
         
         fpBaslangic.setDate(sekmeTarihleri[hedef].bas, false);
         fpBitis.setDate(sekmeTarihleri[hedef].bitis, false);
@@ -1021,6 +1142,9 @@
             googleSorgusuTetikle();
         }
       }
+
+      setTimeout(tabloSigdir, 50);
+      setTimeout(tabloSigdir, 400);
     }
   </script>
 </body>
