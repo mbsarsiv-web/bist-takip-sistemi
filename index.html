@@ -571,6 +571,7 @@
           let oran = (e.clientX - r.left) / r.width;
           oran = (oran - UC_PAY) / (1 - 2 * UC_PAY);
           oran = Math.max(0, Math.min(oran, 1));
+          oran = 1 - oran; // TV'de gözlenen yön ters olduğu için çevrildi
           kap.scrollLeft = Math.round(oran * son);
         });
 
