@@ -47,7 +47,7 @@
     .main-content { flex: 1; display: block; overflow-y: auto; overflow-x: hidden; padding: 5px 15px; max-width: 1400px; margin: 0 auto; width: 100%; box-sizing: border-box; }
     
     .top-header { position: relative; display: flex; justify-content: flex-end; align-items: center; background-color: var(--red-btn); padding: 8px 15px; border-radius: 8px; margin-bottom: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); border: 1px solid #FCA5A5; flex-shrink: 0;}
-    .header-title { position: absolute; left: 50%; transform: translateX(-50%); font-size: 1.25rem; font-weight: 900; margin: 0; letter-spacing: 1px; color: white; white-space: nowrap; z-index: 1;}
+    .header-title { position: absolute; left: 50%; transform: translateX(-50%); font-size: 1.25rem; font-weight: 900; margin: 0; letter-spacing: 1px; color: white; white-space: nowrap; text-shadow: 1px 1px 3px rgba(0,0,0,0.5); z-index: 1;}
     .update-badge { background-color: #000; padding: 4px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: 800; border: 1px solid #333; display: flex; align-items: center; gap: 6px; z-index: 2;}
     .update-badge .dot { width: 6px; height: 6px; background-color: #22C55E; border-radius: 50%; box-shadow: 0 0 6px #22C55E; animation: pulse 2s infinite; }
     @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
@@ -78,15 +78,15 @@
     .table-container { background-color: transparent; border-radius: 10px; border: none; box-shadow: none; display: block; width: 100%; overflow: visible;}
     .table-container:focus { outline: none !important; }
     
-    table { border-collapse: collapse; text-align: center; margin: 0 auto; width: 100%; background-color: var(--bg-panel); border-radius: 10px; border: 1px solid var(--panel-border); box-shadow: 0 10px 20px rgba(0,0,0,0.5);}
-    thead { border-bottom: 2px solid var(--panel-border); background-color: #141b24; }
+    table { border-collapse: collapse; text-align: center; margin: 0 auto; width: 100%; background-color: var(--bg-panel); border-radius: 10px; border: 1px solid var(--panel-border); box-shadow: 0 10px 25px rgba(0,0,0,0.7);}
+    thead { border-bottom: 3px solid #1E293B; background-color: #141b24; }
     th, td { box-sizing: border-box; vertical-align: middle; }
-    th { color: var(--gold); font-weight: 900; letter-spacing: 0.5px; }
+    th { color: var(--gold); font-weight: 900; letter-spacing: 0.5px; text-shadow: 1px 1px 2px rgba(0,0,0,0.6); }
     td { border-bottom: 1px solid rgba(255,255,255,0.03); font-weight: 700; }
 
     .mode-yillar td, .mode-tarih td { height: var(--satir, auto); }
     
-    /* MÜKEMMEL HİZALANMIŞ YILLARA GÖRE MODU */
+    /* GÜNCELLENMİŞ MÜKEMMEL HİZALANMIŞ YILLARA GÖRE MODU */
     .mode-yillar { width: 100%; table-layout: fixed; margin-bottom: 20px; }
     .mode-yillar th { 
         font-size: calc(var(--yazi, 14px) * 0.90); 
@@ -94,7 +94,7 @@
         white-space: nowrap; 
         overflow: hidden; 
         text-overflow: clip;
-        letter-spacing: -0.3px;
+        letter-spacing: -0.2px;
     }
     .mode-yillar td { 
         padding: 4px 2px; 
@@ -104,13 +104,13 @@
         overflow: hidden;
     }
     
-    /* 11 Sütunun Ekrana Tam ve Orantılı Dağılımı */
+    /* YENİ SÜTUN ORANLARI: Varlık sütunu genişletildi! */
     .mode-yillar th:nth-child(1), .mode-yillar td:nth-child(1) { width: 3.5%; background-color: #141b24; color: var(--gold); }
-    .mode-yillar th:nth-child(2), .mode-yillar td:nth-child(2) { width: 11%; background-color: #141b24; text-align: left !important; padding-left: 8px !important;}
+    .mode-yillar th:nth-child(2), .mode-yillar td:nth-child(2) { width: 15.5%; background-color: #141b24; text-align: left !important; padding-left: 10px !important;}
     
-    /* Geriye kalan 9 sütun ( %85.5 / 9 = %9.5 ) */
+    /* Geriye kalan 9 sütun ( %81 / 9 = %9.0 ) */
     .mode-yillar th:not(:nth-child(1)):not(:nth-child(2)), 
-    .mode-yillar td:not(:nth-child(1)):not(:nth-child(2)) { width: 9.5%; } 
+    .mode-yillar td:not(:nth-child(1)):not(:nth-child(2)) { width: 9.0%; } 
 
     /* Diğer Modların Stilleri */
     .mode-tarih { width: 100%; max-width: 600px; margin: 0 auto; table-layout: fixed; }
@@ -122,27 +122,30 @@
     
     .select-wrapper { display: inline-flex; align-items: center; justify-content: flex-start !important; gap: 6px; width: 100%; margin: 0; }
     
+    /* AÇILIR KUTU TASARIMI DÜZELTİLDİ */
     .asset-select { 
         background-color: #0a0e14; border: 1px solid var(--border-color); color: var(--blue-accent); 
         font-family: 'Inter', sans-serif; font-weight: 900; 
-        font-size: calc(var(--yazi-sec, 14px) * 0.90); 
+        font-size: calc(var(--yazi-sec, 14px) * 0.98); 
         height: calc(var(--satir, 34px) - 6px); 
-        line-height: normal; letter-spacing: -0.3px; 
-        padding: 0 12px 0 4px; border-radius: 6px; cursor: pointer; outline: none; 
+        line-height: normal; letter-spacing: -0.2px; 
+        padding: 0 18px 0 6px; /* Sağ taraftan ok için yeterli boşluk bırakıldı */
+        border-radius: 6px; cursor: pointer; outline: none; 
         width: 100%; min-width: 0; box-sizing: border-box; 
         text-overflow: ellipsis; overflow: hidden;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
     }
-    .asset-select:hover { background-color: #1a222d; }
+    .asset-select:hover { background-color: #1a222d; border-color: #475569; }
     .asset-select option, .asset-select optgroup { background-color: var(--bg-panel); color: white; }
 
     .tv-modu .asset-select {
       -webkit-appearance: none; -moz-appearance: none; appearance: none;
-      padding: 0 12px 0 4px; text-overflow: ellipsis; overflow: hidden;
+      padding: 0 18px 0 6px; text-overflow: ellipsis; overflow: hidden;
       background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='5' viewBox='0 0 8 5'><path d='M0 0l4 5 4-5z' fill='%2338BDF8'/></svg>");
-      background-repeat: no-repeat; background-position: right 3px center; background-size: 7px 5px;
+      background-repeat: no-repeat; background-position: right 6px center; background-size: 7px 5px;
     }
     
-    .sabit-varlik { font-size: var(--yazi-sec, 0.95rem) !important; letter-spacing: -0.3px;}
+    .sabit-varlik { font-size: var(--yazi-sec, 0.95rem) !important; letter-spacing: -0.2px;}
     .getiri-wrapper { display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.1; width: 100%; }
     .mode-tarih .getiri-wrapper { position: relative; align-items: center !important; flex-direction: row; display: inline-flex;}
     .mode-tarih .getiri-wrapper .kat-val { margin-top: 0; margin-left: 6px; font-size: calc(var(--yazi, 14px) * 0.7); }
@@ -268,7 +271,7 @@
       
       .asset-select {
         -webkit-appearance: none; -moz-appearance: none; appearance: none;
-        padding: 0 11px 0 4px; text-overflow: clip;
+        padding: 0 16px 0 4px; text-overflow: clip;
         background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='5' viewBox='0 0 8 5'><path d='M0 0l4 5 4-5z' fill='%2338BDF8'/></svg>");
         background-repeat: no-repeat; background-position: right 3px center; background-size: 7px 5px;
       }
@@ -363,7 +366,7 @@
 
   <script>
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxvISjns0Zle5VYIgTLzkoJa38T7LC20bRAEW9Sm6LZYpcW61PF1pzrcgBAulDV6XNM/exec";
-    const SURUM = "S20-KUSURSUZ";
+    const SURUM = "S21-TEKPARCA-ESTETIK";
 
     const TV_MU = /Web0S|webOS|NetCast|SmartTV|SMART-TV|Tizen|HbbTV|VIDAA|Viera|BRAVIA|Hisense|AndroidTV|Android TV|CrKey|AFTM|GoogleTV|LG Browser|LGE|Opera TV|OPRTV|Maple|NETTV|WebTV|Large Screen/i.test(navigator.userAgent || "") || (window.location.search.indexOf('tv=1') > -1);
     const DOKUNMATIK = ('ontouchstart' in window) || ((navigator.maxTouchPoints || 0) > 0);
@@ -484,9 +487,6 @@
       }
     });
 
-    // Kaydırma özellikleri (yatay) ve butonları KALDIRILDI. 
-    // Tablo tamamen tek parça ve sığdırılmış durumda.
-    
     function tabloSigdir() {
       if (aktifSekme === 'aylik') return;
       
@@ -498,11 +498,11 @@
       const tv = TV_MU;
       const mobil = (!tv && window.innerWidth <= 768);
 
-      // Daha kısıtlı ve güvenli font sınırları (çakışmayı imkansız kılar)
+      // Daha ince ayarlanmış font oranları
       let oran, alt, ust;
-      if (tv) { oran = 0.28; alt = 10; ust = 14.5; } 
+      if (tv) { oran = 0.28; alt = 10; ust = 14; } 
       else if (mobil) { oran = 0.28; alt = 9; ust = 12.5; }
-      else { oran = 0.35; alt = 11; ust = 17; }
+      else { oran = 0.35; alt = 11; ust = 16.5; }
 
       let veriSatir = 0;
       let bosluk = 0;
@@ -519,12 +519,10 @@
       }
 
       const baslikYuk = tablo.tHead.offsetHeight;
-      
-      // Eğer ekran çok küçükse scrolla izin verdik, böylece satırlar ezilmez
       const kullanılabilirYukseklik = Math.max(kap.clientHeight || window.innerHeight * 0.6, 400); 
       const kalan = kullanılabilirYukseklik - baslikYuk - bosluk - 6;
       let satir = Math.floor(kalan / veriSatir);
-      satir = Math.max(28, Math.min(satir, mobil ? 40 : 45)); // Satır yükseklik sınırları
+      satir = Math.max(28, Math.min(satir, mobil ? 40 : 44)); 
 
       const yazi = Math.max(alt, Math.min(Math.round(satir * oran), ust));
       const yaziSec = mobil ? Math.max(10, yazi - 1) : yazi;
