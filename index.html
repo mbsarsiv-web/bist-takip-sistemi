@@ -88,6 +88,14 @@
     .asset-select { background-color: #0a0e14; border: 1px solid var(--border-color); color: var(--blue-accent); font-family: 'Inter', sans-serif; font-weight: 900; font-size: var(--yazi-sec, 0.95rem); height: calc(var(--satir, 34px) - 6px); line-height: normal; letter-spacing: 0; padding: 0 2px 0 6px; border-radius: 6px; cursor: pointer; outline: none; width: 100%; min-width: 0; box-sizing: border-box; text-overflow: clip; }
     .asset-select:hover { background-color: #1a222d; }
     .asset-select option, .asset-select optgroup { background-color: var(--bg-panel); color: white; }
+
+    /* TV ve mobilde varlık kutusu: yatayda dar, ok küçük, isim her zaman tam görünür */
+    .tv-modu .asset-select {
+      -webkit-appearance: none; -moz-appearance: none; appearance: none;
+      padding: 0 12px 0 5px; text-overflow: clip; overflow: visible;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='5' viewBox='0 0 8 5'><path d='M0 0l4 5 4-5z' fill='%2338BDF8'/></svg>");
+      background-repeat: no-repeat; background-position: right 3px center; background-size: 7px 5px;
+    }
     
     .sabit-varlik { font-size: var(--yazi-sec, 0.95rem) !important; }
     .getiri-wrapper { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.0; width: 100%; }
@@ -114,8 +122,10 @@
     .tv-modu .mode-yillar th, .tv-modu .mode-yillar td { min-width: 86px; }
     .tv-modu .mode-yillar th { padding: 3px 4px; }
     .tv-modu .mode-yillar td { padding: 2px 4px; }
-    .tv-modu .mode-yillar th:nth-child(1), .tv-modu .mode-yillar td:nth-child(1) { width: 52px; min-width: 52px; padding: 2px 2px; }
-    .tv-modu .mode-yillar th:nth-child(2), .tv-modu .mode-yillar td:nth-child(2) { left: 52px; width: 134px; min-width: 134px; }
+    .tv-modu .mode-yillar th:nth-child(1), .tv-modu .mode-yillar td:nth-child(1) { width: 46px; min-width: 46px; padding: 2px 2px; }
+    .tv-modu .mode-yillar th:nth-child(2), .tv-modu .mode-yillar td:nth-child(2) { left: 46px; width: 100px; min-width: 100px; }
+    .tv-modu .mode-yillar td.col-varlik { padding: 2px 3px !important; }
+    .tv-modu .mode-yillar th.col-varlik { padding-left: 6px !important; }
     .tv-modu #tableContainer { touch-action: none; -webkit-user-select: none; user-select: none; }
 
     .kaydir-btn { display: none; position: fixed; top: 50%; margin-top: -24px; width: 48px; height: 48px; border-radius: 50%; background: rgba(153, 27, 27, 0.9); border: 2px solid #F87171; color: #fff; font-family: 'Inter', Arial, sans-serif; font-size: 26px; font-weight: 900; line-height: 1; padding: 0; cursor: pointer; z-index: 60; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.6); }
@@ -231,17 +241,22 @@
       .mode-yillar th { padding: 3px 4px; min-width: 80px; }
       .mode-yillar td { padding: 2px 4px; min-width: 80px; }
       .col-varlik { padding-left: 8px !important; }
-      .mode-yillar th:nth-child(1), .mode-yillar td:nth-child(1) { width: 40px; min-width: 40px; padding: 2px 1px; }
-      .mode-yillar th:nth-child(2), .mode-yillar td:nth-child(2) { left: 40px; width: 138px; min-width: 138px; }
-      .mode-yillar td.col-varlik { padding: 2px 3px !important; }
-      .mode-yillar th.col-varlik { padding-left: 8px !important; }
+      .mode-yillar th:nth-child(1), .mode-yillar td:nth-child(1) { width: 34px; min-width: 34px; padding: 2px 1px; }
+      .mode-yillar th:nth-child(2), .mode-yillar td:nth-child(2) { left: 34px; width: 92px; min-width: 92px; }
+      .mode-yillar td.col-varlik { padding: 2px 2px !important; }
+      .mode-yillar th.col-varlik { padding-left: 6px !important; }
 
       .mode-tarih { max-width: 100% !important; margin: 0 auto !important; }
       .mode-tarih th { padding: 3px 2px !important; }
       .mode-tarih td { padding: 1px 2px !important; }
       .mode-tarih th:nth-child(2), .mode-tarih td:nth-child(2) { padding-left: 8px !important; }
       .mode-tarih th:nth-child(3), .mode-tarih td:nth-child(3) { padding-left: 2px !important; }
-      .asset-select { padding: 0 0 0 4px; }
+      .asset-select {
+        -webkit-appearance: none; -moz-appearance: none; appearance: none;
+        padding: 0 11px 0 4px; text-overflow: clip;
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='5' viewBox='0 0 8 5'><path d='M0 0l4 5 4-5z' fill='%2338BDF8'/></svg>");
+        background-repeat: no-repeat; background-position: right 3px center; background-size: 7px 5px;
+      }
 
       .aylik-panel { padding: 6px; gap: 5px; margin-bottom: 5px; }
       .aylik-grup { gap: 4px; width: 100%; }
@@ -366,12 +381,23 @@
   <!-- Ana betik, harici kütüphanelerden ÖNCE çalışır: veri isteği hemen başlar -->
   <script>
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxvISjns0Zle5VYIgTLzkoJa38T7LC20bRAEW9Sm6LZYpcW61PF1pzrcgBAulDV6XNM/exec";
-    const SURUM = "S5";
+    const SURUM = "S6";
 
     // Akıllı TV algılama (adres sonuna ?tv=1 eklenirse zorla TV modu açılır)
     const TV_MU = /Web0S|webOS|NetCast|SmartTV|SMART-TV|Tizen|HbbTV|VIDAA|Viera|BRAVIA|Hisense|AndroidTV|Android TV|CrKey|AFTM|GoogleTV|LG Browser|LGE|Opera TV|OPRTV|Maple|NETTV|WebTV|Large Screen/i.test(navigator.userAgent || "") || (window.location.search.indexOf('tv=1') > -1);
     const DOKUNMATIK = ('ontouchstart' in window) || ((navigator.maxTouchPoints || 0) > 0);
     if (TV_MU) document.body.classList.add('tv-modu');
+
+    // ==============================================================
+    // İMLEÇ YÖNÜ AYARLARI (TV / fare)
+    //  SURUKLE_YONU : -1 = tablo imleci takip eder (imleç sola giderse tablo da sola gider,
+    //                 sağdaki sütunlar görünür). +1 = tersi.
+    //  KENAR_YONU   : +1 = imleç sağ kenarda iken sağdaki sütunlara, sol kenarda iken
+    //                 soldaki sütunlara gidilir. -1 = tersi.
+    // Yön yine ters hissedilirse yalnızca ilgili değerin işaretini değiştirin.
+    // ==============================================================
+    const SURUKLE_YONU = -1;
+    const KENAR_YONU = 1;
 
     let globalAssets = [];
     let globalYillar = [];
@@ -524,10 +550,10 @@
 
       // ==============================================================
       // AKILLI TV (sihirli kumanda / fare)
-      //  1) İmleç tablonun SAĞ kenarına gelince tablo sağa, SOL kenarına
-      //     gelince sola kayar (imleç kenara ne kadar yakınsa o kadar hızlı).
+      //  1) İmleç tablonun SAĞ kenarına gelince tablo sağdaki sütunlara, SOL kenarına
+      //     gelince soldaki sütunlara kayar (kenara yaklaştıkça hızlanır).
       //  2) Tekerlek aşağı = sağa, yukarı = sola.
-      //  3) Tuşa basılı tutup sürüklerken imleç sağa gidince tablo sağa kayar.
+      //  3) Tuşa basılı tutup sürüklerken tablo imleci takip eder (SURUKLE_YONU).
       // ==============================================================
       if (TV_MU) {
         let surukle = null;
@@ -566,7 +592,7 @@
           if (yon === 0) { kenarDurdur(); return; }
           yakinlik = Math.max(0, Math.min(yakinlik, 1));
           kenarHiz = 6 + Math.round(14 * yakinlik);
-          kenarYon = yon;
+          kenarYon = yon * KENAR_YONU;
           if (!kenarZamanlayici) kenarZamanlayici = setInterval(kenarAdim, 16);
         });
 
@@ -595,7 +621,7 @@
 
         document.addEventListener('mousemove', function(e) {
           if (!surukle) return;
-          const yeni = surukle.sol + (e.clientX - surukle.x) * 1.5;
+          const yeni = surukle.sol + SURUKLE_YONU * (e.clientX - surukle.x) * 1.5;
           kap.scrollLeft = Math.max(0, Math.min(yeni, kap.scrollWidth - kap.clientWidth));
         });
 
