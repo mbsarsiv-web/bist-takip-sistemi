@@ -406,11 +406,12 @@
     if (TV_MU) document.body.classList.add('tv-modu');
 
     // TV kaydırma yönü. "⇄ YÖN" düğmesine basınca tersine döner ve cihazda hatırlanır.
+    // Düzeltme: Eski hatalı hafızayı temizlemek için kayıt anahtarı getiriTakibi_yonTers_v3 olarak değiştirildi.
     let YON_TERS = false;
-    try { YON_TERS = (window.localStorage.getItem('getiriTakibi_yonTers') === '1'); } catch (e) {}
+    try { YON_TERS = (window.localStorage.getItem('getiriTakibi_yonTers_v3') === '1'); } catch (e) {}
     function yonDegistir() {
       YON_TERS = !YON_TERS;
-      try { window.localStorage.setItem('getiriTakibi_yonTers', YON_TERS ? '1' : '0'); } catch (e) {}
+      try { window.localStorage.setItem('getiriTakibi_yonTers_v3', YON_TERS ? '1' : '0'); } catch (e) {}
       gosterToast("Yön değişti. İmleci sağ duvara götürüp deneyin.", "#FACC15");
     }
 
@@ -1052,7 +1053,8 @@
           opt.value = String(y);
           opt.textContent = String(y);
           sel.appendChild(opt);
-        }
+        });
+      }
       });
     }
 
