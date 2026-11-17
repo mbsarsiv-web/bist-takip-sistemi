@@ -405,14 +405,14 @@
     const DOKUNMATIK = ('ontouchstart' in window) || ((navigator.maxTouchPoints || 0) > 0);
     if (TV_MU) document.body.classList.add('tv-modu');
 
-    // TV kaydırma yönü. "⇄ YÖN" düğmesine basınca tersine döner ve cihazda hatırlanır.
-    // Düzeltme: Eski hatalı hafızayı temizlemek için kayıt anahtarı getiriTakibi_yonTers_v3 olarak değiştirildi.
+    // TV kaydırma yönü. Eski hatalı çerezi (localStorage) kökten silip sıfırdan başlıyoruz. (v7)
     let YON_TERS = false;
-    try { YON_TERS = (window.localStorage.getItem('getiriTakibi_yonTers_v3') === '1'); } catch (e) {}
+    try { YON_TERS = (window.localStorage.getItem('getiriTakibi_yon_v7') === '1'); } catch (e) {}
+    
     function yonDegistir() {
       YON_TERS = !YON_TERS;
-      try { window.localStorage.setItem('getiriTakibi_yonTers_v3', YON_TERS ? '1' : '0'); } catch (e) {}
-      gosterToast("Yön değişti. İmleci sağ duvara götürüp deneyin.", "#FACC15");
+      try { window.localStorage.setItem('getiriTakibi_yon_v7', YON_TERS ? '1' : '0'); } catch (e) {}
+      gosterToast("Yön değiştirildi. Lütfen imleci test edin.", "#FACC15");
     }
 
     let globalAssets = [];
@@ -550,7 +550,7 @@
         const kod = e.keyCode || e.which;
         const sag = (e.key === 'ArrowRight' || e.key === 'Right' || kod === 39);
         const sol = (e.key === 'ArrowLeft' || e.key === 'Left' || kod === 37);
-        if (!sag && sol) return;
+        if (!sag && !sol) return;
 
         const hedef = e.target;
         if (hedef && hedef.tagName === 'INPUT') return;
@@ -565,11 +565,6 @@
       // ==============================================================
       // AKILLI TV (sihirli kumanda / fare) - KONUM TABANLI KAYDIRMA
       //  İmlecin tablo üzerindeki yatay konumu, tablonun kaydırma konumunu belirler:
-      //   - Tablo açılışta başta durur (6 AY, 1 YIL ...)
-      //   - İmleç sağa gittikçe sağdaki sütunlar gelir (sağ duvarda 15 YIL, 20 YIL)
-      //   - İmleç sola gittikçe tablo geri döner (sol duvarda 6 AY, 1 YIL)
-      //  Zamanlayıcı ya da sürükleme yoktur; yön karışmaz. Varlık listesinin üzerindeyken kaymaz.
-      //  Tekerlek: aşağı = sağa, yukarı = sola.
       // ==============================================================
       if (TV_MU) {
         const UC_PAY = 0.06; // iki uçta, tablonun tamamına ulaşmak için ayrılan pay
@@ -582,11 +577,16 @@
           if (t && t.closest && t.closest('select, option, button')) return;
           const r = kap.getBoundingClientRect();
           if (r.width <= 0) return;
+          
           let oran = (e.clientX - r.left) / r.width;
           oran = (oran - UC_PAY) / (1 - 2 * UC_PAY);
           oran = Math.max(0, Math.min(oran, 1));
-          if (YON_TERS) oran = 1 - oran;
-          kap.scrollLeft = Math.round(oran * son);
+          
+          // Standart mantıkta: oran = 0 (sol) ise scrollLeft = 0 olur (6 Ay, 1 Yıl görünür).
+          // Eğer YON_TERS tuşuna basılmışsa, oran (1 - oran) yapılarak mantık ters çevrilir.
+          let nihaiOran = YON_TERS ? (1 - oran) : oran;
+          
+          kap.scrollLeft = Math.round(nihaiOran * son);
         });
 
         kap.addEventListener('wheel', function(e) {
