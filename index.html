@@ -8,6 +8,20 @@
   <meta http-equiv="Expires" content="0">
   <title>Getiri Takibi Sistemi</title>
 
+  <!-- Önbellek kırıcı: TV tarayıcıları eski sayfayı saklayabiliyor. Her açılışta adrese benzersiz bir ek yapılır,
+       böylece her zaman en güncel dosya yüklenir. -->
+  <script>
+    (function () {
+      try {
+        if (location.search.indexOf('_v=') === -1) {
+          var u = location.href.split('#')[0];
+          u += (u.indexOf('?') > -1 ? '&' : '?') + '_v=' + Date.now();
+          location.replace(u);
+        }
+      } catch (e) {}
+    })();
+  </script>
+
   <!-- Hızlı açılış: sunucu bağlantılarını önceden hazırla -->
   <link rel="preconnect" href="https://script.google.com">
   <link rel="preconnect" href="https://script.googleusercontent.com" crossorigin>
