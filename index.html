@@ -8,8 +8,6 @@
   <meta http-equiv="Expires" content="-1">
   <title>Getiri Takibi Sistemi</title>
 
-  <!-- Önbellek kırıcı: TV tarayıcıları eski sayfayı saklayabiliyor. Her açılışta adrese benzersiz bir ek yapılır,
-       böylece her zaman en güncel dosya yüklenir. -->
   <script>
     (function () {
       try {
@@ -22,13 +20,11 @@
     })();
   </script>
 
-  <!-- Hızlı açılış: sunucu bağlantılarını önceden hazırla -->
   <link rel="preconnect" href="https://script.google.com">
   <link rel="preconnect" href="https://script.googleusercontent.com" crossorigin>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
-  <!-- Stiller sayfayı engellemeden yüklenir (ilk görüntü daha hızlı gelir) -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" media="print" onload="this.media='all'">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" media="print" onload="this.media='all'">
@@ -43,7 +39,7 @@
   <style>
     :root { --bg-main: #0a0e14; --bg-panel: #111820; --text-main: #E2E8F0; --gold: #FACC15; --blue-accent: #38BDF8; --green-accent: #10B981; --red-accent: #EF4444; --red-btn: #991B1B; --border-color: #2D3748; --panel-border: #1F2937; }
     body { margin: 0; font-family: 'Inter', sans-serif; background-color: var(--bg-main); color: var(--text-main); display: flex; height: 100vh; height: 100dvh; overflow: hidden; }
-    .main-content { flex: 1; display: flex; flex-direction: column; padding: 5px 15px; max-width: 1400px; margin: 0 auto; width: 100%; box-sizing: border-box; overflow: hidden; min-height: 0; }
+    .main-content { flex: 1; display: flex; flex-direction: column; padding: 5px 15px; max-width: 1400px; margin: 0 auto; width: 100%; box-sizing: border-box; overflow: hidden; min-height: 0; position: relative; }
     
     .top-header { position: relative; display: flex; justify-content: flex-end; align-items: center; background-color: var(--red-btn); padding: 8px 15px; border-radius: 8px; margin-bottom: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); border: 1px solid #FCA5A5; flex-shrink: 0;}
     .header-title { position: absolute; left: 50%; transform: translateX(-50%); font-size: 1.25rem; font-weight: 900; margin: 0; letter-spacing: 1px; color: white; white-space: nowrap; z-index: 1;}
@@ -74,7 +70,7 @@
     span.flatpickr-weekday { color: #38BDF8 !important; }
     .flatpickr-month, .flatpickr-prev-month svg, .flatpickr-next-month svg { color: #E2E8F0 !important; fill: #E2E8F0 !important; }
     
-    .table-container { background-color: var(--bg-panel); border-radius: 10px; border: 1px solid var(--panel-border); box-shadow: 0 10px 20px rgba(0,0,0,0.5); flex: 1; min-height: 0; display: block; width: 100%; overflow-x: auto; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; direction: ltr; }
+    .table-container { background-color: var(--bg-panel); border-radius: 10px; border: 1px solid var(--panel-border); box-shadow: 0 10px 20px rgba(0,0,0,0.5); flex: 1; min-height: 0; display: block; width: 100%; overflow-x: auto; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior-x: contain; direction: ltr; position: relative; z-index: 10;}
     .table-container:focus { outline: none !important; }
     
     table { border-collapse: collapse; text-align: center; margin: 0; width: max-content;}
@@ -83,7 +79,6 @@
     th { color: var(--gold); font-weight: 900; letter-spacing: 0.5px; }
     td { border-bottom: 1px solid rgba(255,255,255,0.03); font-weight: 700; }
 
-    /* Satır yüksekliği ve yazı boyutları JS (tabloSigdir) tarafından ekrana göre hesaplanır */
     .mode-yillar td, .mode-tarih td { height: var(--satir, auto); }
     
     .mode-yillar { width: max-content; margin: 0; }
@@ -103,7 +98,6 @@
     .asset-select:hover { background-color: #1a222d; }
     .asset-select option, .asset-select optgroup { background-color: var(--bg-panel); color: white; }
 
-    /* TV ve mobilde varlık kutusu: yatayda dar, ok küçük, isim her zaman tam görünür */
     .tv-modu .asset-select {
       -webkit-appearance: none; -moz-appearance: none; appearance: none;
       padding: 0 12px 0 5px; text-overflow: clip; overflow: visible;
@@ -132,7 +126,6 @@
     tbody tr:hover td { background-color: rgba(255, 255, 255, 0.05); }
     .mode-yillar tbody tr:hover td:nth-child(1), .mode-yillar tbody tr:hover td:nth-child(2) { background-color: #1a222d; }
 
-    /* AKILLI TV (webOS, Tizen vb.) görünümü: daha dar sütunlar, kumanda ile yatay kaydırma */
     .tv-modu .mode-yillar th, .tv-modu .mode-yillar td { min-width: 86px; }
     .tv-modu .mode-yillar th { padding: 3px 4px; }
     .tv-modu .mode-yillar td { padding: 2px 4px; }
@@ -140,15 +133,33 @@
     .tv-modu .mode-yillar th:nth-child(2), .tv-modu .mode-yillar td:nth-child(2) { left: 46px; width: 100px; min-width: 100px; }
     .tv-modu .mode-yillar td.col-varlik { padding: 2px 3px !important; }
     .tv-modu .mode-yillar th.col-varlik { padding-left: 6px !important; }
-    .tv-modu #tableContainer { touch-action: none; -webkit-user-select: none; user-select: none; }
+    
+    /* İMLEÇLE KAYDIRMAYI KALDIRDIK. SADECE YENİ BUTONLARLA KAYDIRILACAK. */
+    .tv-modu #tableContainer { touch-action: auto; -webkit-user-select: auto; user-select: auto; }
 
-    .yon-btn { display: none; background: #000; color: #FACC15; border: 1px solid #FACC15; border-radius: 4px; padding: 3px 9px; font-family: 'Inter', sans-serif; font-weight: 900; font-size: 0.75rem; cursor: pointer; margin-left: 8px; }
-    .tv-modu .yon-btn { display: inline-block; }
+    /* YÖN BUTONLARI ARTIK DEVASA VE GÖRÜNÜR YERDE */
+    .yon-dugmeleri { display: none; justify-content: center; gap: 40px; margin-top: 10px; margin-bottom: 15px; z-index: 50; }
+    .yillar-kaydir .yon-dugmeleri { display: flex; } /* Sadece tablo taşıyorsa göster */
 
-    .kaydir-btn { display: none; position: fixed; top: 50%; margin-top: -24px; width: 48px; height: 48px; border-radius: 50%; background: rgba(153, 27, 27, 0.9); border: 2px solid #F87171; color: #fff; font-family: 'Inter', Arial, sans-serif; font-size: 26px; font-weight: 900; line-height: 1; padding: 0; cursor: pointer; z-index: 60; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.6); }
-    .kaydir-sol { left: 8px; }
-    .kaydir-sag { right: 8px; }
-    body.yillar-kaydir .kaydir-btn { display: flex; }
+    .k-btn { 
+      background: #991B1B; 
+      color: white; 
+      border: 2px solid #F87171; 
+      border-radius: 8px; 
+      padding: 10px 40px; 
+      font-family: 'Inter', sans-serif; 
+      font-size: 1.5rem; 
+      font-weight: 900; 
+      cursor: pointer; 
+      box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .k-btn:hover, .k-btn:focus { background: #DC2626; transform: scale(1.05); outline: none; border-color: var(--gold); color: var(--gold);}
+    .k-btn:active { transform: scale(0.95); }
+    .k-btn i { font-size: 1.8rem; }
     
     .loading-state { text-align: center; padding: 30px; color: #94A3B8; font-size: 1rem; font-weight: 600; }
     .loading-state i { color: #10B981; margin-bottom: 10px; font-size: 2rem; }
@@ -225,13 +236,13 @@
       .aylik-panel { flex-wrap: wrap; }
     }
 
-    /* KISA EKRANLAR (TV, yatay telefon, küçük pencereler): üst alanları sıkıştır */
     @media (max-height: 720px) {
       .top-header { padding: 4px 10px; margin-bottom: 5px; } .header-title { font-size: 1.1rem; } .tab-buttons { margin-bottom: 5px; } .tab-btn { padding: 4px 6px; font-size: 0.8rem; }
       .table-container { box-shadow: none; }
       .date-controls { padding: 5px 14px; margin-bottom: 5px; }
       .date-input { padding: 3px 8px !important; font-size: 0.9rem !important; }
       .date-controls label { font-size: 0.85rem; }
+      .k-btn { padding: 8px 30px; font-size: 1.2rem; }
     }
     @media (max-height: 600px) {
       .main-content { padding-top: 3px; padding-bottom: 3px; }
@@ -240,6 +251,7 @@
       .date-controls { padding: 3px 12px; margin-bottom: 4px; gap: 14px; }
       .date-input { padding: 2px 6px !important; font-size: 0.82rem !important; width: 120px; }
       .date-controls label { font-size: 0.78rem; }
+      .k-btn { padding: 6px 20px; font-size: 1rem; }
     }
 
     @media (max-width: 768px) {
@@ -274,33 +286,6 @@
         background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='5' viewBox='0 0 8 5'><path d='M0 0l4 5 4-5z' fill='%2338BDF8'/></svg>");
         background-repeat: no-repeat; background-position: right 3px center; background-size: 7px 5px;
       }
-
-      .aylik-panel { padding: 6px; gap: 5px; margin-bottom: 5px; }
-      .aylik-grup { gap: 4px; width: 100%; }
-      .aylik-grup.g-varlik { flex: 1 1 0; width: auto; min-width: 0; flex-shrink: 1; }
-      .aylik-grup.g-preset { flex: 0 0 auto; width: auto; gap: 4px; }
-      .aylik-varlik-btn { flex: 1; width: auto; min-width: 0; font-size: 0.85rem; padding: 7px 4px; }
-      .aylik-panel label { font-size: 0.7rem; gap: 3px; }
-      .aylik-select { padding: 5px 2px; font-size: 0.74rem; }
-      .aylik-ayrac { margin: 0; font-size: 0.7rem; }
-      .aylik-preset { padding: 8px 5px; font-size: 0.62rem; }
-      .aylik-btn { padding: 8px 6px; font-size: 0.66rem; gap: 4px; }
-      #aylikContainer { padding: 5px 3px; }
-      .aylik-ust { flex-direction: column; gap: 4px; margin-bottom: 5px; }
-      .aylik-baslik { text-align: center; font-size: 0.95rem; }
-      .aylik-baslik span { font-size: 0.62rem; margin-left: 5px; }
-      .aylik-ozet { display: grid; grid-template-columns: repeat(5, 1fr); gap: 3px; width: 100%; }
-      .aylik-chip { min-width: 0; padding: 3px 1px; border-radius: 6px; }
-      .aylik-chip .k { font-size: 0.48rem; letter-spacing: 0; }
-      .aylik-chip .v { font-size: 0.68rem; }
-      .aylik-chip .s { font-size: 0.5rem; }
-      .mode-aylik th { font-size: 0.5rem; padding: 4px 0; }
-      .mode-aylik td { font-size: 0.62rem; padding: 6px 0; }
-      .mode-aylik th.ay-yil, .mode-aylik td.ay-yil { width: 9%; font-size: 0.6rem; }
-      .mode-aylik th.ay-toplam, .mode-aylik td.ay-toplam { width: 13%; border-left-width: 1px; }
-      .v-uzun, .th-uzun { display: none; }
-      .v-kisa, .th-kisa { display: inline; }
-      .aylik-detay { font-size: 0.68rem; margin: 6px 2px 2px 2px; }
     }
   </style>
 </head>
@@ -313,7 +298,6 @@
         <div class="dot"></div> SON VERİ: <span style="color: #94A3B8; margin-left: 5px;" id="lastUpdateText">Yükleniyor...</span>
         <span style="color: #475569; margin: 0 8px;">|</span>
         <span style="color: #10B981;" id="assetCountText"><i class="fa-solid fa-spinner fa-spin"></i></span>
-        <button type="button" id="yonBtn" class="yon-btn" onclick="yonDegistir()">⇄ YÖN</button>
       </div>
     </div>
 
@@ -370,6 +354,12 @@
       </div>
     </div>
 
+    <!-- SADECE BUTONLARLA KAYDIRMA İÇİN BÖLÜM -->
+    <div id="yonButonlari" class="yon-dugmeleri">
+      <button class="k-btn" onclick="butonSola()"><i class="fa-solid fa-angles-left"></i> SOLA KAYDIR (6 AY / 1 YIL)</button>
+      <button class="k-btn" onclick="butonSaga()">SAĞA KAYDIR (15 YIL / 20 YIL) <i class="fa-solid fa-angles-right"></i></button>
+    </div>
+
     <div id="tableContainer" class="table-container" tabindex="0">
       <table id="dataTable" class="mode-yillar">
         <thead>
@@ -386,37 +376,18 @@
     </div>
   </main>
 
-  <!-- Tabloyu yatay kaydırmak için ekran düğmeleri (TV'de ve fareli cihazlarda, tablo taşınca görünür) -->
-  <button type="button" id="kaydirSol" class="kaydir-btn kaydir-sol" onclick="yatayKaydir(-1)" aria-label="Sola kaydır">&lt;</button>
-  <button type="button" id="kaydirSag" class="kaydir-btn kaydir-sag" onclick="yatayKaydir(1)" aria-label="Sağa kaydır">&gt;</button>
-
   <div id="toastNotification" class="toast">
     <i class="fa-solid fa-circle-info" style="color: #38BDF8; font-size: 1.2rem;"></i>
     <span id="toastMessage">Bildirim mesajı</span>
   </div>
 
-  <!-- Ana betik, harici kütüphanelerden ÖNCE çalışır: veri isteği hemen başlar -->
   <script>
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxvISjns0Zle5VYIgTLzkoJa38T7LC20bRAEW9Sm6LZYpcW61PF1pzrcgBAulDV6XNM/exec";
-    const SURUM = "S15";
+    const SURUM = "S16-BUTONLU";
 
-    // Akıllı TV algılama (adres sonuna ?tv=1 eklenirse zorla TV modu açılır)
     const TV_MU = /Web0S|webOS|NetCast|SmartTV|SMART-TV|Tizen|HbbTV|VIDAA|Viera|BRAVIA|Hisense|AndroidTV|Android TV|CrKey|AFTM|GoogleTV|LG Browser|LGE|Opera TV|OPRTV|Maple|NETTV|WebTV|Large Screen/i.test(navigator.userAgent || "") || (window.location.search.indexOf('tv=1') > -1);
     const DOKUNMATIK = ('ontouchstart' in window) || ((navigator.maxTouchPoints || 0) > 0);
     if (TV_MU) document.body.classList.add('tv-modu');
-
-    // TV Bro için varsayılanı DOĞRUDAN SİZİN İSTEDİĞİNİZ ŞEKİLDE ayarladım (true).
-    let YON_TERS = true; 
-    try { 
-      let kayitli = window.localStorage.getItem('getiriTakibi_yon_v15');
-      if (kayitli === '0') { YON_TERS = false; } 
-    } catch (e) {}
-    
-    function yonDegistir() {
-      YON_TERS = !YON_TERS;
-      try { window.localStorage.setItem('getiriTakibi_yon_v15', YON_TERS ? '1' : '0'); } catch (e) {}
-      gosterToast(YON_TERS ? "YÖN: TV BRO UYUMLU (TERS)" : "YÖN: STANDART", "#FACC15");
-    }
 
     let globalAssets = [];
     let globalYillar = [];
@@ -445,10 +416,6 @@
 
     const SABIT_VARLIKLAR = ["DOLAR", "EURO", "GR ALTIN", "GR GÜMÜŞ", "NASDAQ", "S&P 500"];
 
-    // ==============================================================
-    // HIZLI AÇILIŞ: son başarılı veri tarayıcıda saklanır. Uygulama
-    // açılır açılmaz bu görüntü gösterilir, güncel veri arkadan gelir.
-    // ==============================================================
     const ONBELLEK_ANAHTARI = 'getiriTakibi_anaVeri_v2';
 
     function onbellekOku() {
@@ -481,11 +448,28 @@
       }
     }
 
-    // Sayfa içeriği hazır olur olmaz başlat
     function hizliBaslat() {
       aylikSecicileriHazirla();
       aylikOnAyar(10, false);
       veriCekHizliAcilis();
+    }
+
+    // ==========================================
+    // YENİ BUTON SİSTEMİ İÇİN FONKSİYONLAR
+    // Ekrana 6 Ay/1 Yıl yönü için SOLA, 15 Yıl/20 Yıl için SAĞA buton eklendi
+    // ==========================================
+    function butonSola() {
+      const kap = document.getElementById('tableContainer');
+      if (!kap) return;
+      const adim = Math.max(200, Math.round(kap.clientWidth * 0.45));
+      kap.scrollLeft = Math.max(0, kap.scrollLeft - adim);
+    }
+    
+    function butonSaga() {
+      const kap = document.getElementById('tableContainer');
+      if (!kap) return;
+      const adim = Math.max(200, Math.round(kap.clientWidth * 0.45));
+      kap.scrollLeft = Math.min(kap.scrollWidth - kap.clientWidth, kap.scrollLeft + adim);
     }
 
     document.addEventListener("DOMContentLoaded", function() {
@@ -539,113 +523,15 @@
         document.fonts.ready.then(function() { tabloSigdir(); tabloHizaDuzenle(); });
       }
 
-      const kap = document.getElementById('tableContainer');
-      kap.addEventListener('scroll', kaydirDugmeleriniGuncelle);
-
-      // ==============================================================
-      // KLAVYE / KUMANDA TUŞLARI İLE KAYDIRMA (TV Bro Kumanda Okları İçin)
-      // ÇÖZÜM: Daha önceki sürümde YON_TERS kumanda oklarını kapsamıyordu. Düzeltildi!
-      // ==============================================================
-      document.addEventListener('keydown', function(e) {
-        if (aktifSekme !== 'yillar') return;
-
-        const kod = e.keyCode || e.which;
-        const sag = (e.key === 'ArrowRight' || e.key === 'Right' || kod === 39);
-        const sol = (e.key === 'ArrowLeft' || e.key === 'Left' || kod === 37);
-        if (!sag && !sol) return;
-
-        const hedef = e.target;
-        if (hedef && hedef.tagName === 'INPUT') return;
-
-        if (!kap || kap.scrollWidth <= kap.clientWidth + 1) return;
-
-        e.preventDefault();
-        e.stopPropagation();
-
-        let adimYonu = sag ? 1 : -1;
-        
-        // EĞER TERS YÖN AKTİFSE, KUMANDA YÖNÜNÜ DE TERS ÇEVİR
-        if (YON_TERS) { adimYonu = -adimYonu; }
-        
-        yatayKaydir(adimYonu);
-      }, true);
-
-      // ==============================================================
-      // AKILLI TV - KONUM TABANLI KAYDIRMA (Sanal İmleç İçin)
-      // ==============================================================
-      if (TV_MU) {
-        kap.addEventListener('mousemove', function(e) {
-          if (aktifSekme !== 'yillar') return;
-          const son = kap.scrollWidth - kap.clientWidth;
-          if (son <= 1) return;
-          const t = e.target;
-          if (t && t.closest && t.closest('select, option, button')) return;
-          
-          let ekranGenislik = window.innerWidth || document.documentElement.clientWidth;
-          if (ekranGenislik <= 0) return;
-          
-          let oran = e.clientX / ekranGenislik;
-          oran = (oran - 0.10) / 0.80; // Uçlara %10 pay
-          oran = Math.max(0, Math.min(oran, 1));
-          
-          let nihaiOran = YON_TERS ? (1 - oran) : oran;
-          
-          kap.scrollLeft = Math.round(nihaiOran * son);
-        });
-
-        kap.addEventListener('wheel', function(e) {
-          if (aktifSekme !== 'yillar') return;
-          if (kap.scrollWidth <= kap.clientWidth + 1) return;
-          if (kap.scrollHeight > kap.clientHeight + 2) return; 
-          let d = (Math.abs(e.deltaX) > Math.abs(e.deltaY)) ? e.deltaX : e.deltaY;
-          if (!d) return;
-
-          if (YON_TERS) { d = -d; }
-
-          const once = kap.scrollLeft;
-          kap.scrollLeft = Math.max(0, Math.min(once + d, kap.scrollWidth - kap.clientWidth));
-          if (kap.scrollLeft !== once) e.preventDefault();
-        }, { passive: false });
-      }
-
-      if (window.location.search.indexOf('tani=1') > -1) {
-        const p = document.createElement('div');
-        p.style.cssText = 'position:fixed;left:6px;bottom:6px;max-width:70vw;background:rgba(0,0,0,0.88);color:#4ADE80;font:12px/1.35 monospace;padding:6px 8px;border:1px solid #166534;border-radius:6px;z-index:99999;white-space:pre-wrap;pointer-events:none;';
-        document.body.appendChild(p);
-        let sonOlay = 'olay bekleniyor...';
-        let sonMove = 0;
-        function taniYaz() {
-          p.textContent = SURUM + ' | TV=' + TV_MU + ' | dokunmatik=' + DOKUNMATIK + ' | kaydirma=' + Math.round(kap.scrollLeft) + '/' + Math.round(kap.scrollWidth - kap.clientWidth) + '\n' + sonOlay + '\n' + (navigator.userAgent || '');
-        }
-        document.addEventListener('keydown', function(e) { sonOlay = 'keydown key=' + e.key + ' keyCode=' + e.keyCode; taniYaz(); }, true);
-        document.addEventListener('mousedown', function(e) { sonOlay = 'mousedown button=' + e.button + ' x=' + e.clientX + ' y=' + e.clientY; taniYaz(); }, true);
-        document.addEventListener('mouseup', function(e) { sonOlay = 'mouseup x=' + e.clientX; taniYaz(); }, true);
-        document.addEventListener('mousemove', function(e) { const n = Date.now(); if (n - sonMove < 150) return; sonMove = n; sonOlay = 'mousemove x=' + e.clientX + ' y=' + e.clientY; taniYaz(); }, true);
-        document.addEventListener('wheel', function(e) { sonOlay = 'wheel dX=' + e.deltaX + ' dY=' + e.deltaY; taniYaz(); }, true);
-        document.addEventListener('touchstart', function() { sonOlay = 'touchstart'; taniYaz(); }, true);
-        kap.addEventListener('scroll', taniYaz);
-        taniYaz();
-      }
+      // Fare veya kumanda tekerleğiyle standart kaydırmayı tamamen serbest bıraktık. 
+      // Her tarayıcı kendi doğal tekerlek yönünü (sola basınca sol, sağa basınca sağ) kullanır.
     });
-
-    // Tabloyu tek adım sağa ya da sola kaydırır
-    function yatayKaydir(yon) {
-      const kap = document.getElementById('tableContainer');
-      if (!kap) return;
-      const adim = Math.max(120, Math.round(kap.clientWidth * 0.35));
-      const yeni = kap.scrollLeft + (yon * adim);
-      kap.scrollLeft = Math.max(0, Math.min(yeni, kap.scrollWidth - kap.clientWidth));
-    }
 
     function kaydirDugmeleriniGuncelle() {
       const kap = document.getElementById('tableContainer');
-      const goster = !!((TV_MU || !DOKUNMATIK) && aktifSekme === 'yillar' && kap && kap.scrollWidth > kap.clientWidth + 1);
+      // Tablo taşıyorsa ana gövdeye class ekle (Yeni devasa butonlar görünsün diye)
+      const goster = !!(aktifSekme === 'yillar' && kap && kap.scrollWidth > kap.clientWidth + 1);
       document.body.classList.toggle('yillar-kaydir', goster);
-      if (!goster) return;
-      const sol = document.getElementById('kaydirSol');
-      const sag = document.getElementById('kaydirSag');
-      if (sol) sol.style.opacity = (kap.scrollLeft <= 1) ? '0.3' : '0.95';
-      if (sag) sag.style.opacity = (kap.scrollLeft >= kap.scrollWidth - kap.clientWidth - 1) ? '0.3' : '0.95';
     }
 
     function tabloHizaDuzenle() {
