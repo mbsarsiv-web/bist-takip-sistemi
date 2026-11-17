@@ -398,21 +398,21 @@
   <!-- Ana betik, harici kütüphanelerden ÖNCE çalışır: veri isteği hemen başlar -->
   <script>
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxvISjns0Zle5VYIgTLzkoJa38T7LC20bRAEW9Sm6LZYpcW61PF1pzrcgBAulDV6XNM/exec";
-    const SURUM = "S11";
+    const SURUM = "S12";
 
     // Akıllı TV algılama (adres sonuna ?tv=1 eklenirse zorla TV modu açılır)
     const TV_MU = /Web0S|webOS|NetCast|SmartTV|SMART-TV|Tizen|HbbTV|VIDAA|Viera|BRAVIA|Hisense|AndroidTV|Android TV|CrKey|AFTM|GoogleTV|LG Browser|LGE|Opera TV|OPRTV|Maple|NETTV|WebTV|Large Screen/i.test(navigator.userAgent || "") || (window.location.search.indexOf('tv=1') > -1);
     const DOKUNMATIK = ('ontouchstart' in window) || ((navigator.maxTouchPoints || 0) > 0);
     if (TV_MU) document.body.classList.add('tv-modu');
 
-    // TV kaydırma yönü. Eski hatalı çerezi (localStorage) kökten silip sıfırdan başlıyoruz. (v7)
+    // TV kaydırma yönü. Eski hatalı çerezi tamamen silip sıfırdan başlıyoruz. (v8)
     let YON_TERS = false;
-    try { YON_TERS = (window.localStorage.getItem('getiriTakibi_yon_v7') === '1'); } catch (e) {}
+    try { YON_TERS = (window.localStorage.getItem('getiriTakibi_yon_v8') === '1'); } catch (e) {}
     
     function yonDegistir() {
       YON_TERS = !YON_TERS;
-      try { window.localStorage.setItem('getiriTakibi_yon_v7', YON_TERS ? '1' : '0'); } catch (e) {}
-      gosterToast("Yön değiştirildi. Lütfen imleci test edin.", "#FACC15");
+      try { window.localStorage.setItem('getiriTakibi_yon_v8', YON_TERS ? '1' : '0'); } catch (e) {}
+      gosterToast(YON_TERS ? "YÖN DEĞİŞTİ: TERS" : "YÖN DEĞİŞTİ: DOĞAL", "#FACC15");
     }
 
     let globalAssets = [];
@@ -445,7 +445,6 @@
     // ==============================================================
     // HIZLI AÇILIŞ: son başarılı veri tarayıcıda saklanır. Uygulama
     // açılır açılmaz bu görüntü gösterilir, güncel veri arkadan gelir.
-    // Yalnızca görüntüyü hızlandırır; hesaplamalara ve tabloya dokunmaz.
     // ==============================================================
     const ONBELLEK_ANAHTARI = 'getiriTakibi_anaVeri_v1';
 
@@ -479,7 +478,7 @@
       }
     }
 
-    // Sayfa içeriği hazır olur olmaz (harici kütüphaneleri beklemeden) başlat
+    // Sayfa içeriği hazır olur olmaz başlat
     function hizliBaslat() {
       aylikSecicileriHazirla();
       aylikOnAyar(10, false);
@@ -541,8 +540,7 @@
       kap.addEventListener('scroll', kaydirDugmeleriniGuncelle);
 
       // ==============================================================
-      // KUMANDA / KLAVYE: YILLARA GÖRE sekmesinde sağ tuş = sağa, sol tuş = sola
-      // kaydırır (açılır listelerin değerini değiştirmez, odağı atlatmaz).
+      // KLAVYE / KUMANDA TUŞLARI İLE KAYDIRMA
       // ==============================================================
       document.addEventListener('keydown', function(e) {
         if (aktifSekme !== 'yillar') return;
@@ -563,36 +561,37 @@
       }, true);
 
       // ==============================================================
-      // AKILLI TV (sihirli kumanda / fare) - KONUM TABANLI KAYDIRMA
-      //  İmlecin tablo üzerindeki yatay konumu, tablonun kaydırma konumunu belirler:
+      // AKILLI TV - KONUM TABANLI KAYDIRMA (SİHİRLİ KUMANDA İÇİN)
+      // ÇÖZÜM: BoundingClientRect yerine doğrudan mutlak ekran genişliği 
+      // (window.innerWidth) kullanılıyor. Bu sayede TV'nin zoom/ölçekleme hatası aşılıyor.
       // ==============================================================
       if (TV_MU) {
-        const UC_PAY = 0.06; // iki uçta, tablonun tamamına ulaşmak için ayrılan pay
-
         kap.addEventListener('mousemove', function(e) {
           if (aktifSekme !== 'yillar') return;
           const son = kap.scrollWidth - kap.clientWidth;
           if (son <= 1) return;
           const t = e.target;
           if (t && t.closest && t.closest('select, option, button')) return;
-          const r = kap.getBoundingClientRect();
-          if (r.width <= 0) return;
           
-          let oran = (e.clientX - r.left) / r.width;
-          oran = (oran - UC_PAY) / (1 - 2 * UC_PAY);
+          let ekranGenislik = window.innerWidth || document.documentElement.clientWidth;
+          if (ekranGenislik <= 0) return;
+          
+          let oran = e.clientX / ekranGenislik;
+          
+          // Uç noktalara (%10 marj) gelindiğinde tabloyu sonuna kadar dayar.
+          oran = (oran - 0.10) / 0.80;
           oran = Math.max(0, Math.min(oran, 1));
           
-          // Standart mantıkta: oran = 0 (sol) ise scrollLeft = 0 olur (6 Ay, 1 Yıl görünür).
-          // Eğer YON_TERS tuşuna basılmışsa, oran (1 - oran) yapılarak mantık ters çevrilir.
-          let nihaiOran = YON_TERS ? (1 - oran) : oran;
+          // Yön ters çevrilmişse hesabı tersine alır.
+          if (YON_TERS) { oran = 1 - oran; }
           
-          kap.scrollLeft = Math.round(nihaiOran * son);
+          kap.scrollLeft = Math.round(oran * son);
         });
 
         kap.addEventListener('wheel', function(e) {
           if (aktifSekme !== 'yillar') return;
           if (kap.scrollWidth <= kap.clientWidth + 1) return;
-          if (kap.scrollHeight > kap.clientHeight + 2) return; // dikey kaydırma gerekiyorsa dokunma
+          if (kap.scrollHeight > kap.clientHeight + 2) return; 
           const d = (Math.abs(e.deltaX) > Math.abs(e.deltaY)) ? e.deltaX : e.deltaY;
           if (!d) return;
           const once = kap.scrollLeft;
@@ -601,10 +600,6 @@
         }, { passive: false });
       }
 
-      // ==============================================================
-      // TEŞHİS PANELİ: adresin sonuna ?tani=1 eklenirse ekranın sol altında
-      // cihazın gönderdiği tuş/fare olayları görünür (sorun giderme için).
-      // ==============================================================
       if (window.location.search.indexOf('tani=1') > -1) {
         const p = document.createElement('div');
         p.style.cssText = 'position:fixed;left:6px;bottom:6px;max-width:70vw;background:rgba(0,0,0,0.88);color:#4ADE80;font:12px/1.35 monospace;padding:6px 8px;border:1px solid #166534;border-radius:6px;z-index:99999;white-space:pre-wrap;pointer-events:none;';
@@ -634,7 +629,6 @@
       kap.scrollLeft = Math.max(0, Math.min(yeni, kap.scrollWidth - kap.clientWidth));
     }
 
-    // Tablo yatayda taşıyorsa (TV'de ve dokunmatik olmayan cihazlarda) kaydırma düğmelerini gösterir
     function kaydirDugmeleriniGuncelle() {
       const kap = document.getElementById('tableContainer');
       const goster = !!((TV_MU || !DOKUNMATIK) && aktifSekme === 'yillar' && kap && kap.scrollWidth > kap.clientWidth + 1);
@@ -646,8 +640,6 @@
       if (sag) sag.style.opacity = (kap.scrollLeft >= kap.scrollWidth - kap.clientWidth - 1) ? '0.3' : '0.95';
     }
 
-    // Tablo ekrana sığıyorsa ortala, sığmıyorsa sola hizala (eski TV tarayıcılarında
-    // ortalanmış geniş tablonun sol kısmı ulaşılamaz kalabiliyor).
     function tabloHizaDuzenle() {
       const tablo = document.getElementById('dataTable');
       const kap = document.getElementById('tableContainer');
@@ -668,9 +660,6 @@
       kaydirDugmeleriniGuncelle();
     }
 
-    // Satır yüksekliğini ve yazı boyutlarını mevcut ekrana göre hesaplar:
-    // tüm varlıklar (10 satır + GR ALTIN) dikey olarak tek ekrana sığar.
-    // TV ve telefonda yazılar daha küçük tutulur.
     function tabloSigdir() {
       if (aktifSekme === 'aylik') return;
       const kap = document.getElementById('tableContainer');
@@ -750,13 +739,11 @@
         aylikSorguBaslat();
     }
 
-    // Gelen (ya da önbellekteki) ana veriyi ekrana uygular. Değişen bir şey yoksa ekranı yeniden çizmez.
     function appVerisiniUygula(response, onbellektenMi) {
       const oncekiGuncelleme = globalLastUpdate;
       const yillarDegisti = JSON.stringify(globalYillar) !== JSON.stringify(response.yillar);
       const assetDegisti = JSON.stringify(globalAssets) !== JSON.stringify(response.assets);
 
-      // Kullanıcı bu arada bir varlığı değiştirdiyse, eski yanıt onun seçimini ezmesin
       if (onbellektenMi || !kullaniciSecimYapti) globalYillar = response.yillar;
       globalAssets = response.assets;
       globalLastUpdate = response.lastUpdate;
@@ -1001,7 +988,6 @@
         tbody.appendChild(tr);
       }
 
-      // Tablo çizildikten sonra: satırları ekrana sığdır, hizayı düzenle, kaydırmayı başa (SIRA/VARLIK tarafına) al
       tabloSigdir();
       tabloHizaDuzenle();
       const kap = document.getElementById('tableContainer');
@@ -1386,7 +1372,6 @@
       setTimeout(tabloSigdir, 400);
     }
 
-    // Veri isteğini şimdi başlat (aşağıdaki harici kütüphanelerin inmesini beklemez)
     hizliBaslat();
   </script>
 
