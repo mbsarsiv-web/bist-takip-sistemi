@@ -394,7 +394,7 @@
   <!-- Ana betik, harici kütüphanelerden ÖNCE çalışır: veri isteği hemen başlar -->
   <script>
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxvISjns0Zle5VYIgTLzkoJa38T7LC20bRAEW9Sm6LZYpcW61PF1pzrcgBAulDV6XNM/exec";
-    const SURUM = "S9";
+    const SURUM = "S10";
 
     // Akıllı TV algılama (adres sonuna ?tv=1 eklenirse zorla TV modu açılır)
     const TV_MU = /Web0S|webOS|NetCast|SmartTV|SMART-TV|Tizen|HbbTV|VIDAA|Viera|BRAVIA|Hisense|AndroidTV|Android TV|CrKey|AFTM|GoogleTV|LG Browser|LGE|Opera TV|OPRTV|Maple|NETTV|WebTV|Large Screen/i.test(navigator.userAgent || "") || (window.location.search.indexOf('tv=1') > -1);
@@ -470,6 +470,8 @@
       aylikSecicileriHazirla();
       aylikOnAyar(10, false);
       veriCekHizliAcilis();
+      // Geçici doğrulama: açılışta 4 saniye boyunca hangi sürümün çalıştığını gösterir
+      setTimeout(function() { gosterToast('Çalışan sürüm: ' + SURUM + ' | imleç sağ = 15-20 YIL', '#FACC15'); }, 600);
     }
 
     document.addEventListener("DOMContentLoaded", function() {
