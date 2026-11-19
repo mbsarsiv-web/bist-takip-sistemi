@@ -54,6 +54,9 @@ GUNLUK_SAYFA_ADI = "Düzeltme Günlüğü"
 
 HIBRIT_PENCERE_GUN = 45              # Fiyat düzeltme olayı ile sermaye değişimi arasında izin verilen en fazla gün farkı
 
+# Günlük motorda sondaki "tarihi var ama hiçbir hisse fiyatı yok" satırlarını temizlerken en fazla kaç satıra bakılır
+BOS_SATIR_TARAMA_ADEDI = 10
+
 # Seçilen yöntem uygulanamadığında (örn. SERMAYE verisi yok) İş Yatırım serisine dönülen hisseler
 _YONTEM_GERI_DONUS = []
 
@@ -210,10 +213,52 @@ def baglanti_ve_bilgi_getir():
             last_date_str = temiz_val
     return sheet, headers, tarih_to_row, last_valid_row_idx, last_date_str
 
+def bos_son_satirlari_temizle(sheet, headers, last_valid_row_idx, max_satir=BOS_SATIR_TARAMA_ADEDI):
+    """Tablonun sonunda, tarihi olduğu halde HİÇBİR hisse fiyatı bulunmayan satırları siler.
+    Böyle bir satır kalırsa günlük motor 'bu tarih işlendi' sanır ve fiyatı bir daha çekmez;
+    uygulama da son fiyat yerine eski fiyatı gösterir. Satır silinince motor o tarihi yeniden çeker.
+    Dönüş: satır silindiyse True."""
+    try:
+        if last_valid_row_idx < 2: return False
+        bist_idx = [i for i, ad in enumerate(headers) if i > 0 and ad and ad not in YFINANCE_SUTUNLAR]
+        if not bist_idx: return False
+
+        ilk = max(2, last_valid_row_idx - max_satir + 1)
+        bitis_hucre = rowcol_to_a1(last_valid_row_idx, len(headers))
+        blok = sheet.get(f"A{ilk}:{bitis_hucre}", value_render_option='UNFORMATTED_VALUE')
+
+        silinecek_ilk = None
+        for r in range(last_valid_row_idx, ilk - 1, -1):
+            k = r - ilk
+            satir = blok[k] if k < len(blok) else []
+            fiyat_var = False
+            for i in bist_idx:
+                if i < len(satir) and saklanan_sayi(satir[i]) is not None:
+                    fiyat_var = True
+                    break
+            if fiyat_var: break
+            silinecek_ilk = r
+
+        if silinecek_ilk is None: return False
+
+        print(f"[TEMİZLİK] Fiyatsız son satırlar siliniyor: {silinecek_ilk}-{last_valid_row_idx} (yeniden çekilecek)", flush=True)
+        sheet.delete_rows(silinecek_ilk, last_valid_row_idx)
+        return True
+    except Exception as e:
+        print(f"[!] Boş satır temizliği atlandı: {e}", flush=True)
+        return False
+
 def guncelleme_motoru():
     try:
         sheet, headers, tarih_to_row, last_valid_row_idx, last_date_str = baglanti_ve_bilgi_getir()
         if not last_date_str: return
+
+        # --- SONDAKİ FİYATSIZ SATIRLARI TEMİZLE ---
+        if bos_son_satirlari_temizle(sheet, headers, last_valid_row_idx):
+            time.sleep(2)
+            sheet, headers, tarih_to_row, last_valid_row_idx, last_date_str = baglanti_ve_bilgi_getir()
+            if not last_date_str: return
+        # ------------------------------------------
 
         # --- GÜN İÇİ SIFIRLAMA MANTIĞI ---
         last_date = datetime.datetime.strptime(last_date_str, "%d.%m.%Y")
@@ -307,6 +352,18 @@ def guncelleme_motoru():
         for col in final_df.columns:
             if col != 'Tarih': final_df[col] = final_df[col].apply(format_fiyat)
         final_df = final_df.fillna("")
+
+        # --- HİÇBİR HİSSE FİYATI OLMAYAN SATIRLARI YAZMA ---
+        # Sadece tarih (ya da yalnızca kur/altın) içeren satır yazılırsa o gün "işlendi" sanılır ve hisse fiyatları bir daha çekilmez.
+        bist_kolonlar = list(dict.fromkeys([c for c in headers if c and c != 'Tarih' and c not in YFINANCE_SUTUNLAR]))
+        if bist_kolonlar:
+            dolu_mask = (final_df[bist_kolonlar] != "").any(axis=1)
+            atilan = final_df.loc[~dolu_mask, 'Tarih'].tolist()
+            if atilan:
+                print(f"[ATLANDI] Hisse fiyatı henüz yayınlanmamış, yazılmayan tarihler: {', '.join(atilan)} (sonraki çalışmada tekrar denenecek)", flush=True)
+            final_df = final_df[dolu_mask]
+        if final_df.empty: return
+        # -----------------------------------------------------
 
         yeni_satirlar = final_df.values.tolist()
         if yeni_satirlar:
