@@ -57,6 +57,14 @@ HIBRIT_PENCERE_GUN = 45              # Fiyat düzeltme olayı ile sermaye deği�
 # Günlük motorda sondaki "tarihi var ama hiçbir hisse fiyatı yok" satırlarını temizlerken en fazla kaç satıra bakılır
 BOS_SATIR_TARAMA_ADEDI = 10
 
+# ======================================================================
+# HIZLI KONTROL (YOKLAMA) AYARLARI
+# 'kontrol' komutu, yeni günün kapanış verisi İş Yatırım'da yayınlandı mı diye bu likit hisselere bakar.
+# Yayınlandıysa normal 'guncelle' motoru çalışır, yayınlanmadıysa saniyeler içinde çıkar.
+# ======================================================================
+BIST_YOKLAMA_HISSELERI = ["THYAO", "GARAN", "AKBNK", "ASELS", "EREGL", "BIMAS", "KCHOL", "SISE", "TUPRS", "ISCTR"]
+BIST_YOKLAMA_ESIK_ORANI = 0.7        # Yoklama hisselerinin en az bu oranında yeni gün verisi varsa "yayınlandı" sayılır
+
 # Seçilen yöntem uygulanamadığında (örn. SERMAYE verisi yok) İş Yatırım serisine dönülen hisseler
 _YONTEM_GERI_DONUS = []
 
@@ -372,6 +380,59 @@ def guncelleme_motoru():
             sheet.update(values=yeni_satirlar, range_name=f"A{start_row}", value_input_option='USER_ENTERED')
 
     except Exception as e: print(traceback.format_exc(), flush=True)
+
+# ======================================================================
+# HIZLI KONTROL (YOKLAMA) MOTORU
+# Kullanım: python main.py kontrol
+# Yeni günün kapanış verisi İş Yatırım'da yayınlandıysa normal 'guncelle' motorunu çalıştırır.
+# Yayınlanmadıysa (ya da tabloda o günün satırı zaten varsa) hiçbir şey yazmadan çıkar.
+# Bu sayede gece boyunca sık aralıklarla çalıştırılabilir; veri yayınlanır yayınlanmaz tabloya girer.
+# ======================================================================
+
+def yeni_bist_verisi_var_mi(son_tarih, bugun, esik_orani=BIST_YOKLAMA_ESIK_ORANI):
+    """Yoklama hisselerinin yeterli bölümünde, tablodaki son tarihten SONRAKİ bir güne ait geçerli kapanış var mı?"""
+    bas_str = (son_tarih + datetime.timedelta(days=1)).strftime('%d-%m-%Y')
+    bit_str = bugun.strftime('%d-%m-%Y')
+    dolu = 0
+    for hisse in BIST_YOKLAMA_HISSELERI:
+        df = fetch_data_for_date_range(hisse, bas_str, bit_str, 2)
+        if df.empty: continue
+        kap = pd.to_numeric(df['Kapanis'], errors='coerce')
+        gecerli = df[df['Tarih'].notna() & (kap > 0)]
+        if not gecerli.empty and (gecerli['Tarih'].dt.date > son_tarih).any():
+            dolu += 1
+    gerekli = max(1, int(len(BIST_YOKLAMA_HISSELERI) * esik_orani))
+    print(f"[KONTROL] Yoklama: {dolu}/{len(BIST_YOKLAMA_HISSELERI)} hissede yeni gün verisi var (gereken: {gerekli})", flush=True)
+    return dolu >= gerekli
+
+def hizli_kontrol_motoru():
+    try:
+        sheet, headers, tarih_to_row, last_valid_row_idx, last_date_str = baglanti_ve_bilgi_getir()
+        if not last_date_str:
+            print("[KONTROL] Tabloda geçerli tarih bulunamadı.", flush=True)
+            return
+
+        # Sondaki fiyatsız satırlar varsa önce temizle (günlük motorla aynı mantık)
+        if bos_son_satirlari_temizle(sheet, headers, last_valid_row_idx):
+            time.sleep(2)
+            sheet, headers, tarih_to_row, last_valid_row_idx, last_date_str = baglanti_ve_bilgi_getir()
+            if not last_date_str: return
+
+        son_tarih = datetime.datetime.strptime(last_date_str, "%d.%m.%Y").date()
+        bugun = datetime.datetime.now().date()
+
+        if son_tarih >= bugun:
+            print(f"[KONTROL] Tabloda {last_date_str} satırı zaten var, yapılacak bir şey yok.", flush=True)
+            return
+
+        if not yeni_bist_verisi_var_mi(son_tarih, bugun):
+            print(f"[KONTROL] {last_date_str} sonrası için kapanış verisi henüz yayınlanmamış, sonraki yoklamada tekrar bakılacak.", flush=True)
+            return
+
+        print("[KONTROL] Yeni kapanış verisi yayınlanmış, güncelleme motoru başlatılıyor.", flush=True)
+        guncelleme_motoru()
+    except Exception:
+        print(traceback.format_exc(), flush=True)
 
 def bakim_motoru(taranacak_gun=15):
     try:
@@ -1234,6 +1295,7 @@ def anomali_motoru():
 if __name__ == '__main__':
     if len(sys.argv) > 1:
         if sys.argv[1] == "guncelle": guncelleme_motoru()
+        elif sys.argv[1] == "kontrol": hizli_kontrol_motoru()
         elif sys.argv[1] == "bakim": bakim_motoru(15)
         elif sys.argv[1] == "haftalik": haftalik_motoru()
         elif sys.argv[1] == "anomali": anomali_motoru()
