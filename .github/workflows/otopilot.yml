@@ -6,6 +6,8 @@ on:
     - cron: '15 22 * * *' # Türkiye saati ile 01:15 (ABD borsası kapandıktan sonra günlük güncelleme düzeltme turu)
     - cron: '49 22 * * *' # Türkiye saati ile 01:49 (bakım)
     - cron: '0 1 * * 0'   # Türkiye saati ile Pazar 04:00 (haftalık geçmiş yenileme + anomali taraması)
+    - cron: '40 16-21 * * 1-5' # Hafta içi TR 19:40, 20:40, 21:40, 22:40, 23:40, 00:40 (yeni kapanış verisi yoklaması)
+    - cron: '40 0 * * 2-6'     # Salı-Cumartesi TR 03:40 (geç yayınlanan kapanış verisi için son yoklama)
   workflow_dispatch:
     inputs:
       islem:
@@ -15,6 +17,7 @@ on:
         type: choice
         options:
           - guncelle
+          - kontrol
           - bakim
           - haftalik
           - anomali
@@ -40,6 +43,7 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
+          cache: 'pip'
 
       - name: Gerekli Kütüphaneleri Yükle
         run: pip install -r requirements.txt
@@ -52,6 +56,10 @@ jobs:
       - name: Güncelleme Motorunu Çalıştır
         if: github.event.schedule == '18 20 * * *' || github.event.schedule == '15 22 * * *' || (github.event_name == 'workflow_dispatch' && github.event.inputs.islem == 'guncelle')
         run: python main.py guncelle
+
+      - name: Hızlı Kontrol (yeni kapanış verisi yayınlandıysa güncelle)
+        if: github.event.schedule == '40 16-21 * * 1-5' || github.event.schedule == '40 0 * * 2-6' || (github.event_name == 'workflow_dispatch' && github.event.inputs.islem == 'kontrol')
+        run: python main.py kontrol
 
       - name: Bakım Motorunu Çalıştır
         if: github.event.schedule == '49 22 * * *' || (github.event_name == 'workflow_dispatch' && github.event.inputs.islem == 'bakim')
