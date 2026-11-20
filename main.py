@@ -12,10 +12,26 @@ import time
 import random
 import traceback
 import gc
+import threading
 from gspread.utils import rowcol_to_a1
 from oauth2client.service_account import ServiceAccountCredentials
 
 YFINANCE_SUTUNLAR = ['DOLAR', 'EURO', 'GR ALTIN', 'GR GÜMÜŞ', 'NASDAQ', 'S&P 500']
+
+# ======================================================================
+# GÜNCELLEME KAYITLARI (web uygulamasındaki "GÜNCELLEMELER" sekmesi)
+# Her motor çalışmasının sonucu, tablodaki "Güncelleme Kayıtları" sayfasına tek satır olarak yazılır.
+# Sütunlar: ZAMAN (TR) | MOTOR | DURUM | İŞLENEN TARİH | DOLULUK | SÜRE | AYRINTI
+# Sayfa yoksa otomatik oluşturulur. Haftalık motor, sayfayı son KAYIT_MAKS_SATIR satırla sınırlar.
+# ======================================================================
+KAYIT_SAYFA_ADI = "Güncelleme Kayıtları"
+KAYIT_BASLIKLAR = ["ZAMAN (TR)", "MOTOR", "DURUM", "İŞLENEN TARİH", "DOLULUK", "SÜRE", "AYRINTI"]
+KAYIT_MAKS_SATIR = 1500
+TR_SAAT_DILIMI = datetime.timezone(datetime.timedelta(hours=3))   # Türkiye: sabit UTC+3
+
+_SS_ONBELLEK = {}
+_HATA_SAYACI = {'isyatirim': 0}   # İş Yatırım'dan, tüm denemelere rağmen alınamayan istek sayısı
+_HATA_KILIDI = threading.Lock()
 
 # ======================================================================
 # HAFTALIK GEÇMİŞ YENİLEME AYARLARI
@@ -73,6 +89,89 @@ def _backoff_bekle(deneme_no, taban=1.5, tavan=20.0):
     sure = min(tavan, taban * (2 ** deneme_no)) + random.uniform(0, 1.0)
     time.sleep(sure)
 
+# ======================================================================
+# GÜNCELLEME KAYITLARI YARDIMCILARI
+# ======================================================================
+
+def _ss_olustur():
+    scope = ["https://spreadsheets.google.com/feeds", 'https://www.googleapis.com/auth/spreadsheets', "https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/drive"]
+    creds = ServiceAccountCredentials.from_json_keyfile_name('google_creds.json', scope)
+    client = gspread.authorize(creds)
+    return client.open_by_key("1alSTQD8LsM7nMAXV58v3ij1Ke6H69g1pXwJsJtT9AJ4")
+
+def sure_metni(saniye):
+    saniye = int(round(saniye))
+    if saniye >= 60:
+        return f"{saniye // 60} dk {saniye % 60} sn"
+    return f"{saniye} sn"
+
+def _tarih_ozeti(tarihler):
+    """['19.11.2026', '20.11.2026'] -> '19.11.2026, 20.11.2026' (3'ten fazlaysa 'ilk – son (N gün)')"""
+    tarihler = [t for t in tarihler if t]
+    if not tarihler: return "-"
+    if len(tarihler) <= 3: return ", ".join(tarihler)
+    return f"{tarihler[0]} – {tarihler[-1]} ({len(tarihler)} gün)"
+
+def _ad_ozeti(adlar, maks=6):
+    adlar = list(adlar)
+    if len(adlar) <= maks: return ", ".join(adlar)
+    return ", ".join(adlar[:maks]) + f" +{len(adlar) - maks}"
+
+def _tarihleri_sirala(tarih_kumesi):
+    def anahtar(t):
+        try: return datetime.datetime.strptime(t, "%d.%m.%Y")
+        except Exception: return datetime.datetime.min
+    return sorted(tarih_kumesi, key=anahtar)
+
+def _kayit_sayfasi_getir(yeni_baglanti=False):
+    ss = None if yeni_baglanti else _SS_ONBELLEK.get('ss')
+    if ss is None:
+        ss = _ss_olustur()
+        _SS_ONBELLEK['ss'] = ss
+    try:
+        ws = ss.worksheet(KAYIT_SAYFA_ADI)
+    except gspread.exceptions.WorksheetNotFound:
+        ws = ss.add_worksheet(title=KAYIT_SAYFA_ADI, rows=KAYIT_MAKS_SATIR + 200, cols=len(KAYIT_BASLIKLAR))
+        ws.update(values=[KAYIT_BASLIKLAR], range_name='A1', value_input_option='RAW')
+    return ws
+
+def kayit_yaz(motor, durum, islenen="-", doluluk="-", sure_sn=None, ayrinti=""):
+    """Motor sonucunu 'Güncelleme Kayıtları' sayfasına tek satır olarak ekler. Hata verirse ana işlemi bozmaz."""
+    satir = [
+        datetime.datetime.now(TR_SAAT_DILIMI).strftime("%d.%m.%Y %H:%M"),
+        motor,
+        durum,
+        islenen or "-",
+        doluluk or "-",
+        sure_metni(sure_sn) if sure_sn is not None else "-",
+        str(ayrinti)[:300],
+    ]
+    for deneme in range(2):
+        try:
+            ws = _kayit_sayfasi_getir(yeni_baglanti=(deneme > 0))
+            ws.append_rows([satir], value_input_option='RAW')
+            print(f"[KAYIT] {motor} | {durum} | {satir[3]} | {satir[4]} | {satir[5]} | {satir[6]}", flush=True)
+            return True
+        except Exception as e:
+            print(f"[!] Güncelleme kaydı yazılamadı (deneme {deneme + 1}): {e}", flush=True)
+            time.sleep(3)
+    return False
+
+def kayit_budama(max_satir=KAYIT_MAKS_SATIR):
+    """Kayıt sayfasında en yeni max_satir satırı bırakır, en eskileri siler."""
+    try:
+        ws = _kayit_sayfasi_getir()
+        veri_satiri = len(ws.col_values(1)) - 1
+        fazla = veri_satiri - max_satir
+        if fazla > 0:
+            ws.delete_rows(2, fazla + 1)
+            print(f"[KAYIT] Eski {fazla} kayıt silindi (en fazla {max_satir} satır tutulur).", flush=True)
+    except Exception as e:
+        print(f"[!] Kayıt budama atlandı: {e}", flush=True)
+
+def _sonucu_kaydet(motor, sonuc, baslangic):
+    kayit_yaz(motor, sonuc['durum'], sonuc['tarih'], sonuc['doluluk'], time.time() - baslangic, sonuc['ayrinti'])
+
 def get_all_bist_stocks():
     try:
         url = "https://www.isyatirim.com.tr/tr-tr/analiz/hisse/Sayfalar/Tarihsel-Fiyat-Bilgileri.aspx"
@@ -103,6 +202,9 @@ def fetch_data_for_date_range(stock, start_date, end_date, max_deneme=5):
             _backoff_bekle(attempt)
         except:
             _backoff_bekle(attempt)
+    # Tüm denemeler başarısız oldu (boş yanıt değil, gerçek bağlantı/sunucu hatası)
+    with _HATA_KILIDI:
+        _HATA_SAYACI['isyatirim'] += 1
     return pd.DataFrame()
 
 def fetch_symbol_series(symbol, start_date, end_date, fallback_symbols=None, label="", max_deneme=5):
@@ -201,10 +303,8 @@ def coklu_tur_bist_onarimi(bist_pivot, max_tur=3):
     return bist_pivot
 
 def baglanti_ve_bilgi_getir():
-    scope = ["https://spreadsheets.google.com/feeds", 'https://www.googleapis.com/auth/spreadsheets', "https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/drive"]
-    creds = ServiceAccountCredentials.from_json_keyfile_name('google_creds.json', scope)
-    client = gspread.authorize(creds)
-    ss = client.open_by_key("1alSTQD8LsM7nMAXV58v3ij1Ke6H69g1pXwJsJtT9AJ4")
+    ss = _ss_olustur()
+    _SS_ONBELLEK['ss'] = ss
     sheet = ss.worksheet("Veritabanı")
     headers = [h.strip() for h in sheet.row_values(1) if h.strip()]
     tarih_sutunu = sheet.col_values(1)
@@ -256,31 +356,58 @@ def bos_son_satirlari_temizle(sheet, headers, last_valid_row_idx, max_satir=BOS_
         print(f"[!] Boş satır temizliği atlandı: {e}", flush=True)
         return False
 
-def guncelleme_motoru():
+def _guncelleme_calistir():
+    """Günlük güncelleme mantığı. Dönüş: {'durum', 'tarih', 'doluluk', 'ayrinti'} (kayıt sayfası için)."""
+    sonuc = {'durum': 'HATA', 'tarih': '-', 'doluluk': '-', 'ayrinti': ''}
+    notlar = []
+    isy_hata = False
+
+    def veri_yok():
+        if isy_hata:
+            sonuc['durum'] = 'HATA'
+            sonuc['ayrinti'] = f"İş Yatırım yanıt vermedi ({_HATA_SAYACI['isyatirim']} istek alınamadı)"
+        else:
+            sonuc['durum'] = 'VERİ YOK'
+            sonuc['ayrinti'] = " | ".join(["Kapanış verisi henüz yayınlanmamış"] + notlar)
+        return sonuc
+
     try:
+        with _HATA_KILIDI:
+            _HATA_SAYACI['isyatirim'] = 0
+
         sheet, headers, tarih_to_row, last_valid_row_idx, last_date_str = baglanti_ve_bilgi_getir()
-        if not last_date_str: return
+        if not last_date_str:
+            sonuc['ayrinti'] = "Tabloda geçerli tarih bulunamadı"
+            return sonuc
 
         # --- SONDAKİ FİYATSIZ SATIRLARI TEMİZLE ---
         if bos_son_satirlari_temizle(sheet, headers, last_valid_row_idx):
+            notlar.append("Fiyatsız son satırlar temizlendi")
             time.sleep(2)
             sheet, headers, tarih_to_row, last_valid_row_idx, last_date_str = baglanti_ve_bilgi_getir()
-            if not last_date_str: return
+            if not last_date_str:
+                sonuc['ayrinti'] = "Tabloda geçerli tarih bulunamadı"
+                return sonuc
         # ------------------------------------------
 
         # --- GÜN İÇİ SIFIRLAMA MANTIĞI ---
         last_date = datetime.datetime.strptime(last_date_str, "%d.%m.%Y")
         today = datetime.datetime.now()
-        
+        yenileme = False
+
         if last_date.date() == today.date():
             sheet.delete_row(last_valid_row_idx) # Bugünün eksik verisini içeren son satırı sil
+            yenileme = True
             time.sleep(2)
             # Satır silindiği için veritabanı bilgilerini tazeleyerek yeniden alıyoruz
             sheet, headers, tarih_to_row, last_valid_row_idx, last_date_str = baglanti_ve_bilgi_getir()
-            if not last_date_str: return
+            if not last_date_str:
+                sonuc['ayrinti'] = "Tabloda geçerli tarih bulunamadı"
+                return sonuc
             last_date = datetime.datetime.strptime(last_date_str, "%d.%m.%Y")
         # -----------------------------------------
 
+        yeni_hisseler = []
         aktif_hisseler = get_all_bist_stocks()
         if aktif_hisseler:
             yeni_hisseler = [h for h in aktif_hisseler if h not in headers]
@@ -305,7 +432,10 @@ def guncelleme_motoru():
 
         en_geri_kalan_tarih = min(yf_last_valid_date.values()) if yf_last_valid_date else last_date
         yf_gap_var = en_geri_kalan_tarih < last_date
-        if last_date.date() >= today.date() and not yf_gap_var: return
+        if last_date.date() >= today.date() and not yf_gap_var:
+            sonuc['durum'] = 'YENİ VERİ YOK'
+            sonuc['ayrinti'] = " | ".join(["Tablo zaten güncel"] + notlar)
+            return sonuc
 
         start_fetch = (last_date + datetime.timedelta(days=1)).strftime("%d-%m-%Y")
         end_fetch = today.strftime("%d-%m-%Y")
@@ -319,6 +449,8 @@ def guncelleme_motoru():
                 for future in concurrent.futures.as_completed(futures):
                     df = future.result()
                     if not df.empty: all_data.append(df)
+            if not all_data and stocks and _HATA_SAYACI['isyatirim'] >= max(1, len(stocks) // 2):
+                isy_hata = True
             if all_data:
                 master_df = pd.concat(all_data, ignore_index=True)
                 bist_pivot = master_df.pivot_table(index='Tarih', columns='Hisse', values='Kapanis', aggfunc='first')
@@ -341,14 +473,16 @@ def guncelleme_motoru():
                         if col_name in row_data.index and col_name in yf_col_indices:
                             formatted_val = format_fiyat(row_data[col_name])
                             if formatted_val != "": gap_updates.append(gspread.Cell(row=row_no, col=yf_col_indices[col_name], value=formatted_val))
-                if gap_updates: sheet.update_cells(gap_updates, value_input_option='USER_ENTERED')
+                if gap_updates:
+                    sheet.update_cells(gap_updates, value_input_option='USER_ENTERED')
+                    notlar.append(f"Kur/altın/endeks boşluğu dolduruldu ({len(gap_updates)} hücre)")
             yf_new_df = yfinance_kuru[yfinance_kuru.index > hedef_tarih]
         else: yf_new_df = pd.DataFrame()
 
         final_df = bist_pivot.join(yf_new_df, how='outer') if not bist_pivot.empty or not yf_new_df.empty else pd.DataFrame()
-        if final_df.empty: return
+        if final_df.empty: return veri_yok()
         final_df = final_df.sort_index()[final_df.index > hedef_tarih]
-        if final_df.empty: return
+        if final_df.empty: return veri_yok()
 
         final_df.index = final_df.index.strftime('%d.%m.%Y')
         final_df.index.name = 'Tarih'
@@ -369,8 +503,9 @@ def guncelleme_motoru():
             atilan = final_df.loc[~dolu_mask, 'Tarih'].tolist()
             if atilan:
                 print(f"[ATLANDI] Hisse fiyatı henüz yayınlanmamış, yazılmayan tarihler: {', '.join(atilan)} (sonraki çalışmada tekrar denenecek)", flush=True)
+                notlar.append(f"Fiyatı yayınlanmayan tarihler yazılmadı: {', '.join(atilan)}")
             final_df = final_df[dolu_mask]
-        if final_df.empty: return
+        if final_df.empty: return veri_yok()
         # -----------------------------------------------------
 
         yeni_satirlar = final_df.values.tolist()
@@ -379,13 +514,39 @@ def guncelleme_motoru():
             if sheet.row_count < start_row + len(yeni_satirlar): sheet.add_rows((start_row + len(yeni_satirlar)) - sheet.row_count + 50)
             sheet.update(values=yeni_satirlar, range_name=f"A{start_row}", value_input_option='USER_ENTERED')
 
-    except Exception as e: print(traceback.format_exc(), flush=True)
+            toplam_hisse = len(bist_kolonlar)
+            dolu_adet = int((final_df.iloc[-1][bist_kolonlar] != "").sum()) if bist_kolonlar else 0
+            tr_saat = datetime.datetime.now(TR_SAAT_DILIMI).hour
+            if yenileme:
+                ana = "ABD kapanışı / gün içi kesinleştirme turu" if tr_saat < 6 else "Gün içi satır yeniden yazıldı"
+            else:
+                ana = "Yeni kapanış verisi eklendi"
+            ayr = [ana]
+            if yeni_hisseler: ayr.append(f"Yeni halka arz ({len(yeni_hisseler)}): {_ad_ozeti(yeni_hisseler, 5)}")
+            ayr.extend(notlar)
+
+            sonuc['durum'] = 'YENİLENDİ' if yenileme else 'YAZILDI'
+            sonuc['tarih'] = _tarih_ozeti(final_df['Tarih'].tolist())
+            sonuc['doluluk'] = f"{dolu_adet} / {toplam_hisse}"
+            sonuc['ayrinti'] = " | ".join(ayr)
+        return sonuc
+
+    except Exception as e:
+        print(traceback.format_exc(), flush=True)
+        sonuc['durum'] = 'HATA'
+        sonuc['ayrinti'] = f"{type(e).__name__}: {str(e)[:200]}"
+        return sonuc
+
+def guncelleme_motoru():
+    baslangic = time.time()
+    sonuc = _guncelleme_calistir()
+    _sonucu_kaydet("GÜNCELLE", sonuc, baslangic)
 
 # ======================================================================
 # HIZLI KONTROL (YOKLAMA) MOTORU
 # Kullanım: python main.py kontrol
 # Yeni günün kapanış verisi İş Yatırım'da yayınlandıysa normal 'guncelle' motorunu çalıştırır.
-# Yayınlanmadıysa (ya da tabloda o günün satırı zaten varsa) hiçbir şey yazmadan çıkar.
+# Yayınlanmadıysa (ya da tabloda o günün satırı zaten varsa) hiçbir şey yazmadan çıkar ve kayıt da bırakmaz.
 # Bu sayede gece boyunca sık aralıklarla çalıştırılabilir; veri yayınlanır yayınlanmaz tabloya girer.
 # ======================================================================
 
@@ -406,6 +567,7 @@ def yeni_bist_verisi_var_mi(son_tarih, bugun, esik_orani=BIST_YOKLAMA_ESIK_ORANI
     return dolu >= gerekli
 
 def hizli_kontrol_motoru():
+    baslangic = time.time()
     try:
         sheet, headers, tarih_to_row, last_valid_row_idx, last_date_str = baglanti_ve_bilgi_getir()
         if not last_date_str:
@@ -430,16 +592,23 @@ def hizli_kontrol_motoru():
             return
 
         print("[KONTROL] Yeni kapanış verisi yayınlanmış, güncelleme motoru başlatılıyor.", flush=True)
-        guncelleme_motoru()
-    except Exception:
+        sonuc = _guncelleme_calistir()
+        _sonucu_kaydet("KONTROL", sonuc, baslangic)
+    except Exception as e:
         print(traceback.format_exc(), flush=True)
+        kayit_yaz("KONTROL", "HATA", "-", "-", time.time() - baslangic, f"{type(e).__name__}: {str(e)[:200]}")
 
 def bakim_motoru(taranacak_gun=15):
+    baslangic = time.time()
     try:
         sheet, headers, tarih_to_row, last_valid_row_idx, _ = baglanti_ve_bilgi_getir()
         baslangic_satiri = max(2, last_valid_row_idx - taranacak_gun)
         son_satirlar = sheet.get_all_values()[baslangic_satiri - 1:last_valid_row_idx]
         eksik_guncellemeler = []
+        eksik_toplam = 0
+        eksik_tarihleri = set()
+        doldurulan_tarihleri = set()
+        doldurulan_adlar = []
         for satir_verisi in son_satirlar:
             satir_tarihi_str = satir_verisi[0].strip()
             if not re.match(r'\d{2}\.\d{2}\.\d{4}', satir_tarihi_str): continue
@@ -450,13 +619,45 @@ def bakim_motoru(taranacak_gun=15):
                 hisse_adi = headers[col_idx]
                 if hisse_adi in YFINANCE_SUTUNLAR or not hisse_adi: continue
                 if (satir_verisi[col_idx].strip() if col_idx < len(satir_verisi) else "") == "":
+                    eksik_toplam += 1
+                    eksik_tarihleri.add(satir_tarihi_str)
                     tarih_api = satir_dt.strftime('%d-%m-%Y')
                     kurtarma_df = fetch_data_for_date_range(hisse_adi, tarih_api, tarih_api)
                     if not kurtarma_df.empty:
                         yfiyat = format_fiyat(kurtarma_df.iloc[0]['Kapanis'])
-                        if yfiyat != "": eksik_guncellemeler.append(gspread.Cell(row=gercek_satir_no, col=col_idx + 1, value=yfiyat))
+                        if yfiyat != "":
+                            eksik_guncellemeler.append(gspread.Cell(row=gercek_satir_no, col=col_idx + 1, value=yfiyat))
+                            doldurulan_tarihleri.add(satir_tarihi_str)
+                            if hisse_adi not in doldurulan_adlar: doldurulan_adlar.append(hisse_adi)
         if eksik_guncellemeler: sheet.update_cells(eksik_guncellemeler, value_input_option='USER_ENTERED')
-    except Exception as e: print(traceback.format_exc(), flush=True)
+
+        doldurulan = len(eksik_guncellemeler)
+        kalan = eksik_toplam - doldurulan
+        if eksik_toplam == 0:
+            durum = "TEMİZ"
+            tarih_metni = f"Son {taranacak_gun} gün"
+            doluluk = "0 eksik"
+            ayrinti = f"Son {taranacak_gun} günde eksik BIST hücresi bulunmadı"
+        elif kalan == 0:
+            durum = "ONARILDI"
+            tarih_metni = _tarih_ozeti(_tarihleri_sirala(doldurulan_tarihleri))
+            doluluk = f"+{doldurulan} hücre"
+            ayrinti = f"Eksik {doldurulan} BIST hücresi tamamlandı ({_ad_ozeti(doldurulan_adlar)})"
+        elif doldurulan > 0:
+            durum = "KISMEN"
+            tarih_metni = _tarih_ozeti(_tarihleri_sirala(eksik_tarihleri))
+            doluluk = f"+{doldurulan} / {eksik_toplam}"
+            ayrinti = f"{doldurulan} hücre tamamlandı ({_ad_ozeti(doldurulan_adlar)}), {kalan} hücre İş Yatırım'da bulunamadı"
+        else:
+            durum = "KALAN EKSİK"
+            tarih_metni = _tarih_ozeti(_tarihleri_sirala(eksik_tarihleri))
+            doluluk = f"{eksik_toplam} eksik"
+            ayrinti = f"{eksik_toplam} hücre İş Yatırım'da bulunamadı (işlem görmeyen hisseler olabilir)"
+
+        kayit_yaz("BAKIM", durum, tarih_metni, doluluk, time.time() - baslangic, ayrinti)
+    except Exception as e:
+        print(traceback.format_exc(), flush=True)
+        kayit_yaz("BAKIM", "HATA", "-", "-", time.time() - baslangic, f"{type(e).__name__}: {str(e)[:200]}")
 
 
 # ======================================================================
@@ -730,6 +931,7 @@ def haftalik_motoru():
         sheet, headers, tarih_to_row, son_satir, son_tarih_str = baglanti_ve_bilgi_getir()
         if not son_tarih_str:
             print("[!] Tabloda geçerli tarih bulunamadı, işlem iptal.", flush=True)
+            kayit_yaz("HAFTALIK", "HATA", "-", "-", time.time() - baslangic, "Tabloda geçerli tarih bulunamadı")
             return
 
         satir_tarihi = {}
@@ -752,6 +954,7 @@ def haftalik_motoru():
         zaman = datetime.datetime.now().strftime("%d.%m.%Y %H:%M")
         sayac = {'degismedi': 0, 'guncelle': 0, 'atla': 0, 'cekilemedi': 0}
         gunluk = []
+        guncellenen_adlar = []
         teshis_adet = 0
         teshis_ornek = []
         tavan_asildi = False
@@ -819,6 +1022,7 @@ def haftalik_motoru():
                         continue
                     a1 = f"{rowcol_to_a1(2, col)}:{rowcol_to_a1(son_satir, col)}"
                     guncellemeler.append({'aralik': a1, 'degerler': sonuc['kolon']})
+                    guncellenen_adlar.append(ad)
                     gunluk.append([zaman, ad, "GÜNCELLENDİ", sonuc['ayrinti']])
                     print(f"[GÜNCELLENDİ] {ad}: {sonuc['ayrinti']}", flush=True)
 
@@ -845,8 +1049,29 @@ def haftalik_motoru():
             print(f"[ALAN TEŞHİSİ] {FIYAT_ALANI} ile {ALT_FIYAT_ALANI} hiçbir hissede farklı değil.", flush=True)
         print("=" * 60, flush=True)
 
-    except Exception:
+        # --- GÜNCELLEME KAYDI ---
+        toplam_hisse = len(hisseler)
+        if toplam_hisse and sayac['cekilemedi'] >= max(1, toplam_hisse // 2):
+            h_durum = "HATA"
+            h_ayrinti = f"İş Yatırım'dan {sayac['cekilemedi']} hissenin verisi alınamadı"
+        elif sayac['guncelle'] > 0:
+            h_durum = "GÜNCELLENDİ"
+            h_ayrinti = f"{sayac['guncelle']} sütun yenilendi ({_ad_ozeti(guncellenen_adlar)})"
+        else:
+            h_durum = "DEĞİŞMEDİ"
+            h_ayrinti = "Geçmiş fiyatlarda değişiklik yok"
+        ekler = []
+        if sayac['atla']: ekler.append(f"{sayac['atla']} hisse atlandı")
+        if sayac['cekilemedi'] and h_durum != "HATA": ekler.append(f"{sayac['cekilemedi']} hisse alınamadı")
+        if tavan_asildi: ekler.append("güvenlik tavanı aşıldı, kalanlar gelecek haftaya ertelendi")
+        if _YONTEM_GERI_DONUS: ekler.append(f"{len(set(_YONTEM_GERI_DONUS))} hissede {FIYAT_YONTEMI} yerine İş Yatırım serisi kullanıldı")
+        if ekler: h_ayrinti += " | " + ", ".join(ekler)
+        kayit_yaz("HAFTALIK", h_durum, f"{ilk_tarih.year}–{bugun.year}", f"{sayac['guncelle']} hisse", time.time() - baslangic, h_ayrinti)
+        kayit_budama()
+
+    except Exception as e:
         print(traceback.format_exc(), flush=True)
+        kayit_yaz("HAFTALIK", "HATA", "-", "-", time.time() - baslangic, f"{type(e).__name__}: {str(e)[:200]}")
         sys.exit(1)
 
 
@@ -1287,8 +1512,16 @@ def anomali_motoru():
             print(f"   {ad}: {ot.strftime('%d.%m.%Y')} {round(ov, 4)} -> {t.strftime('%d.%m.%Y')} {round(v, 4)} (oran {round(oran, 4)})", flush=True)
         print("=" * 70, flush=True)
 
-    except Exception:
+        # --- GÜNCELLEME KAYDI ---
+        etkilenen = len(set(x[0] for x in bulunanlar))
+        kayit_yaz(
+            "ANOMALİ", "TARANDI", "-", f"{len(kalici)} kalıcı kayma", time.time() - baslangic,
+            f"{len(hisseler)} sütun tarandı | Kalıcı kayma {len(kalici)}, tek günlük sapma {len(tek_gun)}, düşük fiyat {len(dusuk)} ({etkilenen} hisse etkilendi)"
+        )
+
+    except Exception as e:
         print(traceback.format_exc(), flush=True)
+        kayit_yaz("ANOMALİ", "HATA", "-", "-", time.time() - baslangic, f"{type(e).__name__}: {str(e)[:200]}")
         sys.exit(1)
 
 
