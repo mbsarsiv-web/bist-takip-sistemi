@@ -1098,7 +1098,7 @@
       // ---- GÜNLÜK GÜNCELLEME / YOKLAMA ----
       if (motor === 'GÜNCELLE' || motor === 'KONTROL') {
         let adet = "";
-        if ((m = dol.match(/^(\d+)\s*\/\s*(\d+)$/))) adet = " Toplam " + m[2] + " hissenin " + m[1] + " tanesinin fiyatı var; kalan " + (parseInt(m[2], 10) - parseInt(m[1], 10)) + " hisse o gün işlem görmedi.";
+        if ((m = dol.match(/^(\d+)\s*\/\s*(\d+)$/))) adet = " Toplam " + m[2] + " hisse sütunundan " + m[1] + " tanesinin fiyatı var; kalan " + (parseInt(m[2], 10) - parseInt(m[1], 10)) + " hissenin fiyatı gelmedi (sistem nedenini bilmiyor; işlem durdurma, borsadan çıkmış hisse veya kaynakta eksik veri olabilir).";
         let arz = "";
         if ((m = ayr.match(/Yeni halka arz \((\d+)\): ([^|]*)/))) arz = " Tabloya " + m[1] + " yeni halka arz hissesi eklendi (" + m[2].trim() + ").";
 
@@ -1142,13 +1142,13 @@
         } else if (durum === 'KISMEN') {
           r.etiket = 'BİR KISMI DOLDURULDU'; r.sinif = 'bilgi';
           if (toplam !== null) {
-            r.metin = "Son 15 günde " + toplam + " boş fiyat hücresi bulundu. " + doldu + " tanesi dolduruldu. Kalan " + (toplam - doldu) + " hücrenin verisi kaynakta (İş Yatırım) yok; çoğunlukla o gün işlem görmeyen hisselerdir, yapılacak bir şey yok." + hisseler;
+            r.metin = "Son 15 günde " + toplam + " boş fiyat hücresi bulundu. " + doldu + " tanesi dolduruldu. Kalan " + (toplam - doldu) + " hücrenin verisi kaynakta (İş Yatırım) bulunamadı. Sistem nedenini bilmiyor (işlem durdurma, borsadan çıkmış hisse veya kaynakta eksik veri olabilir)." + hisseler;
           } else {
             r.metin = ayr;
           }
         } else if (durum === 'KALAN EKSİK') {
           r.etiket = 'DOLDURULAMADI'; r.sinif = 'uyari';
-          r.metin = (toplam !== null ? toplam : "Bazı") + " boş fiyat hücresi var ama verisi kaynakta (İş Yatırım) yok; işlem görmeyen hisseler olabilir. Yapılacak bir şey yok.";
+          r.metin = (toplam !== null ? toplam : "Bazı") + " boş fiyat hücresi var ama verisi kaynakta (İş Yatırım) bulunamadı. Sistem nedenini bilmiyor (işlem durdurma, borsadan çıkmış hisse veya kaynakta eksik veri olabilir).";
         }
         return r;
       }
