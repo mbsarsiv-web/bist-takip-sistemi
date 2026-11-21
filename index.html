@@ -238,7 +238,7 @@
     .aylik-not { display: none; }
 
     /* ==========================================================
-       GÜNCELLEMELER SEKMESİ
+       GÜNCELLEMELER SEKMESİ (sade, tek ekrana sığan tasarım)
        ========================================================== */
     .gunc-panel { background: #111820; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 6px; display: none; flex-direction: row; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); flex-shrink: 0; position: relative; z-index: 40; }
     .gunc-filtre { background-color: #0a0e14; border: 1px solid var(--border-color); color: #CBD5E1; padding: 5px 12px; border-radius: 6px; font-family: 'Inter', sans-serif; font-weight: 800; font-size: 0.82rem; cursor: pointer; transition: 0.2s; white-space: nowrap; }
@@ -248,27 +248,37 @@
     .gunc-yenile { background-color: #0F766E; border: 1px solid #14B8A6; color: white; padding: 5px 12px; border-radius: 6px; font-family: 'Inter', sans-serif; font-weight: 900; font-size: 0.82rem; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: 0.2s; white-space: nowrap; margin-left: 6px; }
     .gunc-yenile:hover { background-color: #0D9488; }
 
-    #guncContainer { display: none; flex: 1; min-height: 0; overflow-y: auto; overflow-x: auto; position: relative; z-index: 10; padding: 2px 0 6px 0; -webkit-overflow-scrolling: touch; }
-    .gunc-ozet { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 2px auto 8px auto; max-width: 1250px; }
-    .gunc-chip { background: #111820; border: 1px solid var(--border-color); border-radius: 8px; padding: 5px 14px; min-width: 170px; text-align: center; }
-    .gunc-chip .k { font-size: 0.62rem; color: #94A3B8; font-weight: 800; letter-spacing: 0.4px; }
-    .gunc-chip .v { font-size: 0.95rem; font-weight: 900; margin-top: 2px; }
-    .gunc-chip .s { font-size: 0.66rem; color: var(--gold); font-weight: 800; margin-top: 1px; }
+    #guncContainer { display: none; flex: 1; min-height: 0; flex-direction: column; overflow: hidden; position: relative; z-index: 10; padding: 0 0 4px 0; }
+
+    /* Üst özet şeridi: tek satır, küçük kartlar */
+    .gunc-ozet { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 0 auto 6px auto; width: 100%; max-width: 1250px; flex-shrink: 0; }
+    .gunc-chip { flex: 1 1 0; min-width: 200px; background: #111820; border: 1px solid var(--border-color); border-radius: 8px; padding: 4px 10px; text-align: center; overflow: hidden; }
+    .gunc-chip .k { font-size: 0.6rem; color: #94A3B8; font-weight: 800; letter-spacing: 0.4px; }
+    .gunc-chip .v { font-size: 0.92rem; font-weight: 900; margin-top: 1px; white-space: nowrap; }
+    .gunc-chip .s { font-size: 0.68rem; color: #CBD5E1; font-weight: 700; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .gunc-chip .v.iyi { color: var(--green-accent); }
     .gunc-chip .v.kotu { color: var(--red-accent); }
+    .gunc-chip .v.uyari { color: var(--gold); }
 
-    .gunc-tablo { width: 100%; max-width: 1250px; margin: 0 auto; border-collapse: collapse; background: transparent; box-shadow: none; text-align: left; min-width: 820px; }
+    /* Tek tablo: içinde kayar, başlık sabit kalır */
+    .gunc-kap { flex: 1; min-height: 0; width: 100%; max-width: 1250px; margin: 0 auto; overflow: auto; border: 1px solid var(--panel-border); border-radius: 8px; background: #0e141b; -webkit-overflow-scrolling: touch; }
+    .gunc-tablo { width: 100%; min-width: 880px; margin: 0; border-collapse: collapse; background: transparent; box-shadow: none; border-radius: 0; border-style: none; text-align: left; table-layout: fixed; }
     .gunc-tablo thead { background-color: #0d131a; border-bottom: 2px solid #1E293B; position: sticky; top: 0; z-index: 5; }
-    .gunc-tablo th { color: #94A3B8; font-size: 0.78rem; font-weight: 800; letter-spacing: 0.3px; padding: 8px 10px; text-align: left; text-shadow: none; white-space: nowrap; }
-    .gunc-tablo td { padding: 9px 10px; font-size: 0.86rem; font-weight: 600; color: #E2E8F0; border-bottom: 1px solid rgba(255,255,255,0.07); vertical-align: top; text-align: left; }
+    .gunc-tablo th { color: #94A3B8; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.4px; padding: 6px 8px; text-align: left; text-shadow: none; white-space: nowrap; }
+    .gunc-tablo td { padding: 5px 8px; font-size: 0.8rem; font-weight: 600; color: #E2E8F0; border-bottom: 1px solid rgba(255,255,255,0.06); vertical-align: middle; text-align: left; line-height: 1.25; height: auto; }
     .gunc-tablo tbody tr.gunc-satir:hover td { background-color: rgba(255,255,255,0.04); }
-    .gunc-tablo td.g-zaman, .gunc-tablo td.g-sure, .gunc-tablo td.g-dol, .gunc-tablo td.g-tarih { white-space: nowrap; }
-    .gunc-tablo td.g-motor { font-weight: 800; white-space: nowrap; }
-    .gunc-tablo td.g-ayr { color: #CBD5E1; font-weight: 600; line-height: 1.35; min-width: 260px; }
-    .gunc-tablo tr.gunc-gun td { background: rgba(56,189,248,0.08); color: var(--blue-accent); font-weight: 900; font-size: 0.8rem; letter-spacing: 0.4px; padding: 6px 10px; border-top: 2px solid rgba(56,189,248,0.25); border-bottom: 1px solid rgba(56,189,248,0.15); }
-    .gunc-tablo tr.gunc-gun td span { color: #94A3B8; font-weight: 700; margin-left: 8px; }
+    .gunc-tablo tr.yeni-gun td { border-top: 2px solid rgba(56,189,248,0.45); }
+    .gunc-tablo tr.yeni-gun:first-child td { border-top: none; }
+    .gunc-tablo td.g-zaman { white-space: nowrap; }
+    .gunc-tablo td.g-zaman .zs { font-weight: 900; color: #F8FAFC; margin-right: 6px; }
+    .gunc-tablo td.g-zaman .zg { color: var(--blue-accent); font-weight: 800; font-size: 0.74rem; }
+    .gunc-tablo td.g-motor { font-weight: 800; }
+    .gunc-tablo td.g-motor small { display: block; color: #94A3B8; font-weight: 600; font-size: 0.66rem; }
+    .gunc-tablo td.g-tarih, .gunc-tablo td.g-dol { color: #E2E8F0; }
+    .gunc-tablo td.g-sure { white-space: nowrap; color: #CBD5E1; }
+    .gunc-tablo td.g-ayr { color: #CBD5E1; font-weight: 600; word-break: break-word; }
 
-    .rozet { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 0.74rem; font-weight: 900; letter-spacing: 0.2px; white-space: nowrap; border: 1px solid transparent; }
+    .rozet { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 0.7rem; font-weight: 900; letter-spacing: 0.2px; white-space: nowrap; border: 1px solid transparent; }
     .rozet.iyi { background: rgba(16,185,129,0.14); color: #34D399; border-color: rgba(16,185,129,0.35); }
     .rozet.bilgi { background: rgba(56,189,248,0.13); color: #7DD3FC; border-color: rgba(56,189,248,0.35); }
     .rozet.uyari { background: rgba(250,204,21,0.13); color: #FDE047; border-color: rgba(250,204,21,0.35); }
@@ -278,7 +288,7 @@
     .gunc-hint { text-align: center; padding: 30px; color: #94A3B8; font-size: 1rem; font-weight: 600; }
     .gunc-hint i { color: #60A5FA; margin-bottom: 10px; font-size: 2rem; display: block; }
     .gunc-hint.hata { color: #FACC15; }
-    .gunc-alt { text-align: center; color: #64748B; font-size: 0.72rem; font-weight: 700; margin: 8px 0 2px 0; }
+    .gunc-alt { text-align: center; color: #64748B; font-size: 0.68rem; font-weight: 700; margin: 4px 0 0 0; flex-shrink: 0; line-height: 1.35; }
 
     @media (max-width: 1000px) {
       .aylik-panel { flex-wrap: wrap; }
@@ -387,8 +397,10 @@
       .gunc-panel { padding: 5px 6px; gap: 5px; }
       .gunc-filtre { padding: 4px 8px; font-size: 0.72rem; }
       .gunc-yenile { padding: 4px 8px; font-size: 0.72rem; margin-left: 0; }
-      .gunc-chip { min-width: 46%; flex: 1 1 46%; padding: 4px 8px; }
-      .gunc-tablo td { font-size: 0.8rem; padding: 7px 8px; }
+      .gunc-chip { min-width: 46%; flex: 1 1 46%; padding: 3px 6px; }
+      .gunc-chip .s { white-space: normal; }
+      .gunc-tablo td { font-size: 0.76rem; padding: 5px 6px; }
+      .gunc-alt { display: none; }
     }
   </style>
 </head>
@@ -462,10 +474,10 @@
 
     <div id="guncPanel" class="gunc-panel">
       <button type="button" class="gunc-filtre aktif" data-f="TÜMÜ" onclick="guncFiltreSec('TÜMÜ')">TÜMÜ</button>
-      <button type="button" class="gunc-filtre" data-f="GÜNCELLE" onclick="guncFiltreSec('GÜNCELLE')">GÜNCELLE</button>
-      <button type="button" class="gunc-filtre" data-f="KONTROL" onclick="guncFiltreSec('KONTROL')">KONTROL</button>
-      <button type="button" class="gunc-filtre" data-f="BAKIM" onclick="guncFiltreSec('BAKIM')">BAKIM</button>
-      <button type="button" class="gunc-filtre" data-f="HAFTALIK" onclick="guncFiltreSec('HAFTALIK')">HAFTALIK</button>
+      <button type="button" class="gunc-filtre" data-f="GÜNCELLE" onclick="guncFiltreSec('GÜNCELLE')">GÜNLÜK</button>
+      <button type="button" class="gunc-filtre" data-f="KONTROL" onclick="guncFiltreSec('KONTROL')">YOKLAMA</button>
+      <button type="button" class="gunc-filtre" data-f="BAKIM" onclick="guncFiltreSec('BAKIM')">EKSİK TAMAMLAMA</button>
+      <button type="button" class="gunc-filtre" data-f="HAFTALIK" onclick="guncFiltreSec('HAFTALIK')">GEÇMİŞ YENİLEME</button>
       <button type="button" class="gunc-filtre" data-f="ANOMALİ" onclick="guncFiltreSec('ANOMALİ')">ANOMALİ</button>
       <button type="button" class="gunc-filtre hata-f" data-f="HATALAR" onclick="guncFiltreSec('HATALAR')">HATALAR</button>
       <button type="button" class="gunc-yenile" onclick="guncellemeleriYukle(true)"><i class="fa-solid fa-rotate"></i> YENİLE</button>
@@ -498,7 +510,7 @@
 
   <script>
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxvISjns0Zle5VYIgTLzkoJa38T7LC20bRAEW9Sm6LZYpcW61PF1pzrcgBAulDV6XNM/exec";
-    const SURUM = "S28-GUNCELLEMELER";
+    const SURUM = "S29-GUNCELLEMELER-SADE";
 
     const TV_MU = /Web0S|webOS|NetCast|SmartTV|SMART-TV|Tizen|HbbTV|VIDAA|Viera|BRAVIA|Hisense|AndroidTV|Android TV|CrKey|AFTM|GoogleTV|LG Browser|LGE|Opera TV|OPRTV|Maple|NETTV|WebTV|Large Screen/i.test(navigator.userAgent || "") || (window.location.search.indexOf('tv=1') > -1);
     const DOKUNMATIK = ('ontouchstart' in window) || ((navigator.maxTouchPoints || 0) > 0);
@@ -531,13 +543,38 @@
     // ---- GÜNCELLEMELER sekmesi durumu ----
     const GUNC_ADET = 300;                 // sunucudan en fazla kaç kayıt istenir
     const GUNC_OTO_YENILE_MS = 60000;      // sekme açıkken kaç ms'de bir sessiz yenileme
-    const GUN_ADLARI = ["Pazar", "Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi"];
+    const GUN_ADLARI_KISA = ["Paz", "Pzt", "Sal", "Çar", "Per", "Cum", "Cmt"];
     let guncKayitlar = null;               // [[zaman, motor, durum, tarih, doluluk, sure, ayrinti], ...] (yeniden eskiye)
     let guncHata = "";
     let guncFiltre = 'TÜMÜ';
     let guncIstekNo = 0;
     let guncSonYukleme = 0;
     let guncZamanlayici = null;
+
+    // Motor kodu -> okunur ad ve kısa açıklama
+    const GUNC_MOTOR_ADLARI = {
+      'GÜNCELLE': ['Günlük güncelleme', 'yeni günü tabloya yazar'],
+      'KONTROL': ['Yoklama', 'yeni veri çıktı mı bakar'],
+      'BAKIM': ['Eksik tamamlama', 'boş hücreleri doldurur'],
+      'HAFTALIK': ['Geçmiş yenileme', 'eski fiyatları düzeltir'],
+      'ANOMALİ': ['Anomali taraması', 'şüpheli fiyat sıçramaları']
+    };
+
+    // Durum kodu -> ekranda görünen sade ifade
+    const GUNC_DURUM_ADLARI = {
+      'YAZILDI': 'EKLENDİ',
+      'YENİLENDİ': 'YENİLENDİ',
+      'YENİ VERİ YOK': 'YENİ VERİ YOK',
+      'VERİ YOK': 'BEKLENİYOR',
+      'HATA': 'HATA',
+      'KISMEN': 'KISMEN',
+      'KALAN EKSİK': 'EKSİK KALDI',
+      'ONARILDI': 'TAMAMLANDI',
+      'TEMİZ': 'SORUN YOK',
+      'TARANDI': 'TARANDI',
+      'GÜNCELLENDİ': 'DÜZELTİLDİ',
+      'DEĞİŞMEDİ': 'DEĞİŞMEDİ'
+    };
 
     const SABIT_VARLIKLAR = ["DOLAR", "EURO", "GR ALTIN", "GR GÜMÜŞ", "NASDAQ", "S&P 500"];
 
@@ -1033,17 +1070,67 @@
       return 'bilgi';
     }
 
-    // "22.11.2026 04:12" -> { gun: "22.11.2026", saat: "04:12", y, m, d } (çözülemezse null)
+    function guncDurumMetni(durum) {
+      const d = String(durum || "").trim().toUpperCase();
+      return GUNC_DURUM_ADLARI[d] || String(durum || "-");
+    }
+
+    function guncMotorAdi(motor) {
+      const m = String(motor || "").trim().toUpperCase();
+      return GUNC_MOTOR_ADLARI[m] || [String(motor || "-"), ""];
+    }
+
+    // Doluluk sütununu motorun anlamına göre sadeleştirir
+    function guncDolulukMetni(motor, dol) {
+      const d = String(dol || "").trim();
+      if (!d || d === "-") return "-";
+      const M = String(motor || "").trim().toUpperCase();
+      let m;
+      if (M === 'BAKIM') {
+        if ((m = d.match(/^\+(\d+)\s*\/\s*(\d+)$/))) return m[2] + " eksik hücrenin " + m[1] + " tanesi dolduruldu";
+        if ((m = d.match(/^\+(\d+)\s*hücre$/i))) return m[1] + " hücre dolduruldu";
+        if ((m = d.match(/^(\d+)\s*eksik$/i))) return (m[1] === "0") ? "Eksik yok" : m[1] + " hücre eksik";
+      } else if (M === 'GÜNCELLE' || M === 'KONTROL') {
+        if ((m = d.match(/^(\d+)\s*\/\s*(\d+)$/))) return m[1] + " / " + m[2] + " hisse fiyatı";
+      } else if (M === 'HAFTALIK') {
+        if ((m = d.match(/^(\d+)\s*hisse$/i))) return m[1] + " hisse yenilendi";
+      } else if (M === 'ANOMALİ') {
+        if ((m = d.match(/^(\d+)\s*kalıcı kayma$/i))) return m[1] + " şüpheli sıçrama";
+      }
+      return d;
+    }
+
+    // Ayrıntı sütununu sadeleştirir (eski kayıtlar da dahil)
+    function guncAyrintiMetni(durum, ayr) {
+      let t = String(ayr || "").trim();
+      if (!t) return "";
+      const eslesmeler = [
+        [/AttributeError: 'Worksheet' object has no attribute 'delete_row'/g, "Satır silme komutu eski kod sürümünde hatalıydı (sonradan düzeltildi)"],
+        [/Kapanış verisi henüz yayınlanmamış/g, "İş Yatırım henüz kapanış verisini yayınlamadı, sonraki turda tekrar denenecek"],
+        [/Kur\/altın\/endeks boşluğu dolduruldu/g, "Kur / altın / endeks eksikleri tamamlandı"],
+        [/ABD kapanışı \/ gün içi kesinleştirme turu/g, "ABD borsası kapanış değerleriyle satır yenilendi"],
+        [/Gün içi satır yeniden yazıldı/g, "Gün içi yazılan satır yeniden yazıldı"],
+        [/Fiyatsız son satırlar temizlendi/g, "Hisse fiyatı olmayan son satırlar silindi"],
+        [/Fiyatı yayınlanmayan tarihler yazılmadı/g, "Fiyatı çıkmayan tarihler yazılmadı"],
+        [/Yeni halka arz \((\d+)\)/g, "$1 yeni halka arz eklendi"],
+        [/İş Yatırım'da bulunamadı(?! \()/g, "İş Yatırım'da bulunamadı (işlem görmeyen hisse olabilir)"],
+        [/İş Yatırım yanıt vermedi \((\d+) istek alınamadı\)/g, "İş Yatırım yanıt vermedi ($1 istek alınamadı)"]
+      ];
+      eslesmeler.forEach(function(e) { t = t.replace(e[0], e[1]); });
+      if (String(durum || "").toUpperCase() === 'HATA' && /^[A-Za-z]+(Error|Exception):/.test(t)) t = "Teknik hata: " + t;
+      return t;
+    }
+
+    // "22.11.2026 04:12" -> { gun, saat, d, m, y } (çözülemezse null)
     function guncZamanCoz(zaman) {
       const m = String(zaman || "").match(/^(\d{2})\.(\d{2})\.(\d{4})\s+(\d{2}:\d{2})/);
       if (!m) return null;
       return { gun: m[1] + "." + m[2] + "." + m[3], saat: m[4], d: parseInt(m[1], 10), m: parseInt(m[2], 10), y: parseInt(m[3], 10) };
     }
 
-    function guncGunBasligi(gun) {
-      const p = gun.split(".");
-      const dt = new Date(parseInt(p[2], 10), parseInt(p[1], 10) - 1, parseInt(p[0], 10));
-      return gun + " • " + GUN_ADLARI[dt.getDay()];
+    function guncGunKisa(z) {
+      const dt = new Date(z.y, z.m - 1, z.d);
+      return ikiHane(z.d) + "." + ikiHane(z.m) + " " + GUN_ADLARI_KISA[dt.getDay()];
     }
 
     function guncFiltreSec(f) {
@@ -1100,7 +1187,7 @@
 
     function guncChipHtml(k, v, s, sinif) {
       return '<div class="gunc-chip"><div class="k">' + htmlKacis(k) + '</div><div class="v ' + (sinif || '') + '">' + htmlKacis(v) + '</div>' +
-             (s ? '<div class="s">' + htmlKacis(s) + '</div>' : '') + '</div>';
+             (s ? '<div class="s" title="' + htmlKacis(s) + '">' + htmlKacis(s) + '</div>' : '') + '</div>';
     }
 
     function guncCiz() {
@@ -1110,28 +1197,37 @@
       if (guncKayitlar.length === 0) { guncMesaj("Henüz güncelleme kaydı yok. Bir motor çalıştığında burada görünecek.", false, false); return; }
 
       // Üst özet kartları (filtreden bağımsız, tüm kayıtlara göre)
-      let sonYazim = null, sonHata = null;
+      let sonYazim = null, sonHata = null, sonHataIdx = -1;
       for (let i = 0; i < guncKayitlar.length; i++) {
         const k = guncKayitlar[i];
         const motor = String(k[1] || "").toUpperCase();
         const durum = String(k[2] || "").toUpperCase();
         if (!sonYazim && (motor === 'GÜNCELLE' || motor === 'KONTROL') && (durum === 'YAZILDI' || durum === 'YENİLENDİ')) sonYazim = k;
-        if (!sonHata && durum === 'HATA') sonHata = k;
+        if (!sonHata && durum === 'HATA') { sonHata = k; sonHataIdx = i; }
         if (sonYazim && sonHata) break;
+      }
+
+      // Son hatadan sonra aynı motor başarıyla çalıştıysa bunu belirt
+      let hataSonrasiDuzeldi = false;
+      if (sonHata) {
+        for (let j = 0; j < sonHataIdx; j++) {
+          const kk = guncKayitlar[j];
+          if (String(kk[1] || "").toUpperCase() === String(sonHata[1] || "").toUpperCase() && String(kk[2] || "").toUpperCase() !== 'HATA') { hataSonrasiDuzeldi = true; break; }
+        }
       }
 
       let html = '<div class="gunc-ozet">';
       if (sonYazim) {
-        html += guncChipHtml("SON VERİ GİRİŞİ", sonYazim[0], sonYazim[3] + "  •  " + sonYazim[4], "iyi");
+        html += guncChipHtml("SON VERİ GİRİŞİ", sonYazim[0], "Tarih: " + (sonYazim[3] || "-") + " • " + guncDolulukMetni(sonYazim[1], sonYazim[4]), "iyi");
       } else {
         html += guncChipHtml("SON VERİ GİRİŞİ", "-", "listede yok", "");
       }
       if (sonHata) {
-        html += guncChipHtml("SON HATA", sonHata[0], sonHata[1] + "  •  " + sonHata[6], "kotu");
+        html += guncChipHtml("SON HATA", sonHata[0], guncMotorAdi(sonHata[1])[0] + (hataSonrasiDuzeldi ? " • sonradan düzeldi" : " • henüz düzelmedi"), hataSonrasiDuzeldi ? "uyari" : "kotu");
       } else {
         html += guncChipHtml("SON HATA", "HATA YOK", "listelenen kayıtlarda", "iyi");
       }
-      html += guncChipHtml("SON KAYIT", guncKayitlar[0][0], guncKayitlar[0][1] + "  •  " + guncKayitlar[0][2], "");
+      html += guncChipHtml("SON ÇALIŞMA", guncKayitlar[0][0], guncMotorAdi(guncKayitlar[0][1])[0] + " • " + guncDurumMetni(guncKayitlar[0][2]), "");
       html += '</div>';
 
       // Filtre uygula
@@ -1147,45 +1243,43 @@
         return;
       }
 
-      // Günlük kayıt sayıları
-      const gunSayac = {};
-      liste.forEach(function(k) {
-        const z = guncZamanCoz(k[0]);
-        const g = z ? z.gun : "?";
-        gunSayac[g] = (gunSayac[g] || 0) + 1;
-      });
-
-      html += '<table class="gunc-tablo"><thead><tr>' +
-              '<th>ZAMAN (TR)</th><th>MOTOR</th><th>DURUM</th><th>İŞLENEN TARİH</th><th>DOLULUK</th><th>SÜRE</th><th>AYRINTI</th>' +
+      html += '<div class="gunc-kap" id="guncKap"><table class="gunc-tablo"><colgroup>' +
+              '<col style="width:11%"><col style="width:12%"><col style="width:10%"><col style="width:16%"><col style="width:15%"><col style="width:7%"><col style="width:29%">' +
+              '</colgroup><thead><tr>' +
+              '<th>ZAMAN</th><th>İŞLEM</th><th>DURUM</th><th>İŞLENEN TARİH</th><th>SONUÇ</th><th>SÜRE</th><th>AÇIKLAMA</th>' +
               '</tr></thead><tbody>';
 
       let oncekiGun = null;
       liste.forEach(function(k) {
         const z = guncZamanCoz(k[0]);
         const g = z ? z.gun : "?";
-        if (g !== oncekiGun) {
-          const baslik = (g === "?") ? "TARİHSİZ KAYITLAR" : guncGunBasligi(g);
-          html += '<tr class="gunc-gun"><td colspan="7">' + htmlKacis(baslik) + '<span>' + gunSayac[g] + ' kayıt</span></td></tr>';
-          oncekiGun = g;
-        }
+        const yeniGun = (oncekiGun !== null && g !== oncekiGun);
+        oncekiGun = g;
         const sinif = guncDurumSinifi(k[2]);
-        html += '<tr class="gunc-satir">' +
-                '<td class="g-zaman">' + htmlKacis(k[0] || "-") + '</td>' +
-                '<td class="g-motor">' + htmlKacis(k[1] || "-") + '</td>' +
-                '<td><span class="rozet ' + sinif + '">' + htmlKacis(k[2] || "-") + '</span></td>' +
+        const motorBilgi = guncMotorAdi(k[1]);
+        const zamanHtml = z
+          ? '<span class="zs">' + htmlKacis(z.saat) + '</span><span class="zg">' + htmlKacis(guncGunKisa(z)) + '</span>'
+          : htmlKacis(k[0] || "-");
+        html += '<tr class="gunc-satir' + (yeniGun ? ' yeni-gun' : '') + '">' +
+                '<td class="g-zaman" title="' + htmlKacis(k[0] || "") + '">' + zamanHtml + '</td>' +
+                '<td class="g-motor">' + htmlKacis(motorBilgi[0]) + (motorBilgi[1] ? '<small>' + htmlKacis(motorBilgi[1]) + '</small>' : '') + '</td>' +
+                '<td><span class="rozet ' + sinif + '">' + htmlKacis(guncDurumMetni(k[2])) + '</span></td>' +
                 '<td class="g-tarih">' + htmlKacis(k[3] || "-") + '</td>' +
-                '<td class="g-dol">' + htmlKacis(k[4] || "-") + '</td>' +
+                '<td class="g-dol">' + htmlKacis(guncDolulukMetni(k[1], k[4])) + '</td>' +
                 '<td class="g-sure">' + htmlKacis(k[5] || "-") + '</td>' +
-                '<td class="g-ayr">' + htmlKacis(k[6] || "") + '</td>' +
+                '<td class="g-ayr">' + htmlKacis(guncAyrintiMetni(k[2], k[6])) + '</td>' +
                 '</tr>';
       });
 
-      html += '</tbody></table>';
-      html += '<div class="gunc-alt">' + liste.length + ' kayıt gösteriliyor • en yeni üstte • sekme açıkken her dakika kendiliğinden yenilenir</div>';
+      html += '</tbody></table></div>';
+      html += '<div class="gunc-alt">' + liste.length + ' kayıt • en yeni üstte • her dakika kendiliğinden yenilenir<br>' +
+              'EKLENDİ: yeni gün tabloya yazıldı • BEKLENİYOR: kapanış verisi henüz çıkmadı • TAMAMLANDI / KISMEN: eksik hücreler dolduruldu • HATA: işlem başarısız oldu</div>';
 
-      const eskiKaydirma = c.scrollTop;
+      const eskiKap = document.getElementById('guncKap');
+      const eskiKaydirma = eskiKap ? eskiKap.scrollTop : 0;
       c.innerHTML = html;
-      c.scrollTop = eskiKaydirma;
+      const yeniKap = document.getElementById('guncKap');
+      if (yeniKap) yeniKap.scrollTop = eskiKaydirma;
     }
 
     function guncOtoYenilemeBaslat() {
@@ -1524,7 +1618,7 @@
         aylikContainer.style.display = 'none';
         tableContainer.style.display = 'none';
         guncPanel.style.display = 'flex';
-        guncContainer.style.display = 'block';
+        guncContainer.style.display = 'flex';
         guncellemeleriYukle(true, false);
         guncOtoYenilemeBaslat();
         return;
