@@ -361,11 +361,15 @@ def _guncelleme_calistir():
     sonuc = {'durum': 'HATA', 'tarih': '-', 'doluluk': '-', 'ayrinti': ''}
     notlar = []
     isy_hata = False
+    hafta_sonu = False   # Son tarih ile bugün arasında hiç hafta içi gün yoksa True olur
 
     def veri_yok():
         if isy_hata:
             sonuc['durum'] = 'HATA'
             sonuc['ayrinti'] = f"İş Yatırım yanıt vermedi ({_HATA_SAYACI['isyatirim']} istek alınamadı)"
+        elif hafta_sonu:
+            sonuc['durum'] = 'YENİ VERİ YOK'
+            sonuc['ayrinti'] = " | ".join(["Hafta sonu: yeni işlem günü yok"] + notlar)
         else:
             sonuc['durum'] = 'VERİ YOK'
             sonuc['ayrinti'] = " | ".join(["Kapanış verisi henüz yayınlanmamış"] + notlar)
@@ -396,7 +400,7 @@ def _guncelleme_calistir():
         yenileme = False
 
         if last_date.date() == today.date():
-            sheet.delete_row(last_valid_row_idx) # Bugünün eksik verisini içeren son satırı sil
+            sheet.delete_rows(last_valid_row_idx) # Bugünün eksik verisini içeren son satırı sil
             yenileme = True
             time.sleep(2)
             # Satır silindiği için veritabanı bilgilerini tazeleyerek yeniden alıyoruz
@@ -441,7 +445,18 @@ def _guncelleme_calistir():
         end_fetch = today.strftime("%d-%m-%Y")
         bist_pivot = pd.DataFrame()
 
-        if last_date.date() < today.date():
+        # Son tarih ile bugün arasında hiç hafta içi gün yoksa (hafta sonu), İş Yatırım'a boşuna sorgu atılmaz
+        islem_gunu_var = False
+        kontrol_gunu = last_date + datetime.timedelta(days=1)
+        while kontrol_gunu.date() <= today.date():
+            if kontrol_gunu.weekday() < 5:
+                islem_gunu_var = True
+                break
+            kontrol_gunu += datetime.timedelta(days=1)
+        if last_date.date() < today.date() and not islem_gunu_var:
+            hafta_sonu = True
+
+        if last_date.date() < today.date() and islem_gunu_var:
             stocks = [h for h in headers if h not in (['Tarih'] + YFINANCE_SUTUNLAR) and h]
             all_data = []
             with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
