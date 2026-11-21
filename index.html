@@ -276,7 +276,7 @@
     .gunc-tablo td.g-motor small { display: block; color: #94A3B8; font-weight: 600; font-size: 0.66rem; }
     .gunc-tablo td.g-tarih, .gunc-tablo td.g-dol { color: #E2E8F0; }
     .gunc-tablo td.g-sure { white-space: nowrap; color: #CBD5E1; }
-    .gunc-tablo td.g-ayr { color: #CBD5E1; font-weight: 600; word-break: break-word; }
+    .gunc-tablo td.g-ayr { color: #E2E8F0; font-weight: 600; font-size: 0.84rem; line-height: 1.35; word-break: break-word; }
 
     .rozet { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 0.7rem; font-weight: 900; letter-spacing: 0.2px; white-space: nowrap; border: 1px solid transparent; }
     .rozet.iyi { background: rgba(16,185,129,0.14); color: #34D399; border-color: rgba(16,185,129,0.35); }
@@ -1059,66 +1059,126 @@
     // GÜNCELLEMELER SEKMESİ
     // ==========================================
 
-    // Durum metnine göre rozet rengi
-    function guncDurumSinifi(durum) {
-      const d = String(durum || "").trim().toUpperCase();
-      if (d === 'HATA') return 'kotu';
-      if (d === 'YAZILDI' || d === 'YENİLENDİ' || d === 'ONARILDI' || d === 'GÜNCELLENDİ' || d === 'TEMİZ') return 'iyi';
-      if (d === 'VERİ YOK' || d === 'KISMEN' || d === 'KALAN EKSİK') return 'uyari';
-      if (d === 'TARANDI') return 'bilgi';
-      if (d === 'YENİ VERİ YOK' || d === 'DEĞİŞMEDİ') return 'nötr';
-      return 'bilgi';
-    }
-
-    function guncDurumMetni(durum) {
-      const d = String(durum || "").trim().toUpperCase();
-      return GUNC_DURUM_ADLARI[d] || String(durum || "-");
-    }
-
     function guncMotorAdi(motor) {
       const m = String(motor || "").trim().toUpperCase();
       return GUNC_MOTOR_ADLARI[m] || [String(motor || "-"), ""];
     }
 
-    // Doluluk sütununu motorun anlamına göre sadeleştirir
-    function guncDolulukMetni(motor, dol) {
-      const d = String(dol || "").trim();
-      if (!d || d === "-") return "-";
-      const M = String(motor || "").trim().toUpperCase();
+    // Bir kaydı, hiçbir şey bilmeyen birinin anlayacağı sade Türkçeye çevirir.
+    // Dönüş: { etiket: rozet yazısı, sinif: renk, metin: açıklama cümlesi }
+    function guncYorumla(k) {
+      const motor = String(k[1] || "").trim().toUpperCase();
+      const durum = String(k[2] || "").trim().toUpperCase();
+      const tarih = String(k[3] || "").trim();
+      const dol = String(k[4] || "").trim();
+      const ayr = String(k[6] || "").trim();
+      const z = guncZamanCoz(k[0]);
+      let haftaSonu = false;
+      if (z) { const g = new Date(z.y, z.m - 1, z.d).getDay(); haftaSonu = (g === 0 || g === 6); }
+      const tarihVar = tarih && tarih !== "-";
       let m;
-      if (M === 'BAKIM') {
-        if ((m = d.match(/^\+(\d+)\s*\/\s*(\d+)$/))) return m[2] + " eksik hücrenin " + m[1] + " tanesi dolduruldu";
-        if ((m = d.match(/^\+(\d+)\s*hücre$/i))) return m[1] + " hücre dolduruldu";
-        if ((m = d.match(/^(\d+)\s*eksik$/i))) return (m[1] === "0") ? "Eksik yok" : m[1] + " hücre eksik";
-      } else if (M === 'GÜNCELLE' || M === 'KONTROL') {
-        if ((m = d.match(/^(\d+)\s*\/\s*(\d+)$/))) return m[1] + " / " + m[2] + " hisse fiyatı";
-      } else if (M === 'HAFTALIK') {
-        if ((m = d.match(/^(\d+)\s*hisse$/i))) return m[1] + " hisse yenilendi";
-      } else if (M === 'ANOMALİ') {
-        if ((m = d.match(/^(\d+)\s*kalıcı kayma$/i))) return m[1] + " şüpheli sıçrama";
-      }
-      return d;
-    }
+      const r = { etiket: String(k[2] || "-"), sinif: 'bilgi', metin: ayr };
 
-    // Ayrıntı sütununu sadeleştirir (eski kayıtlar da dahil)
-    function guncAyrintiMetni(durum, ayr) {
-      let t = String(ayr || "").trim();
-      if (!t) return "";
-      const eslesmeler = [
-        [/AttributeError: 'Worksheet' object has no attribute 'delete_row'/g, "Satır silme komutu eski kod sürümünde hatalıydı (sonradan düzeltildi)"],
-        [/Kapanış verisi henüz yayınlanmamış/g, "İş Yatırım henüz kapanış verisini yayınlamadı, sonraki turda tekrar denenecek"],
-        [/Kur\/altın\/endeks boşluğu dolduruldu/g, "Kur / altın / endeks eksikleri tamamlandı"],
-        [/ABD kapanışı \/ gün içi kesinleştirme turu/g, "ABD borsası kapanış değerleriyle satır yenilendi"],
-        [/Gün içi satır yeniden yazıldı/g, "Gün içi yazılan satır yeniden yazıldı"],
-        [/Fiyatsız son satırlar temizlendi/g, "Hisse fiyatı olmayan son satırlar silindi"],
-        [/Fiyatı yayınlanmayan tarihler yazılmadı/g, "Fiyatı çıkmayan tarihler yazılmadı"],
-        [/Yeni halka arz \((\d+)\)/g, "$1 yeni halka arz eklendi"],
-        [/İş Yatırım'da bulunamadı(?! \()/g, "İş Yatırım'da bulunamadı (işlem görmeyen hisse olabilir)"],
-        [/İş Yatırım yanıt vermedi \((\d+) istek alınamadı\)/g, "İş Yatırım yanıt vermedi ($1 istek alınamadı)"]
-      ];
-      eslesmeler.forEach(function(e) { t = t.replace(e[0], e[1]); });
-      if (String(durum || "").toUpperCase() === 'HATA' && /^[A-Za-z]+(Error|Exception):/.test(t)) t = "Teknik hata: " + t;
-      return t;
+      let kurNot = "";
+      if ((m = ayr.match(/Kur\/altın\/endeks boşluğu dolduruldu \((\d+) hücre\)/))) {
+        kurNot = " Ayrıca kur / altın / endeks sütunlarındaki " + m[1] + " eksik değer de tamamlandı.";
+      }
+
+      // ---- HATA ----
+      if (durum === 'HATA') {
+        let neden;
+        if (/delete_row/.test(ayr)) neden = "program tablodan bir satır silerken eski bir komut kullandığı için takıldı (bu hata kodda düzeltildi)";
+        else if (/İş Yatırım yanıt vermedi/.test(ayr)) neden = "fiyat kaynağı olan İş Yatırım sitesi cevap vermedi";
+        else neden = "teknik hata: " + ayr;
+        r.etiket = 'HATA'; r.sinif = 'kotu';
+        r.metin = "İşlem tamamlanamadı. Neden: " + neden + ".";
+        return r;
+      }
+
+      // ---- GÜNLÜK GÜNCELLEME / YOKLAMA ----
+      if (motor === 'GÜNCELLE' || motor === 'KONTROL') {
+        let adet = "";
+        if ((m = dol.match(/^(\d+)\s*\/\s*(\d+)$/))) adet = " Toplam " + m[2] + " hissenin " + m[1] + " tanesinin fiyatı var; kalan " + (parseInt(m[2], 10) - parseInt(m[1], 10)) + " hisse o gün işlem görmedi.";
+        let arz = "";
+        if ((m = ayr.match(/Yeni halka arz \((\d+)\): ([^|]*)/))) arz = " Tabloya " + m[1] + " yeni halka arz hissesi eklendi (" + m[2].trim() + ").";
+
+        if (durum === 'YAZILDI') {
+          r.etiket = 'YENİ GÜN EKLENDİ'; r.sinif = 'iyi';
+          r.metin = (tarihVar ? tarih : "Yeni") + " günü fiyatları tabloya yazıldı." + adet + arz;
+        } else if (durum === 'YENİLENDİ') {
+          r.etiket = 'GÜN YENİDEN YAZILDI'; r.sinif = 'iyi';
+          r.metin = (tarihVar ? tarih : "Son") + " günü satırı silinip en güncel değerlerle yeniden yazıldı (gece ABD borsası kapandıktan sonra yapılan düzeltme)." + adet + arz;
+        } else if (durum === 'YENİ VERİ YOK' || (durum === 'VERİ YOK' && haftaSonu)) {
+          r.etiket = 'YAPILACAK İŞ YOK'; r.sinif = 'nötr';
+          r.metin = (/Tablo zaten güncel/.test(ayr) && !haftaSonu)
+            ? "Tablo zaten güncel, eklenecek yeni gün yok."
+            : "Hafta sonu olduğu için yeni işlem günü yok, tablo zaten güncel." + kurNot;
+          if (!/Tablo zaten güncel/.test(ayr) && !haftaSonu) r.metin += kurNot;
+        } else if (durum === 'VERİ YOK') {
+          r.etiket = 'VERİ HENÜZ ÇIKMADI'; r.sinif = 'uyari';
+          let gun = "";
+          if ((m = ayr.match(/Fiyatı yayınlanmayan tarihler yazılmadı: ([^|]*)/))) gun = " Fiyatı çıkmayan gün: " + m[1].trim() + ".";
+          r.metin = "Bu günün kapanış fiyatları kaynakta (İş Yatırım) henüz yayınlanmadı. Bu bir hata değil; fiyatlar çıkınca sistem kendisi tabloya yazacak." + gun + kurNot;
+        }
+        return r;
+      }
+
+      // ---- EKSİK TAMAMLAMA ----
+      if (motor === 'BAKIM') {
+        let doldu = null, toplam = null;
+        if ((m = dol.match(/^\+(\d+)\s*\/\s*(\d+)$/))) { doldu = parseInt(m[1], 10); toplam = parseInt(m[2], 10); }
+        else if ((m = dol.match(/^\+(\d+)\s*hücre$/i))) { doldu = parseInt(m[1], 10); toplam = doldu; }
+        else if ((m = dol.match(/^(\d+)\s*eksik$/i))) { doldu = 0; toplam = parseInt(m[1], 10); }
+        const donem = tarihVar ? " (" + tarih + ")" : "";
+        let hisseler = "";
+        if ((m = ayr.match(/tamamlandı \(([^)]*)\)/))) hisseler = " Doldurulan hisseler: " + m[1] + ".";
+
+        if (durum === 'TEMİZ') {
+          r.etiket = 'EKSİK YOK'; r.sinif = 'iyi';
+          r.metin = "Son 15 günün tablosu kontrol edildi, boş fiyat hücresi yok.";
+        } else if (durum === 'ONARILDI') {
+          r.etiket = 'EKSİKLER DOLDURULDU'; r.sinif = 'iyi';
+          r.metin = "Son 15 günde " + (toplam !== null ? toplam : "bazı") + " boş fiyat hücresi vardı; hepsi İş Yatırım'dan alınıp dolduruldu." + hisseler + donem;
+        } else if (durum === 'KISMEN') {
+          r.etiket = 'BİR KISMI DOLDURULDU'; r.sinif = 'bilgi';
+          if (toplam !== null) {
+            r.metin = "Son 15 günde " + toplam + " boş fiyat hücresi bulundu. " + doldu + " tanesi dolduruldu. Kalan " + (toplam - doldu) + " hücrenin verisi kaynakta (İş Yatırım) yok; çoğunlukla o gün işlem görmeyen hisselerdir, yapılacak bir şey yok." + hisseler;
+          } else {
+            r.metin = ayr;
+          }
+        } else if (durum === 'KALAN EKSİK') {
+          r.etiket = 'DOLDURULAMADI'; r.sinif = 'uyari';
+          r.metin = (toplam !== null ? toplam : "Bazı") + " boş fiyat hücresi var ama verisi kaynakta (İş Yatırım) yok; işlem görmeyen hisseler olabilir. Yapılacak bir şey yok.";
+        }
+        return r;
+      }
+
+      // ---- GEÇMİŞ YENİLEME (haftalık) ----
+      if (motor === 'HAFTALIK') {
+        let ek = "";
+        if ((m = ayr.match(/\|\s*(.*)$/))) ek = " Not: " + m[1].trim() + ".";
+        if (durum === 'GÜNCELLENDİ') {
+          let n = (m = dol.match(/^(\d+)/)) ? m[1] : "Bazı";
+          let adlar = (m = ayr.match(/\(([^)]*)\)/)) ? " (" + m[1] + ")" : "";
+          r.etiket = 'GEÇMİŞ FİYATLAR DÜZELTİLDİ'; r.sinif = 'iyi';
+          r.metin = n + " hissenin eski fiyatları" + adlar + " bölünme / bedelsiz gibi işlemlere göre yeniden hesaplanıp düzeltildi." + ek;
+        } else if (durum === 'DEĞİŞMEDİ') {
+          r.etiket = 'DEĞİŞİKLİK YOK'; r.sinif = 'nötr';
+          r.metin = "Tüm hisselerin geçmiş fiyatları kaynakla karşılaştırıldı, düzeltilecek bir şey çıkmadı." + ek;
+        }
+        return r;
+      }
+
+      // ---- ANOMALİ TARAMASI ----
+      if (motor === 'ANOMALİ') {
+        let n = (m = dol.match(/^(\d+)/)) ? m[1] : "0";
+        let sut = (m = ayr.match(/^(\d+) sütun/)) ? m[1] : "";
+        r.etiket = 'TARAMA TAMAMLANDI'; r.sinif = 'bilgi';
+        r.metin = (sut ? sut + " hisse / varlık" : "Tüm hisseler") + " fiyat sıçramaları için tarandı; " + n + " şüpheli sıçrama bulundu. Ayrıntısı tablodaki \"Anomali Raporu\" sayfasında.";
+        return r;
+      }
+
+      return r;
     }
 
     // "22.11.2026 04:12" -> { gun, saat, d, m, y } (çözülemezse null)
@@ -1194,9 +1254,9 @@
       const c = document.getElementById('guncContainer');
       if (aktifSekme !== 'guncellemeler') return;
       if (!guncKayitlar) { guncMesaj("Güncelleme kayıtları yükleniyor...", true, false); return; }
-      if (guncKayitlar.length === 0) { guncMesaj("Henüz güncelleme kaydı yok. Bir motor çalıştığında burada görünecek.", false, false); return; }
+      if (guncKayitlar.length === 0) { guncMesaj("Henüz güncelleme kaydı yok. Bir işlem çalıştığında burada görünecek.", false, false); return; }
 
-      // Üst özet kartları (filtreden bağımsız, tüm kayıtlara göre)
+      // Üst özet kartları (filtreden bağımsız)
       let sonYazim = null, sonHata = null, sonHataIdx = -1;
       for (let i = 0; i < guncKayitlar.length; i++) {
         const k = guncKayitlar[i];
@@ -1207,7 +1267,6 @@
         if (sonYazim && sonHata) break;
       }
 
-      // Son hatadan sonra aynı motor başarıyla çalıştıysa bunu belirt
       let hataSonrasiDuzeldi = false;
       if (sonHata) {
         for (let j = 0; j < sonHataIdx; j++) {
@@ -1218,19 +1277,18 @@
 
       let html = '<div class="gunc-ozet">';
       if (sonYazim) {
-        html += guncChipHtml("SON VERİ GİRİŞİ", sonYazim[0], "Tarih: " + (sonYazim[3] || "-") + " • " + guncDolulukMetni(sonYazim[1], sonYazim[4]), "iyi");
+        html += guncChipHtml("EN SON FİYAT EKLENEN GÜN", sonYazim[3] || "-", "Tabloya " + sonYazim[0] + " tarihinde yazıldı", "iyi");
       } else {
-        html += guncChipHtml("SON VERİ GİRİŞİ", "-", "listede yok", "");
+        html += guncChipHtml("EN SON FİYAT EKLENEN GÜN", "-", "listede yok", "");
       }
       if (sonHata) {
-        html += guncChipHtml("SON HATA", sonHata[0], guncMotorAdi(sonHata[1])[0] + (hataSonrasiDuzeldi ? " • sonradan düzeldi" : " • henüz düzelmedi"), hataSonrasiDuzeldi ? "uyari" : "kotu");
+        html += guncChipHtml("SON HATA", sonHata[0], guncMotorAdi(sonHata[1])[0] + (hataSonrasiDuzeldi ? " • sonradan düzeldi, sorun yok" : " • henüz düzelmedi"), hataSonrasiDuzeldi ? "uyari" : "kotu");
       } else {
         html += guncChipHtml("SON HATA", "HATA YOK", "listelenen kayıtlarda", "iyi");
       }
-      html += guncChipHtml("SON ÇALIŞMA", guncKayitlar[0][0], guncMotorAdi(guncKayitlar[0][1])[0] + " • " + guncDurumMetni(guncKayitlar[0][2]), "");
+      html += guncChipHtml("SİSTEMİN SON ÇALIŞMASI", guncKayitlar[0][0], guncMotorAdi(guncKayitlar[0][1])[0] + " • " + guncYorumla(guncKayitlar[0]).etiket, "");
       html += '</div>';
 
-      // Filtre uygula
       const liste = guncKayitlar.filter(function(k) {
         if (guncFiltre === 'TÜMÜ') return true;
         if (guncFiltre === 'HATALAR') return String(k[2] || "").toUpperCase() === 'HATA';
@@ -1244,9 +1302,9 @@
       }
 
       html += '<div class="gunc-kap" id="guncKap"><table class="gunc-tablo"><colgroup>' +
-              '<col style="width:11%"><col style="width:12%"><col style="width:10%"><col style="width:16%"><col style="width:15%"><col style="width:7%"><col style="width:29%">' +
+              '<col style="width:12%"><col style="width:15%"><col style="width:17%"><col style="width:48%"><col style="width:8%">' +
               '</colgroup><thead><tr>' +
-              '<th>ZAMAN</th><th>İŞLEM</th><th>DURUM</th><th>İŞLENEN TARİH</th><th>SONUÇ</th><th>SÜRE</th><th>AÇIKLAMA</th>' +
+              '<th>NE ZAMAN</th><th>HANGİ İŞLEM</th><th>SONUÇ</th><th>NE OLDU?</th><th>SÜRE</th>' +
               '</tr></thead><tbody>';
 
       let oncekiGun = null;
@@ -1255,7 +1313,7 @@
         const g = z ? z.gun : "?";
         const yeniGun = (oncekiGun !== null && g !== oncekiGun);
         oncekiGun = g;
-        const sinif = guncDurumSinifi(k[2]);
+        const yo = guncYorumla(k);
         const motorBilgi = guncMotorAdi(k[1]);
         const zamanHtml = z
           ? '<span class="zs">' + htmlKacis(z.saat) + '</span><span class="zg">' + htmlKacis(guncGunKisa(z)) + '</span>'
@@ -1263,17 +1321,14 @@
         html += '<tr class="gunc-satir' + (yeniGun ? ' yeni-gun' : '') + '">' +
                 '<td class="g-zaman" title="' + htmlKacis(k[0] || "") + '">' + zamanHtml + '</td>' +
                 '<td class="g-motor">' + htmlKacis(motorBilgi[0]) + (motorBilgi[1] ? '<small>' + htmlKacis(motorBilgi[1]) + '</small>' : '') + '</td>' +
-                '<td><span class="rozet ' + sinif + '">' + htmlKacis(guncDurumMetni(k[2])) + '</span></td>' +
-                '<td class="g-tarih">' + htmlKacis(k[3] || "-") + '</td>' +
-                '<td class="g-dol">' + htmlKacis(guncDolulukMetni(k[1], k[4])) + '</td>' +
+                '<td><span class="rozet ' + yo.sinif + '">' + htmlKacis(yo.etiket) + '</span></td>' +
+                '<td class="g-ayr">' + htmlKacis(yo.metin) + '</td>' +
                 '<td class="g-sure">' + htmlKacis(k[5] || "-") + '</td>' +
-                '<td class="g-ayr">' + htmlKacis(guncAyrintiMetni(k[2], k[6])) + '</td>' +
                 '</tr>';
       });
 
       html += '</tbody></table></div>';
-      html += '<div class="gunc-alt">' + liste.length + ' kayıt • en yeni üstte • her dakika kendiliğinden yenilenir<br>' +
-              'EKLENDİ: yeni gün tabloya yazıldı • BEKLENİYOR: kapanış verisi henüz çıkmadı • TAMAMLANDI / KISMEN: eksik hücreler dolduruldu • HATA: işlem başarısız oldu</div>';
+      html += '<div class="gunc-alt">' + liste.length + ' kayıt • en yeni üstte • her dakika kendiliğinden yenilenir • yeşil: işlem başarılı • sarı: bekleyen / dikkat • gri: yapılacak iş yoktu • kırmızı: hata</div>';
 
       const eskiKap = document.getElementById('guncKap');
       const eskiKaydirma = eskiKap ? eskiKap.scrollTop : 0;
