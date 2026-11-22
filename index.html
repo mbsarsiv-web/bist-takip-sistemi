@@ -276,7 +276,7 @@
     .gunc-tablo td.g-motor small { display: block; color: #94A3B8; font-weight: 600; font-size: 0.66rem; }
     .gunc-tablo td.g-tarih, .gunc-tablo td.g-dol { color: #E2E8F0; }
     .gunc-tablo td.g-sure { white-space: nowrap; color: #CBD5E1; }
-    .gunc-tablo td.g-ayr { color: #E2E8F0; font-weight: 600; font-size: 0.84rem; line-height: 1.35; word-break: break-word; }
+    .gunc-tablo td.g-ayr { color: #E2E8F0; font-weight: 600; font-size: 0.84rem; line-height: 1.35; word-break: break-word; white-space: pre-line; }
 
     .rozet { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 0.7rem; font-weight: 900; letter-spacing: 0.2px; white-space: nowrap; border: 1px solid transparent; }
     .rozet.iyi { background: rgba(16,185,129,0.14); color: #34D399; border-color: rgba(16,185,129,0.35); }
@@ -510,7 +510,7 @@
 
   <script>
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxvISjns0Zle5VYIgTLzkoJa38T7LC20bRAEW9Sm6LZYpcW61PF1pzrcgBAulDV6XNM/exec";
-    const SURUM = "S29-GUNCELLEMELER-SADE";
+    const SURUM = "S30-EKSIK-VERI-RAPORU";
 
     const TV_MU = /Web0S|webOS|NetCast|SmartTV|SMART-TV|Tizen|HbbTV|VIDAA|Viera|BRAVIA|Hisense|AndroidTV|Android TV|CrKey|AFTM|GoogleTV|LG Browser|LGE|Opera TV|OPRTV|Maple|NETTV|WebTV|Large Screen/i.test(navigator.userAgent || "") || (window.location.search.indexOf('tv=1') > -1);
     const DOKUNMATIK = ('ontouchstart' in window) || ((navigator.maxTouchPoints || 0) > 0);
@@ -1071,7 +1071,9 @@
       const durum = String(k[2] || "").trim().toUpperCase();
       const tarih = String(k[3] || "").trim();
       const dol = String(k[4] || "").trim();
-      const ayr = String(k[6] || "").trim();
+      const ayAyir = guncAyrintiAyir(k[6]);
+      const ayr = ayAyir.taban;
+      const j = ayAyir.j;
       const z = guncZamanCoz(k[0]);
       let haftaSonu = false;
       if (z) { const g = new Date(z.y, z.m - 1, z.d).getDay(); haftaSonu = (g === 0 || g === 6); }
@@ -1125,6 +1127,37 @@
 
       // ---- EKSİK TAMAMLAMA ----
       if (motor === 'BAKIM') {
+        // Yeni kayıtlar: hangi hücrelerin eksik kaldığı ayrıntılı gelir
+        if (j && typeof j.n === 'number') {
+          const satirlar = [];
+          const kaAdlari = Object.keys(j.ka || {});
+          satirlar.push("Kontrol edilen: " + j.d1 + " – " + j.d2 + " arası " + j.n + " işlem günü • " + j.hs + " hisse + 6 kur/altın/endeks sütunu.");
+          if (kaAdlari.length === 0) {
+            satirlar.push("DOLAR, EURO, GR ALTIN, GR GÜMÜŞ, NASDAQ, S&P 500: tüm günlerde dolu, eksik yok.");
+          } else {
+            satirlar.push("EKSİK kur/altın/endeks: " + kaAdlari.map(function(ad) { return ad + " (" + j.ka[ad][0] + " gün: " + j.ka[ad][1].join(", ") + ")"; }).join(" • ") + ". Diğerleri tam.");
+          }
+          const kalanHucre = j.top - j.ok;
+          satirlar.push("Hisse fiyatları: " + j.top + " boş hücre bulundu, " + j.ok + " tanesi dolduruldu" + (kalanHucre > 0 ? ", " + kalanHucre + " tanesi doldurulamadı." : ". Doldurulamayan hücre yok."));
+          if (j.kisN > 0) {
+            const adlar = Object.keys(j.kis || {});
+            const liste = adlar.map(function(h) { return h + " (" + j.kis[h][0] + " gün: " + j.kis[h][1].join(", ") + ")"; });
+            satirlar.push("Bazı günleri eksik kalan " + j.kisN + " hisse (asıl dikkat edilecekler): " + liste.join(" • ") + (j.kisN > adlar.length ? " ve " + (j.kisN - adlar.length) + " hisse daha" : "") + ".");
+          }
+          if (j.bosN > 0) {
+            satirlar.push("Bu " + j.n + " günün hiçbirinde fiyatı olmayan " + j.bosN + " hisse: " + (j.bos || []).join(", ") + (j.bosN > (j.bos || []).length ? " ve " + (j.bosN - j.bos.length) + " hisse daha" : "") + ". Sistem nedenini bilmiyor.");
+          }
+          if (j.ag > 0) {
+            satirlar.push("Uyarı: " + j.ag + " istek İş Yatırım'dan alınamadı (bağlantı sorunu); eksiklerin bir kısmı bu yüzden olabilir.");
+          }
+          if (kaAdlari.length > 0 || j.kisN > 0) { r.etiket = 'EKSİK VERİ VAR'; r.sinif = 'uyari'; }
+          else if (j.bosN > 0) { r.etiket = 'FİYATSIZ HİSSE VAR'; r.sinif = 'bilgi'; }
+          else { r.etiket = 'EKSİK YOK'; r.sinif = 'iyi'; }
+          r.metin = satirlar.join("\n");
+          return r;
+        }
+
+        // Eski kayıtlar (ayrıntı yok)
         let doldu = null, toplam = null;
         if ((m = dol.match(/^\+(\d+)\s*\/\s*(\d+)$/))) { doldu = parseInt(m[1], 10); toplam = parseInt(m[2], 10); }
         else if ((m = dol.match(/^\+(\d+)\s*hücre$/i))) { doldu = parseInt(m[1], 10); toplam = doldu; }
@@ -1132,23 +1165,25 @@
         const donem = tarihVar ? " (" + tarih + ")" : "";
         let hisseler = "";
         if ((m = ayr.match(/tamamlandı \(([^)]*)\)/))) hisseler = " Doldurulan hisseler: " + m[1] + ".";
+        const eskiNot = " (Bu eski kayıtta hangi hücrelerin eksik kaldığı kaydedilmemiş.)";
 
         if (durum === 'TEMİZ') {
           r.etiket = 'EKSİK YOK'; r.sinif = 'iyi';
-          r.metin = "Son 15 günün tablosu kontrol edildi, boş fiyat hücresi yok.";
+          r.metin = "Son 15 günün tablosu kontrol edildi, boş hisse fiyatı hücresi yok.";
         } else if (durum === 'ONARILDI') {
           r.etiket = 'EKSİKLER DOLDURULDU'; r.sinif = 'iyi';
           r.metin = "Son 15 günde " + (toplam !== null ? toplam : "bazı") + " boş fiyat hücresi vardı; hepsi İş Yatırım'dan alınıp dolduruldu." + hisseler + donem;
         } else if (durum === 'KISMEN') {
           r.etiket = 'BİR KISMI DOLDURULDU'; r.sinif = 'bilgi';
-          if (toplam !== null) {
-            r.metin = "Son 15 günde " + toplam + " boş fiyat hücresi bulundu. " + doldu + " tanesi dolduruldu. Kalan " + (toplam - doldu) + " hücrenin verisi kaynakta (İş Yatırım) bulunamadı. Sistem nedenini bilmiyor (işlem durdurma, borsadan çıkmış hisse veya kaynakta eksik veri olabilir)." + hisseler;
-          } else {
-            r.metin = ayr;
-          }
+          r.metin = (toplam !== null)
+            ? "Son 15 günde " + toplam + " boş fiyat hücresi bulundu. " + doldu + " tanesi dolduruldu, " + (toplam - doldu) + " tanesi doldurulamadı." + hisseler + eskiNot
+            : ayr + eskiNot;
         } else if (durum === 'KALAN EKSİK') {
           r.etiket = 'DOLDURULAMADI'; r.sinif = 'uyari';
-          r.metin = (toplam !== null ? toplam : "Bazı") + " boş fiyat hücresi var ama verisi kaynakta (İş Yatırım) bulunamadı. Sistem nedenini bilmiyor (işlem durdurma, borsadan çıkmış hisse veya kaynakta eksik veri olabilir).";
+          r.metin = (toplam !== null ? toplam : "Bazı") + " boş fiyat hücresi doldurulamadı." + eskiNot;
+        } else if (durum === 'KUR EKSİK') {
+          r.etiket = 'EKSİK VERİ VAR'; r.sinif = 'uyari';
+          r.metin = ayr + eskiNot;
         }
         return r;
       }
@@ -1171,10 +1206,19 @@
 
       // ---- ANOMALİ TARAMASI ----
       if (motor === 'ANOMALİ') {
-        let n = (m = dol.match(/^(\d+)/)) ? m[1] : "0";
-        let sut = (m = ayr.match(/^(\d+) sütun/)) ? m[1] : "";
         r.etiket = 'TARAMA TAMAMLANDI'; r.sinif = 'bilgi';
-        r.metin = (sut ? sut + " hisse / varlık" : "Tüm hisseler") + " fiyat sıçramaları için tarandı; " + n + " şüpheli sıçrama bulundu. Ayrıntısı tablodaki \"Anomali Raporu\" sayfasında.";
+        if (j && typeof j.top === 'number') {
+          let t = j.sut + " hisse / varlığın tüm geçmiş fiyatları tarandı. Bu tarama EKSİK veriyi değil, fiyatlardaki ani sıçramaları arar.\n";
+          t += "Bir günden diğerine %11'den fazla düşen ya da %12'den fazla yükselen " + j.top + " fiyat hareketi bulundu (tüm geçmiş, " + j.his + " hisse). Bunların " + j.k365 + " tanesi son 1 yılda, " + j.k30 + " tanesi son 30 günde.\n";
+          t += "Türleri: kalıcı kayma " + j.kal + " (fiyat yeni seviyede kalmış: bölünme, gerçek sert hareket veya kaynak hatası olabilir), tek günlük sapma " + j.tek + " (ertesi gün eski seviyeye dönmüş: hatalı veri olabilir), çok düşük fiyat " + j.dus + ".";
+          if (j.son) t += "\nEn yeni kalıcı kayma: " + j.son[0] + ", " + j.son[1] + " (önceki güne göre " + String(j.son[2]).replace('.', ',') + " katı).";
+          t += "\nTam liste bu sayfada yok; Google E-Tablo'daki \"Anomali Raporu\" sayfasında.";
+          r.metin = t;
+        } else {
+          let n = (m = dol.match(/^(\d+)/)) ? m[1] : "0";
+          let sut = (m = ayr.match(/^(\d+) sütun/)) ? m[1] : "";
+          r.metin = (sut ? sut + " hisse / varlık" : "Tüm hisseler") + " fiyat sıçramaları için tarandı (eksik veri taraması değildir); " + n + " kalıcı fiyat kayması bulundu. Tam liste Google E-Tablo'daki \"Anomali Raporu\" sayfasında.";
+        }
         return r;
       }
 
@@ -1245,6 +1289,36 @@
         });
     }
 
+    // Ayrıntı sütunundaki " ## " sonrası JSON'u ayırır: { taban: okunabilir metin, j: ayrıntı nesnesi veya null }
+    function guncAyrintiAyir(ham) {
+      const s = String(ham || "").trim();
+      const i = s.indexOf(" ## ");
+      if (i < 0) return { taban: s, j: null };
+      let j = null;
+      try { j = JSON.parse(s.slice(i + 4)); } catch (e) { j = null; }
+      return { taban: s.slice(0, i), j: j };
+    }
+
+    // En son ayrıntılı EKSİK TAMAMLAMA kaydından, ekranın üstündeki "eksik veri var mı?" kartını üretir
+    function guncEksikKartiHtml() {
+      let bulunan = null;
+      for (let i = 0; i < guncKayitlar.length; i++) {
+        const k = guncKayitlar[i];
+        if (String(k[1] || "").toUpperCase() !== 'BAKIM') continue;
+        const a = guncAyrintiAyir(k[6]);
+        if (a.j && typeof a.j.n === 'number') { bulunan = { k: k, j: a.j }; break; }
+      }
+      if (!bulunan) return guncChipHtml("EKSİK VERİ DURUMU", "-", "Ayrıntılı kontrol, bir sonraki Eksik tamamlama çalışmasında görünecek", "");
+      const j = bulunan.j;
+      const kur = Object.keys(j.ka || {}).length;
+      const parcalar = [];
+      parcalar.push(kur === 0 ? "Kur/altın: tam" : "Kur/altın: " + kur + " sütunda eksik");
+      parcalar.push(j.kisN + " hissede kısmi eksik");
+      parcalar.push(j.bosN + " hissede hiç fiyat yok");
+      const sorunVar = (kur > 0 || j.kisN > 0);
+      return guncChipHtml("EKSİK VERİ (SON KONTROL: " + bulunan.k[0] + ")", sorunVar ? "VAR" : "YOK", parcalar.join(" • "), sorunVar ? "uyari" : "iyi");
+    }
+
     function guncChipHtml(k, v, s, sinif) {
       return '<div class="gunc-chip"><div class="k">' + htmlKacis(k) + '</div><div class="v ' + (sinif || '') + '">' + htmlKacis(v) + '</div>' +
              (s ? '<div class="s" title="' + htmlKacis(s) + '">' + htmlKacis(s) + '</div>' : '') + '</div>';
@@ -1281,6 +1355,7 @@
       } else {
         html += guncChipHtml("EN SON FİYAT EKLENEN GÜN", "-", "listede yok", "");
       }
+      html += guncEksikKartiHtml();
       if (sonHata) {
         html += guncChipHtml("SON HATA", sonHata[0], guncMotorAdi(sonHata[1])[0] + (hataSonrasiDuzeldi ? " • sonradan düzeldi, sorun yok" : " • henüz düzelmedi"), hataSonrasiDuzeldi ? "uyari" : "kotu");
       } else {
