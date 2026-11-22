@@ -1,6 +1,7 @@
 import os
 import sys
 import json
+import math
 import requests
 import pandas as pd
 import datetime
@@ -1193,6 +1194,7 @@ ANOMALI_MAX_GUN_FARKI = 7          # İki fiyat arası en fazla bu kadar gün is
 ANOMALI_MAX_SATIR = 6000           # Rapor sayfasına yazılacak en fazla satır
 ANOMALI_SAYFA_ADI = "Anomali Raporu"
 ANOMALI_DUSUK_FIYAT = 0.05         # Her iki fiyattan biri bunun altındaysa "DÜŞÜK FİYAT" sınıfına alınır
+ANOMALI_YIL_SINIRI = 20            # Uygulamadaki en uzun getiri sütunu 20 yıllık; rapor bu kadar yıla odaklanır
 
 def _gun_coz(metin):
     return datetime.datetime.strptime(str(metin).strip(), "%d-%m-%Y").date()
@@ -1596,7 +1598,7 @@ def anomali_motoru():
             print(f"[!] Anomali Raporu sayfasına yazılamadı: {e}", flush=True)
 
         sure = int(time.time() - baslangic)
-        yil_siniri = datetime.datetime.now().year - 10
+        yil_siniri = datetime.datetime.now().year - ANOMALI_YIL_SINIRI
         print("=" * 70, flush=True)
         print(f"[ANOMALİ ÖZET] Toplam: {len(bulunanlar)} | KALICI KAYMA: {len(kalici)} | TEK GÜNLÜK SAPMA: {len(tek_gun)} | DÜŞÜK FİYAT: {len(dusuk)} | Etkilenen hisse: {len(set(x[0] for x in bulunanlar))} | Süre: {sure // 60} dk {sure % 60} sn", flush=True)
         print(f"[NORMAL FİYATLI KALICI KAYMALAR] {len(kalici)} olay, {len(set(x[0] for x in kalici))} hisse (gerçek kurumsal işlem veya kaynak hatası adayları)", flush=True)
@@ -1606,8 +1608,8 @@ def anomali_motoru():
             yil_sayac[x[3].year] = yil_sayac.get(x[3].year, 0) + 1
         print("[KALICI KAYMALARIN YILLARA DAĞILIMI] " + " | ".join(f"{y}:{yil_sayac[y]}" for y in sorted(yil_sayac)), flush=True)
 
-        son10 = [x for x in kalici if x[3].year >= yil_siniri]
-        print(f"[SON 10 YILDAKİ KALICI KAYMA] {len(son10)} olay, {len(set(x[0] for x in son10))} hisse (7-10 yıllık getirileri etkileyebilir)", flush=True)
+        son20 = [x for x in kalici if x[3].year >= yil_siniri]
+        print(f"[SON 20 YILDAKİ KALICI KAYMA] {len(son20)} olay, {len(set(x[0] for x in son20))} hisse (15 ve 20 yıllık getirileri etkileyebilir)", flush=True)
 
         hisse_sayac = {}
         for x in kalici:
@@ -1615,8 +1617,8 @@ def anomali_motoru():
         en_cok = sorted(hisse_sayac.items(), key=lambda kv: -kv[1])[:10]
         print("[EN ÇOK KALICI KAYMASI OLAN 10 HİSSE] " + " | ".join(f"{a}:{b}" for a, b in en_cok), flush=True)
 
-        print("[SON 10 YILDAKİ EN YENİ 15 KALICI KAYMA]", flush=True)
-        for ad, ot, ov, t, v, oran, gf, tur in son10[:15]:
+        print("[SON 20 YILDAKİ EN YENİ 15 KALICI KAYMA]", flush=True)
+        for ad, ot, ov, t, v, oran, gf, tur in son20[:15]:
             print(f"   {ad}: {ot.strftime('%d.%m.%Y')} {round(ov, 4)} -> {t.strftime('%d.%m.%Y')} {round(v, 4)} (oran {round(oran, 4)})", flush=True)
         print("=" * 70, flush=True)
 
@@ -1629,6 +1631,19 @@ def anomali_motoru():
             "sut": len(hisseler), "top": len(bulunanlar), "kal": len(kalici), "tek": len(tek_gun),
             "dus": len(dusuk), "his": etkilenen, "k30": kalici_30, "k365": kalici_365
         }
+        # Son 20 yıl (15 ve 20 yıllık getiri sütunlarını etkileyebilecek olaylar)
+        son20_liste = [x for x in kalici if (bugun_tarih - x[3]).days <= 365 * ANOMALI_YIL_SINIRI + 5]
+        hisse20 = {}
+        for x in son20_liste:
+            hisse20[x[0]] = hisse20.get(x[0], 0) + 1
+        en_cok20 = sorted(hisse20.items(), key=lambda kv: (-kv[1], kv[0]))[:8]
+        buyuk20 = sorted(son20_liste, key=lambda x: abs(math.log(x[5])), reverse=True)[:5]
+        rapor["k20"] = len(son20_liste)
+        rapor["h20"] = len(hisse20)
+        rapor["en"] = [[a, b] for a, b in en_cok20]
+        rapor["buy"] = [[x[0], x[3].strftime("%d.%m.%Y"), round(x[5], 3)] for x in buyuk20]
+        print(f"[SON 20 YIL] Kalıcı kayma: {len(son20_liste)} olay, {len(hisse20)} hisse | En çok olan: " + ", ".join(f"{a}:{b}" for a, b in en_cok20), flush=True)
+        print("[SON 20 YIL: EN BÜYÜK 5 SIÇRAMA] " + " | ".join(f"{x[0]} {x[3].strftime('%d.%m.%Y')} oran {round(x[5], 3)}" for x in buyuk20), flush=True)
         if kalici:
             en_yeni = kalici[0]
             rapor["son"] = [en_yeni[0], en_yeni[3].strftime("%d.%m.%Y"), round(en_yeni[5], 4)]
