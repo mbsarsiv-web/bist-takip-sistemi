@@ -255,7 +255,7 @@
     .gunc-chip { flex: 1 1 0; min-width: 200px; background: #111820; border: 1px solid var(--border-color); border-radius: 8px; padding: 4px 10px; text-align: center; overflow: hidden; }
     .gunc-chip .k { font-size: 0.6rem; color: #94A3B8; font-weight: 800; letter-spacing: 0.4px; }
     .gunc-chip .v { font-size: 0.92rem; font-weight: 900; margin-top: 1px; white-space: nowrap; }
-    .gunc-chip .s { font-size: 0.68rem; color: #CBD5E1; font-weight: 700; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .gunc-chip .s { font-size: 0.68rem; color: #CBD5E1; font-weight: 700; margin-top: 1px; white-space: normal; line-height: 1.25; }
     .gunc-chip .v.iyi { color: var(--green-accent); }
     .gunc-chip .v.kotu { color: var(--red-accent); }
     .gunc-chip .v.uyari { color: var(--gold); }
@@ -510,7 +510,7 @@
 
   <script>
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxvISjns0Zle5VYIgTLzkoJa38T7LC20bRAEW9Sm6LZYpcW61PF1pzrcgBAulDV6XNM/exec";
-    const SURUM = "S30-EKSIK-VERI-RAPORU";
+    const SURUM = "S31-ANOMALI-20-YIL";
 
     const TV_MU = /Web0S|webOS|NetCast|SmartTV|SMART-TV|Tizen|HbbTV|VIDAA|Viera|BRAVIA|Hisense|AndroidTV|Android TV|CrKey|AFTM|GoogleTV|LG Browser|LGE|Opera TV|OPRTV|Maple|NETTV|WebTV|Large Screen/i.test(navigator.userAgent || "") || (window.location.search.indexOf('tv=1') > -1);
     const DOKUNMATIK = ('ontouchstart' in window) || ((navigator.maxTouchPoints || 0) > 0);
@@ -1213,10 +1213,19 @@
           satirlar.push("   • " + j.kal + " tanesinde fiyat sıçradı ve yeni yerinde kaldı.");
           satirlar.push("   • " + j.tek + " tanesinde fiyat bir gün sıçradı, ertesi gün eski yerine döndü.");
           satirlar.push("   • " + j.dus + " tanesi çok ucuz hisse (5 kuruştan az). Bunlarda küçük bir oynama bile büyük görünür.");
+          satirlar.push("ÖNEMLİ: Uygulamada 15 ve 20 yıllık getiri sütunları var. Bu yüzden son 20 yıldaki olaylar önemli.");
+          if (typeof j.k20 === 'number') {
+            satirlar.push("Son 20 yılda \"sıçrayıp yeni yerinde kalan\" " + j.k20 + " olay var (" + j.h20 + " hissede). Yanlış çıkan uzun süreli getiriler en çok bunlardan olabilir.");
+            if (j.en && j.en.length) satirlar.push("En çok olay görülen hisseler: " + j.en.map(function(x) { return x[0] + " (" + x[1] + ")"; }).join(", ") + ".");
+            if (j.buy && j.buy.length) satirlar.push("En büyük sıçramalar (fiyat bir önceki güne göre kaç katı olmuş): " + j.buy.map(function(b) { return b[0] + " " + b[1] + " → " + String(b[2]).replace('.', ',') + " kat"; }).join(" • ") + ".");
+          } else {
+            satirlar.push("(Son 20 yıl ayrıntısı bu kayıtta yok. Garip fiyat taraması yeniden çalışınca görünecek.)");
+          }
           if (j.k365 === 0) satirlar.push("Yeni mi? \"Sıçrayıp orada kalan\" grubundan son 1 yılda yeni bir olay yok.");
           else satirlar.push("Yeni mi? \"Sıçrayıp orada kalan\" grubundan son 1 yılda " + j.k365 + ", son 30 günde " + j.k30 + " olay var.");
           if (j.son) satirlar.push("Bu gruptaki en yeni olay: " + j.son[0] + " hissesi, " + j.son[1] + " günü (fiyat bir önceki güne göre " + String(j.son[2]).replace('.', ',') + " katına çıkmış).");
           satirlar.push("Bu bir hata mı? Bilmiyoruz. Hisse bölünmesi gibi gerçek bir olay da olabilir, yanlış veri de. Sistem sadece listeledi, hiçbir şeyi değiştirmedi.");
+          satirlar.push("Ne yapmalı? Listedeki hisselerden birkaçının uzun süreli getirisini Finnet ile karşılaştır. Fark varsa eski fiyatlarda hata olabilir.");
           satirlar.push("Liste nerede? Google E-Tablo'daki \"Anomali Raporu\" sayfasında.");
           r.metin = satirlar.join("\n");
         } else {
