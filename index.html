@@ -510,7 +510,7 @@
 
   <script>
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxvISjns0Zle5VYIgTLzkoJa38T7LC20bRAEW9Sm6LZYpcW61PF1pzrcgBAulDV6XNM/exec";
-    const SURUM = "S31-ANOMALI-20-YIL";
+    const SURUM = "S32-ANOMALI-KISA";
 
     const TV_MU = /Web0S|webOS|NetCast|SmartTV|SMART-TV|Tizen|HbbTV|VIDAA|Viera|BRAVIA|Hisense|AndroidTV|Android TV|CrKey|AFTM|GoogleTV|LG Browser|LGE|Opera TV|OPRTV|Maple|NETTV|WebTV|Large Screen/i.test(navigator.userAgent || "") || (window.location.search.indexOf('tv=1') > -1);
     const DOKUNMATIK = ('ontouchstart' in window) || ((navigator.maxTouchPoints || 0) > 0);
@@ -1207,30 +1207,16 @@
         r.etiket = 'TARAMA BİTTİ'; r.sinif = 'bilgi';
         if (j && typeof j.top === 'number') {
           const satirlar = [];
-          satirlar.push("Ne yapıldı? " + j.sut + " hissenin eski ve yeni tüm fiyatlarına tek tek bakıldı. Aranan şey: bir günde fiyatı çok değişen yerler.");
-          satirlar.push("Boş kutu aranmadı. Boş kutular \"Eksik tamamlama\" satırında yazıyor.");
-          satirlar.push("Ne bulundu? Fiyatı bir günde %11'den fazla düşen veya %12'den fazla çıkan " + j.top + " yer bulundu. (Eski yıllar dahil, " + j.his + " hissede.)");
-          satirlar.push("   • " + j.kal + " tanesinde fiyat sıçradı ve yeni yerinde kaldı.");
-          satirlar.push("   • " + j.tek + " tanesinde fiyat bir gün sıçradı, ertesi gün eski yerine döndü.");
-          satirlar.push("   • " + j.dus + " tanesi çok ucuz hisse (5 kuruştan az). Bunlarda küçük bir oynama bile büyük görünür.");
-          satirlar.push("ÖNEMLİ: Uygulamada 15 ve 20 yıllık getiri sütunları var. Bu yüzden son 20 yıldaki olaylar önemli.");
-          if (typeof j.k20 === 'number') {
-            satirlar.push("Son 20 yılda \"sıçrayıp yeni yerinde kalan\" " + j.k20 + " olay var (" + j.h20 + " hissede). Yanlış çıkan uzun süreli getiriler en çok bunlardan olabilir.");
-            if (j.en && j.en.length) satirlar.push("En çok olay görülen hisseler: " + j.en.map(function(x) { return x[0] + " (" + x[1] + ")"; }).join(", ") + ".");
-            if (j.buy && j.buy.length) satirlar.push("En büyük sıçramalar (fiyat bir önceki güne göre kaç katı olmuş): " + j.buy.map(function(b) { return b[0] + " " + b[1] + " → " + String(b[2]).replace('.', ',') + " kat"; }).join(" • ") + ".");
-          } else {
-            satirlar.push("(Son 20 yıl ayrıntısı bu kayıtta yok. Garip fiyat taraması yeniden çalışınca görünecek.)");
-          }
-          if (j.k365 === 0) satirlar.push("Yeni mi? \"Sıçrayıp orada kalan\" grubundan son 1 yılda yeni bir olay yok.");
-          else satirlar.push("Yeni mi? \"Sıçrayıp orada kalan\" grubundan son 1 yılda " + j.k365 + ", son 30 günde " + j.k30 + " olay var.");
-          if (j.son) satirlar.push("Bu gruptaki en yeni olay: " + j.son[0] + " hissesi, " + j.son[1] + " günü (fiyat bir önceki güne göre " + String(j.son[2]).replace('.', ',') + " katına çıkmış).");
-          satirlar.push("Bu bir hata mı? Bilmiyoruz. Hisse bölünmesi gibi gerçek bir olay da olabilir, yanlış veri de. Sistem sadece listeledi, hiçbir şeyi değiştirmedi.");
-          satirlar.push("Ne yapmalı? Listedeki hisselerden birkaçının uzun süreli getirisini Finnet ile karşılaştır. Fark varsa eski fiyatlarda hata olabilir.");
-          satirlar.push("Liste nerede? Google E-Tablo'daki \"Anomali Raporu\" sayfasında.");
+          satirlar.push("Ne yapıldı? Hisselerin eski fiyatlarına bakıldı. Aranan şey: fiyatı bir günde birden çok değişen yerler.");
+          const sayi = (typeof j.k20 === 'number') ? j.k20 + " yerde (son 20 yıl, " + j.h20 + " hissede)" : j.kal + " yerde (tüm geçmiş)";
+          satirlar.push("Ne bulundu? " + sayi + " fiyat bir günde birden değişmiş ve yeni fiyatında kalmış.");
+          satirlar.push(j.k365 === 0 ? "Yeni mi? Hayır. Son 1 yılda böyle yeni bir yer yok." : "Yeni mi? Son 1 yılda " + j.k365 + " yeni yer var.");
+          satirlar.push("Bu hata mı? Bilmiyoruz. Hisse bölününce (bedelsiz gibi) fiyat böyle değişebilir. Ama düzeltilmediyse 15 ve 20 yıllık getiriler yanlış çıkabilir.");
+          satirlar.push("Bu satır sadece bilgi verir, hiçbir şeyi değiştirmez. Tam liste: Google E-Tablo, \"Anomali Raporu\" sayfası.");
           r.metin = satirlar.join("\n");
         } else {
           let n = (m = dol.match(/^(\d+)/)) ? m[1] : "0";
-          r.metin = "Hisselerin tüm fiyatlarına bakıldı. Aranan şey: bir günde fiyatı çok değişen yerler. Boş kutu aranmadı.\n" + n + " yerde fiyat sıçrayıp yeni yerinde kalmış.\nListe: Google E-Tablo'daki \"Anomali Raporu\" sayfasında.";
+          r.metin = "Ne yapıldı? Hisselerin eski fiyatlarına bakıldı. Aranan şey: fiyatı bir günde birden çok değişen yerler.\nNe bulundu? " + n + " yerde fiyat bir günde birden değişmiş ve yeni fiyatında kalmış.\nBu satır sadece bilgi verir. Tam liste: Google E-Tablo, \"Anomali Raporu\" sayfası.";
         }
         return r;
       }
