@@ -478,7 +478,7 @@
       <button type="button" class="gunc-filtre" data-f="KONTROL" onclick="guncFiltreSec('KONTROL')">YOKLAMA</button>
       <button type="button" class="gunc-filtre" data-f="BAKIM" onclick="guncFiltreSec('BAKIM')">EKSİK TAMAMLAMA</button>
       <button type="button" class="gunc-filtre" data-f="HAFTALIK" onclick="guncFiltreSec('HAFTALIK')">GEÇMİŞ YENİLEME</button>
-      <button type="button" class="gunc-filtre" data-f="ANOMALİ" onclick="guncFiltreSec('ANOMALİ')">ANOMALİ</button>
+      <button type="button" class="gunc-filtre" data-f="ANOMALİ" onclick="guncFiltreSec('ANOMALİ')">GARİP FİYAT</button>
       <button type="button" class="gunc-filtre hata-f" data-f="HATALAR" onclick="guncFiltreSec('HATALAR')">HATALAR</button>
       <button type="button" class="gunc-yenile" onclick="guncellemeleriYukle(true)"><i class="fa-solid fa-rotate"></i> YENİLE</button>
     </div>
@@ -557,7 +557,7 @@
       'KONTROL': ['Yoklama', 'yeni veri çıktı mı bakar'],
       'BAKIM': ['Eksik tamamlama', 'boş hücreleri doldurur'],
       'HAFTALIK': ['Geçmiş yenileme', 'eski fiyatları düzeltir'],
-      'ANOMALİ': ['Anomali taraması', 'şüpheli fiyat sıçramaları']
+      'ANOMALİ': ['Garip fiyat taraması', 'ani fiyat sıçramalarını arar']
     };
 
     // Durum kodu -> ekranda görünen sade ifade
@@ -1064,8 +1064,8 @@
       return GUNC_MOTOR_ADLARI[m] || [String(motor || "-"), ""];
     }
 
-    // Bir kaydı, hiçbir şey bilmeyen birinin anlayacağı sade Türkçeye çevirir.
-    // Dönüş: { etiket: rozet yazısı, sinif: renk, metin: açıklama cümlesi }
+    // Bir kaydı, çok sade ve kısa cümlelerle anlatır.
+    // Dönüş: { etiket: rozet yazısı, sinif: renk, metin: açıklama }
     function guncYorumla(k) {
       const motor = String(k[1] || "").trim().toUpperCase();
       const durum = String(k[2] || "").trim().toUpperCase();
@@ -1083,72 +1083,71 @@
 
       let kurNot = "";
       if ((m = ayr.match(/Kur\/altın\/endeks boşluğu dolduruldu \((\d+) hücre\)/))) {
-        kurNot = " Ayrıca kur / altın / endeks sütunlarındaki " + m[1] + " eksik değer de tamamlandı.";
+        kurNot = "\nAyrıca dolar, altın gibi sütunlardaki " + m[1] + " boş kutu da dolduruldu.";
       }
 
       // ---- HATA ----
       if (durum === 'HATA') {
         let neden;
-        if (/delete_row/.test(ayr)) neden = "program tablodan bir satır silerken eski bir komut kullandığı için takıldı (bu hata kodda düzeltildi)";
-        else if (/İş Yatırım yanıt vermedi/.test(ayr)) neden = "fiyat kaynağı olan İş Yatırım sitesi cevap vermedi";
-        else neden = "teknik hata: " + ayr;
+        if (/delete_row/.test(ayr)) neden = "Program, tablodan satır silerken eski bir komut kullandı ve takıldı. Bu sorun sonra düzeltildi.";
+        else if (/İş Yatırım yanıt vermedi/.test(ayr)) neden = "Fiyatları aldığımız site (İş Yatırım) cevap vermedi.";
+        else neden = "Teknik bir hata oldu: " + ayr;
         r.etiket = 'HATA'; r.sinif = 'kotu';
-        r.metin = "İşlem tamamlanamadı. Neden: " + neden + ".";
+        r.metin = "İşlem yarıda kaldı.\nSebebi: " + neden;
         return r;
       }
 
       // ---- GÜNLÜK GÜNCELLEME / YOKLAMA ----
       if (motor === 'GÜNCELLE' || motor === 'KONTROL') {
         let adet = "";
-        if ((m = dol.match(/^(\d+)\s*\/\s*(\d+)$/))) adet = " Toplam " + m[2] + " hisse sütunundan " + m[1] + " tanesinin fiyatı var; kalan " + (parseInt(m[2], 10) - parseInt(m[1], 10)) + " hissenin fiyatı gelmedi (sistem nedenini bilmiyor; işlem durdurma, borsadan çıkmış hisse veya kaynakta eksik veri olabilir).";
+        if ((m = dol.match(/^(\d+)\s*\/\s*(\d+)$/))) {
+          adet = "\nToplam hisse: " + m[2] + ". Fiyatı gelen: " + m[1] + ". Fiyatı gelmeyen: " + (parseInt(m[2], 10) - parseInt(m[1], 10)) + " (nedenini sistem bilmiyor).";
+        }
         let arz = "";
-        if ((m = ayr.match(/Yeni halka arz \((\d+)\): ([^|]*)/))) arz = " Tabloya " + m[1] + " yeni halka arz hissesi eklendi (" + m[2].trim() + ").";
+        if ((m = ayr.match(/Yeni halka arz \((\d+)\): ([^|]*)/))) arz = "\nYeni halka arz olan " + m[1] + " hisse tabloya eklendi (" + m[2].trim() + ").";
 
         if (durum === 'YAZILDI') {
           r.etiket = 'YENİ GÜN EKLENDİ'; r.sinif = 'iyi';
-          r.metin = (tarihVar ? tarih : "Yeni") + " günü fiyatları tabloya yazıldı." + adet + arz;
+          r.metin = (tarihVar ? tarih : "Yeni") + " gününün fiyatları tabloya eklendi." + adet + arz;
         } else if (durum === 'YENİLENDİ') {
           r.etiket = 'GÜN YENİDEN YAZILDI'; r.sinif = 'iyi';
-          r.metin = (tarihVar ? tarih : "Son") + " günü satırı silinip en güncel değerlerle yeniden yazıldı (gece ABD borsası kapandıktan sonra yapılan düzeltme)." + adet + arz;
+          r.metin = (tarihVar ? tarih : "Son") + " günü satırı silindi ve doğru değerlerle yeniden yazıldı. (ABD borsası kapandıktan sonra yapılan düzeltme.)" + adet + arz;
         } else if (durum === 'YENİ VERİ YOK' || (durum === 'VERİ YOK' && haftaSonu)) {
           r.etiket = 'YAPILACAK İŞ YOK'; r.sinif = 'nötr';
-          r.metin = (/Tablo zaten güncel/.test(ayr) && !haftaSonu)
-            ? "Tablo zaten güncel, eklenecek yeni gün yok."
-            : "Hafta sonu olduğu için yeni işlem günü yok, tablo zaten güncel." + kurNot;
-          if (!/Tablo zaten güncel/.test(ayr) && !haftaSonu) r.metin += kurNot;
+          if (/Hafta sonu/.test(ayr) || haftaSonu) r.metin = "Bugün hafta sonu, borsa kapalı. Eklenecek yeni gün yok." + kurNot;
+          else r.metin = "Tablo zaten en yeni halinde. Eklenecek yeni gün yok." + kurNot;
         } else if (durum === 'VERİ YOK') {
           r.etiket = 'VERİ HENÜZ ÇIKMADI'; r.sinif = 'uyari';
           let gun = "";
-          if ((m = ayr.match(/Fiyatı yayınlanmayan tarihler yazılmadı: ([^|]*)/))) gun = " Fiyatı çıkmayan gün: " + m[1].trim() + ".";
-          r.metin = "Bu günün kapanış fiyatları kaynakta (İş Yatırım) henüz yayınlanmadı. Bu bir hata değil; fiyatlar çıkınca sistem kendisi tabloya yazacak." + gun + kurNot;
+          if ((m = ayr.match(/Fiyatı yayınlanmayan tarihler yazılmadı: ([^|]*)/))) gun = "\nFiyatı çıkmayan gün: " + m[1].trim() + ".";
+          r.metin = "Bu günün fiyatlarını veren site (İş Yatırım) henüz yayınlamadı.\nBu bir hata değil. Fiyatlar çıkınca sistem kendisi tabloya yazacak." + gun + kurNot;
         }
         return r;
       }
 
       // ---- EKSİK TAMAMLAMA ----
       if (motor === 'BAKIM') {
-        // Yeni kayıtlar: hangi hücrelerin eksik kaldığı ayrıntılı gelir
         if (j && typeof j.n === 'number') {
           const satirlar = [];
           const kaAdlari = Object.keys(j.ka || {});
-          satirlar.push("Kontrol edilen: " + j.d1 + " – " + j.d2 + " arası " + j.n + " işlem günü • " + j.hs + " hisse + 6 kur/altın/endeks sütunu.");
+          satirlar.push("Bakılan günler: " + j.d1 + " – " + j.d2 + " (" + j.n + " iş günü).");
           if (kaAdlari.length === 0) {
-            satirlar.push("DOLAR, EURO, GR ALTIN, GR GÜMÜŞ, NASDAQ, S&P 500: tüm günlerde dolu, eksik yok.");
+            satirlar.push("Dolar, Euro, Altın, Gümüş, NASDAQ ve S&P 500: boş kutu yok, hepsi dolu.");
           } else {
-            satirlar.push("EKSİK kur/altın/endeks: " + kaAdlari.map(function(ad) { return ad + " (" + j.ka[ad][0] + " gün: " + j.ka[ad][1].join(", ") + ")"; }).join(" • ") + ". Diğerleri tam.");
+            satirlar.push("Dolar, altın gibi sütunlarda BOŞ kalan kutular: " + kaAdlari.map(function(ad) { return ad + " (" + j.ka[ad][0] + " gün: " + j.ka[ad][1].join(", ") + ")"; }).join(" • ") + ". Diğerleri dolu.");
           }
           const kalanHucre = j.top - j.ok;
-          satirlar.push("Hisse fiyatları: " + j.top + " boş hücre bulundu, " + j.ok + " tanesi dolduruldu" + (kalanHucre > 0 ? ", " + kalanHucre + " tanesi doldurulamadı." : ". Doldurulamayan hücre yok."));
+          satirlar.push("Hisse fiyatı kutuları: " + j.top + " boş kutu bulundu. " + j.ok + " tanesi dolduruldu. " + kalanHucre + " tanesi doldurulamadı.");
           if (j.kisN > 0) {
             const adlar = Object.keys(j.kis || {});
             const liste = adlar.map(function(h) { return h + " (" + j.kis[h][0] + " gün: " + j.kis[h][1].join(", ") + ")"; });
-            satirlar.push("Bazı günleri eksik kalan " + j.kisN + " hisse (asıl dikkat edilecekler): " + liste.join(" • ") + (j.kisN > adlar.length ? " ve " + (j.kisN - adlar.length) + " hisse daha" : "") + ".");
+            satirlar.push("DİKKAT: Şu " + j.kisN + " hissenin bazı günleri boş kaldı: " + liste.join(" • ") + (j.kisN > adlar.length ? " ve " + (j.kisN - adlar.length) + " hisse daha" : "") + ".");
           }
           if (j.bosN > 0) {
-            satirlar.push("Bu " + j.n + " günün hiçbirinde fiyatı olmayan " + j.bosN + " hisse: " + (j.bos || []).join(", ") + (j.bosN > (j.bos || []).length ? " ve " + (j.bosN - j.bos.length) + " hisse daha" : "") + ". Sistem nedenini bilmiyor.");
+            satirlar.push("Şu " + j.bosN + " hissenin bu günlerin hiçbirinde fiyatı yok: " + (j.bos || []).join(", ") + (j.bosN > (j.bos || []).length ? " ve " + (j.bosN - j.bos.length) + " hisse daha" : "") + ". Nedenini sistem bilmiyor.");
           }
           if (j.ag > 0) {
-            satirlar.push("Uyarı: " + j.ag + " istek İş Yatırım'dan alınamadı (bağlantı sorunu); eksiklerin bir kısmı bu yüzden olabilir.");
+            satirlar.push("Uyarı: Fiyat sitesine " + j.ag + " kez ulaşılamadı. Boş kalanların bir kısmı bu yüzden olabilir.");
           }
           if (kaAdlari.length > 0 || j.kisN > 0) { r.etiket = 'EKSİK VERİ VAR'; r.sinif = 'uyari'; }
           else if (j.bosN > 0) { r.etiket = 'FİYATSIZ HİSSE VAR'; r.sinif = 'bilgi'; }
@@ -1157,30 +1156,29 @@
           return r;
         }
 
-        // Eski kayıtlar (ayrıntı yok)
+        // Eski kayıtlar (hangi kutuların boş kaldığı kaydedilmemiş)
         let doldu = null, toplam = null;
         if ((m = dol.match(/^\+(\d+)\s*\/\s*(\d+)$/))) { doldu = parseInt(m[1], 10); toplam = parseInt(m[2], 10); }
         else if ((m = dol.match(/^\+(\d+)\s*hücre$/i))) { doldu = parseInt(m[1], 10); toplam = doldu; }
         else if ((m = dol.match(/^(\d+)\s*eksik$/i))) { doldu = 0; toplam = parseInt(m[1], 10); }
-        const donem = tarihVar ? " (" + tarih + ")" : "";
         let hisseler = "";
-        if ((m = ayr.match(/tamamlandı \(([^)]*)\)/))) hisseler = " Doldurulan hisseler: " + m[1] + ".";
-        const eskiNot = " (Bu eski kayıtta hangi hücrelerin eksik kaldığı kaydedilmemiş.)";
+        if ((m = ayr.match(/tamamlandı \(([^)]*)\)/))) hisseler = "\nDoldurulan hisseler: " + m[1] + ".";
+        const eskiNot = "\n(Bu kayıt eski. Hangi kutuların boş kaldığı yazılmamış.)";
 
         if (durum === 'TEMİZ') {
           r.etiket = 'EKSİK YOK'; r.sinif = 'iyi';
-          r.metin = "Son 15 günün tablosu kontrol edildi, boş hisse fiyatı hücresi yok.";
+          r.metin = "Son günlerin tablosuna bakıldı. Boş hisse fiyatı kutusu yok.";
         } else if (durum === 'ONARILDI') {
           r.etiket = 'EKSİKLER DOLDURULDU'; r.sinif = 'iyi';
-          r.metin = "Son 15 günde " + (toplam !== null ? toplam : "bazı") + " boş fiyat hücresi vardı; hepsi İş Yatırım'dan alınıp dolduruldu." + hisseler + donem;
+          r.metin = (toplam !== null ? toplam : "Bazı") + " boş kutu vardı. Hepsi dolduruldu." + hisseler;
         } else if (durum === 'KISMEN') {
           r.etiket = 'BİR KISMI DOLDURULDU'; r.sinif = 'bilgi';
           r.metin = (toplam !== null)
-            ? "Son 15 günde " + toplam + " boş fiyat hücresi bulundu. " + doldu + " tanesi dolduruldu, " + (toplam - doldu) + " tanesi doldurulamadı." + hisseler + eskiNot
+            ? toplam + " boş kutu vardı. " + doldu + " tanesi dolduruldu. " + (toplam - doldu) + " tanesi doldurulamadı." + hisseler + eskiNot
             : ayr + eskiNot;
         } else if (durum === 'KALAN EKSİK') {
           r.etiket = 'DOLDURULAMADI'; r.sinif = 'uyari';
-          r.metin = (toplam !== null ? toplam : "Bazı") + " boş fiyat hücresi doldurulamadı." + eskiNot;
+          r.metin = (toplam !== null ? toplam : "Bazı") + " boş kutu doldurulamadı." + eskiNot;
         } else if (durum === 'KUR EKSİK') {
           r.etiket = 'EKSİK VERİ VAR'; r.sinif = 'uyari';
           r.metin = ayr + eskiNot;
@@ -1191,33 +1189,39 @@
       // ---- GEÇMİŞ YENİLEME (haftalık) ----
       if (motor === 'HAFTALIK') {
         let ek = "";
-        if ((m = ayr.match(/\|\s*(.*)$/))) ek = " Not: " + m[1].trim() + ".";
+        if ((m = ayr.match(/\|\s*(.*)$/))) ek = "\nNot: " + m[1].trim() + ".";
         if (durum === 'GÜNCELLENDİ') {
           let n = (m = dol.match(/^(\d+)/)) ? m[1] : "Bazı";
           let adlar = (m = ayr.match(/\(([^)]*)\)/)) ? " (" + m[1] + ")" : "";
-          r.etiket = 'GEÇMİŞ FİYATLAR DÜZELTİLDİ'; r.sinif = 'iyi';
-          r.metin = n + " hissenin eski fiyatları" + adlar + " bölünme / bedelsiz gibi işlemlere göre yeniden hesaplanıp düzeltildi." + ek;
+          r.etiket = 'ESKİ FİYATLAR DÜZELTİLDİ'; r.sinif = 'iyi';
+          r.metin = n + " hissenin eski fiyatları" + adlar + " yeniden hesaplanıp düzeltildi.\nSebep: Bir hisse bölününce (bedelsiz gibi) eski fiyatların da değişmesi gerekir." + ek;
         } else if (durum === 'DEĞİŞMEDİ') {
           r.etiket = 'DEĞİŞİKLİK YOK'; r.sinif = 'nötr';
-          r.metin = "Tüm hisselerin geçmiş fiyatları kaynakla karşılaştırıldı, düzeltilecek bir şey çıkmadı." + ek;
+          r.metin = "Eski fiyatlara bakıldı. Düzeltilecek bir şey çıkmadı." + ek;
         }
         return r;
       }
 
-      // ---- ANOMALİ TARAMASI ----
+      // ---- GARİP FİYAT TARAMASI (anomali) ----
       if (motor === 'ANOMALİ') {
-        r.etiket = 'TARAMA TAMAMLANDI'; r.sinif = 'bilgi';
+        r.etiket = 'TARAMA BİTTİ'; r.sinif = 'bilgi';
         if (j && typeof j.top === 'number') {
-          let t = j.sut + " hisse / varlığın tüm geçmiş fiyatları tarandı. Bu tarama EKSİK veriyi değil, fiyatlardaki ani sıçramaları arar.\n";
-          t += "Bir günden diğerine %11'den fazla düşen ya da %12'den fazla yükselen " + j.top + " fiyat hareketi bulundu (tüm geçmiş, " + j.his + " hisse). Bunların " + j.k365 + " tanesi son 1 yılda, " + j.k30 + " tanesi son 30 günde.\n";
-          t += "Türleri: kalıcı kayma " + j.kal + " (fiyat yeni seviyede kalmış: bölünme, gerçek sert hareket veya kaynak hatası olabilir), tek günlük sapma " + j.tek + " (ertesi gün eski seviyeye dönmüş: hatalı veri olabilir), çok düşük fiyat " + j.dus + ".";
-          if (j.son) t += "\nEn yeni kalıcı kayma: " + j.son[0] + ", " + j.son[1] + " (önceki güne göre " + String(j.son[2]).replace('.', ',') + " katı).";
-          t += "\nTam liste bu sayfada yok; Google E-Tablo'daki \"Anomali Raporu\" sayfasında.";
-          r.metin = t;
+          const satirlar = [];
+          satirlar.push("Ne yapıldı? " + j.sut + " hissenin eski ve yeni tüm fiyatlarına tek tek bakıldı. Aranan şey: bir günde fiyatı çok değişen yerler.");
+          satirlar.push("Boş kutu aranmadı. Boş kutular \"Eksik tamamlama\" satırında yazıyor.");
+          satirlar.push("Ne bulundu? Fiyatı bir günde %11'den fazla düşen veya %12'den fazla çıkan " + j.top + " yer bulundu. (Eski yıllar dahil, " + j.his + " hissede.)");
+          satirlar.push("   • " + j.kal + " tanesinde fiyat sıçradı ve yeni yerinde kaldı.");
+          satirlar.push("   • " + j.tek + " tanesinde fiyat bir gün sıçradı, ertesi gün eski yerine döndü.");
+          satirlar.push("   • " + j.dus + " tanesi çok ucuz hisse (5 kuruştan az). Bunlarda küçük bir oynama bile büyük görünür.");
+          if (j.k365 === 0) satirlar.push("Yeni mi? \"Sıçrayıp orada kalan\" grubundan son 1 yılda yeni bir olay yok.");
+          else satirlar.push("Yeni mi? \"Sıçrayıp orada kalan\" grubundan son 1 yılda " + j.k365 + ", son 30 günde " + j.k30 + " olay var.");
+          if (j.son) satirlar.push("Bu gruptaki en yeni olay: " + j.son[0] + " hissesi, " + j.son[1] + " günü (fiyat bir önceki güne göre " + String(j.son[2]).replace('.', ',') + " katına çıkmış).");
+          satirlar.push("Bu bir hata mı? Bilmiyoruz. Hisse bölünmesi gibi gerçek bir olay da olabilir, yanlış veri de. Sistem sadece listeledi, hiçbir şeyi değiştirmedi.");
+          satirlar.push("Liste nerede? Google E-Tablo'daki \"Anomali Raporu\" sayfasında.");
+          r.metin = satirlar.join("\n");
         } else {
           let n = (m = dol.match(/^(\d+)/)) ? m[1] : "0";
-          let sut = (m = ayr.match(/^(\d+) sütun/)) ? m[1] : "";
-          r.metin = (sut ? sut + " hisse / varlık" : "Tüm hisseler") + " fiyat sıçramaları için tarandı (eksik veri taraması değildir); " + n + " kalıcı fiyat kayması bulundu. Tam liste Google E-Tablo'daki \"Anomali Raporu\" sayfasında.";
+          r.metin = "Hisselerin tüm fiyatlarına bakıldı. Aranan şey: bir günde fiyatı çok değişen yerler. Boş kutu aranmadı.\n" + n + " yerde fiyat sıçrayıp yeni yerinde kalmış.\nListe: Google E-Tablo'daki \"Anomali Raporu\" sayfasında.";
         }
         return r;
       }
