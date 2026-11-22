@@ -1,5 +1,6 @@
 import os
 import sys
+import json
 import requests
 import pandas as pd
 import datetime
@@ -23,11 +24,14 @@ YFINANCE_SUTUNLAR = ['DOLAR', 'EURO', 'GR ALTIN', 'GR GÜMÜŞ', 'NASDAQ', 'S&P 
 # Her motor çalışmasının sonucu, tablodaki "Güncelleme Kayıtları" sayfasına tek satır olarak yazılır.
 # Sütunlar: ZAMAN (TR) | MOTOR | DURUM | İŞLENEN TARİH | DOLULUK | SÜRE | AYRINTI
 # Sayfa yoksa otomatik oluşturulur. Haftalık motor, sayfayı son KAYIT_MAKS_SATIR satırla sınırlar.
+# AYRINTI sütununda, okunabilir metnin ardından " ## " ayracıyla web uygulamasının okuduğu ayrıntı (JSON) bulunabilir.
 # ======================================================================
 KAYIT_SAYFA_ADI = "Güncelleme Kayıtları"
 KAYIT_BASLIKLAR = ["ZAMAN (TR)", "MOTOR", "DURUM", "İŞLENEN TARİH", "DOLULUK", "SÜRE", "AYRINTI"]
 KAYIT_MAKS_SATIR = 1500
+KAYIT_AYRINTI_MAKS = 3000             # AYRINTI hücresinin en fazla karakter sayısı (ayrıntı JSON'u kesilmesin diye geniş tutulur)
 TR_SAAT_DILIMI = datetime.timezone(datetime.timedelta(hours=3))   # Türkiye: sabit UTC+3
+AYRINTI_AYRACI = " ## "
 
 _SS_ONBELLEK = {}
 _HATA_SAYACI = {'isyatirim': 0}   # İş Yatırım'dan, tüm denemelere rağmen alınamayan istek sayısı
@@ -72,6 +76,11 @@ HIBRIT_PENCERE_GUN = 45              # Fiyat düzeltme olayı ile sermaye deği�
 
 # Günlük motorda sondaki "tarihi var ama hiçbir hisse fiyatı yok" satırlarını temizlerken en fazla kaç satıra bakılır
 BOS_SATIR_TARAMA_ADEDI = 10
+
+# Bakım raporunda (web uygulamasında gösterilen ayrıntıda) listelenecek en fazla hisse adedi
+BAKIM_RAPOR_BOS_HISSE_MAKS = 40      # "Taranan günlerin hiçbirinde fiyatı olmayan" hisse adı sayısı
+BAKIM_RAPOR_KISMI_HISSE_MAKS = 15    # "Bazı günleri eksik kalan" hisse adı sayısı
+BAKIM_RAPOR_TARIH_MAKS = 4           # Her hisse / kur sütunu için gösterilecek en fazla gün sayısı
 
 # ======================================================================
 # HIZLI KONTROL (YOKLAMA) AYARLARI
@@ -123,6 +132,10 @@ def _tarihleri_sirala(tarih_kumesi):
         except Exception: return datetime.datetime.min
     return sorted(tarih_kumesi, key=anahtar)
 
+def _json_ekle(metin, sozluk):
+    """Okunabilir metnin sonuna, web uygulamasının okuyacağı ayrıntıyı (JSON) ekler."""
+    return metin + AYRINTI_AYRACI + json.dumps(sozluk, ensure_ascii=False, separators=(',', ':'))
+
 def _kayit_sayfasi_getir(yeni_baglanti=False):
     ss = None if yeni_baglanti else _SS_ONBELLEK.get('ss')
     if ss is None:
@@ -144,13 +157,13 @@ def kayit_yaz(motor, durum, islenen="-", doluluk="-", sure_sn=None, ayrinti=""):
         islenen or "-",
         doluluk or "-",
         sure_metni(sure_sn) if sure_sn is not None else "-",
-        str(ayrinti)[:300],
+        str(ayrinti)[:KAYIT_AYRINTI_MAKS],
     ]
     for deneme in range(2):
         try:
             ws = _kayit_sayfasi_getir(yeni_baglanti=(deneme > 0))
             ws.append_rows([satir], value_input_option='RAW')
-            print(f"[KAYIT] {motor} | {durum} | {satir[3]} | {satir[4]} | {satir[5]} | {satir[6]}", flush=True)
+            print(f"[KAYIT] {motor} | {durum} | {satir[3]} | {satir[4]} | {satir[5]} | {satir[6].split(AYRINTI_AYRACI)[0]}", flush=True)
             return True
         except Exception as e:
             print(f"[!] Güncelleme kaydı yazılamadı (deneme {deneme + 1}): {e}", flush=True)
@@ -613,44 +626,119 @@ def hizli_kontrol_motoru():
         print(traceback.format_exc(), flush=True)
         kayit_yaz("KONTROL", "HATA", "-", "-", time.time() - baslangic, f"{type(e).__name__}: {str(e)[:200]}")
 
+# ======================================================================
+# BAKIM (EKSİK TAMAMLAMA) MOTORU
+# Son 'taranacak_gun' satırdaki işlem günlerini tarar:
+#   1) Hisse sütunlarındaki boş hücreleri İş Yatırım'dan doldurmaya çalışır.
+#   2) DOLAR / EURO / GR ALTIN / GR GÜMÜŞ / NASDAQ / S&P 500 sütunlarında boş hücre var mı kontrol eder (raporlar).
+# Sonucu, hangi hücrelerin dolmadığı DAHİL, kayıt sayfasına yazar (web uygulamasında "EKSİK TAMAMLAMA" satırı).
+# ======================================================================
+
 def bakim_motoru(taranacak_gun=15):
     baslangic = time.time()
     try:
+        with _HATA_KILIDI:
+            _HATA_SAYACI['isyatirim'] = 0
+
         sheet, headers, tarih_to_row, last_valid_row_idx, _ = baglanti_ve_bilgi_getir()
         baslangic_satiri = max(2, last_valid_row_idx - taranacak_gun)
         son_satirlar = sheet.get_all_values()[baslangic_satiri - 1:last_valid_row_idx]
+
+        def hucre(satir, idx):
+            return satir[idx].strip() if idx < len(satir) else ""
+
+        # Taranacak işlem günleri (yalnızca hafta içi, tarihi geçerli satırlar)
+        gun_satirlari = []   # (tarih_str, tarih_dt, satir_no, satir_verisi)
+        for satir_verisi in son_satirlar:
+            satir_tarihi_str = hucre(satir_verisi, 0)
+            if not re.match(r'\d{2}\.\d{2}\.\d{4}', satir_tarihi_str): continue
+            satir_dt = datetime.datetime.strptime(satir_tarihi_str[:10], "%d.%m.%Y")
+            if satir_dt.weekday() >= 5: continue
+            gercek_satir_no = tarih_to_row.get(satir_tarihi_str)
+            if gercek_satir_no is None: continue
+            gun_satirlari.append((satir_tarihi_str, satir_dt, gercek_satir_no, satir_verisi))
+
+        gun_adedi = len(gun_satirlari)
+        ilk_gun = gun_satirlari[0][0] if gun_satirlari else "-"
+        son_gun = gun_satirlari[-1][0] if gun_satirlari else "-"
+
+        hisse_kolonlari = [(i, headers[i]) for i in range(1, len(headers)) if headers[i] and headers[i] not in YFINANCE_SUTUNLAR]
+
+        # --- 1) KUR / ALTIN / GÜMÜŞ / ENDEKS SÜTUNLARI: boş hücre var mı? ---
+        kur_eksik = {}   # sütun adı -> [boş günler]
+        for ad in YFINANCE_SUTUNLAR:
+            if ad not in headers: continue
+            idx = headers.index(ad)
+            bos_gunler = [t for t, _, _, s in gun_satirlari if hucre(s, idx) == ""]
+            if bos_gunler: kur_eksik[ad] = bos_gunler
+
+        # --- 2) HİSSE SÜTUNLARI: boş hücreleri doldurmayı dene ---
         eksik_guncellemeler = []
         eksik_toplam = 0
         eksik_tarihleri = set()
         doldurulan_tarihleri = set()
         doldurulan_adlar = []
-        for satir_verisi in son_satirlar:
-            satir_tarihi_str = satir_verisi[0].strip()
-            if not re.match(r'\d{2}\.\d{2}\.\d{4}', satir_tarihi_str): continue
-            satir_dt = datetime.datetime.strptime(satir_tarihi_str, "%d.%m.%Y")
-            if satir_dt.weekday() >= 5: continue
-            gercek_satir_no = tarih_to_row[satir_tarihi_str]
-            for col_idx in range(1, len(headers)):
-                hisse_adi = headers[col_idx]
-                if hisse_adi in YFINANCE_SUTUNLAR or not hisse_adi: continue
-                if (satir_verisi[col_idx].strip() if col_idx < len(satir_verisi) else "") == "":
-                    eksik_toplam += 1
-                    eksik_tarihleri.add(satir_tarihi_str)
-                    tarih_api = satir_dt.strftime('%d-%m-%Y')
-                    kurtarma_df = fetch_data_for_date_range(hisse_adi, tarih_api, tarih_api)
-                    if not kurtarma_df.empty:
-                        yfiyat = format_fiyat(kurtarma_df.iloc[0]['Kapanis'])
-                        if yfiyat != "":
-                            eksik_guncellemeler.append(gspread.Cell(row=gercek_satir_no, col=col_idx + 1, value=yfiyat))
-                            doldurulan_tarihleri.add(satir_tarihi_str)
-                            if hisse_adi not in doldurulan_adlar: doldurulan_adlar.append(hisse_adi)
+        hisse_dolu_gun = {}      # hisse -> doldurmadan önce fiyatı olan gün sayısı
+        hisse_doldurulan = {}    # hisse -> bu çalışmada doldurulan hücre sayısı
+        hisse_kalan = {}         # hisse -> doldurulamayan günler
+
+        for t_str, satir_dt, gercek_satir_no, satir_verisi in gun_satirlari:
+            tarih_api = satir_dt.strftime('%d-%m-%Y')
+            for col_idx, hisse_adi in hisse_kolonlari:
+                if hucre(satir_verisi, col_idx) != "":
+                    hisse_dolu_gun[hisse_adi] = hisse_dolu_gun.get(hisse_adi, 0) + 1
+                    continue
+                eksik_toplam += 1
+                eksik_tarihleri.add(t_str)
+                yfiyat = ""
+                kurtarma_df = fetch_data_for_date_range(hisse_adi, tarih_api, tarih_api)
+                if not kurtarma_df.empty:
+                    yfiyat = format_fiyat(kurtarma_df.iloc[0]['Kapanis'])
+                if yfiyat != "":
+                    eksik_guncellemeler.append(gspread.Cell(row=gercek_satir_no, col=col_idx + 1, value=yfiyat))
+                    doldurulan_tarihleri.add(t_str)
+                    hisse_doldurulan[hisse_adi] = hisse_doldurulan.get(hisse_adi, 0) + 1
+                    if hisse_adi not in doldurulan_adlar: doldurulan_adlar.append(hisse_adi)
+                else:
+                    hisse_kalan.setdefault(hisse_adi, []).append(t_str)
+
         if eksik_guncellemeler: sheet.update_cells(eksik_guncellemeler, value_input_option='USER_ENTERED')
 
         doldurulan = len(eksik_guncellemeler)
         kalan = eksik_toplam - doldurulan
+
+        # Doldurulamayanları ikiye ayır:
+        #   tamamen_bos : taranan günlerin hiçbirinde fiyatı olmayan hisse
+        #   kismi       : başka günlerde fiyatı var ama bazı günleri doldurulamayan hisse (asıl dikkat edilecekler)
+        tamamen_bos = []
+        kismi = {}
+        for hisse_adi, gunler in hisse_kalan.items():
+            if hisse_dolu_gun.get(hisse_adi, 0) == 0 and hisse_doldurulan.get(hisse_adi, 0) == 0:
+                tamamen_bos.append(hisse_adi)
+            else:
+                kismi[hisse_adi] = gunler
+        tamamen_bos.sort()
+        kismi_sirali = sorted(kismi.items(), key=lambda kv: (-len(kv[1]), kv[0]))
+
+        def kisa_gun(t):
+            return t[:5]   # gg.aa
+
+        with _HATA_KILIDI:
+            ag_hatasi = _HATA_SAYACI['isyatirim']
+
+        rapor = {
+            "n": gun_adedi, "d1": ilk_gun, "d2": son_gun, "hs": len(hisse_kolonlari),
+            "top": eksik_toplam, "ok": doldurulan,
+            "ka": {ad: [len(ts), [kisa_gun(t) for t in ts[:BAKIM_RAPOR_TARIH_MAKS]]] for ad, ts in kur_eksik.items()},
+            "bosN": len(tamamen_bos), "bos": tamamen_bos[:BAKIM_RAPOR_BOS_HISSE_MAKS],
+            "kisN": len(kismi_sirali),
+            "kis": {h: [len(ts), [kisa_gun(t) for t in ts[:BAKIM_RAPOR_TARIH_MAKS]]] for h, ts in kismi_sirali[:BAKIM_RAPOR_KISMI_HISSE_MAKS]},
+            "ag": ag_hatasi
+        }
+
         if eksik_toplam == 0:
             durum = "TEMİZ"
-            tarih_metni = f"Son {taranacak_gun} gün"
+            tarih_metni = f"{ilk_gun} – {son_gun}" if gun_adedi else f"Son {taranacak_gun} gün"
             doluluk = "0 eksik"
             ayrinti = f"Son {taranacak_gun} günde eksik BIST hücresi bulunmadı"
         elif kalan == 0:
@@ -669,7 +757,12 @@ def bakim_motoru(taranacak_gun=15):
             doluluk = f"{eksik_toplam} eksik"
             ayrinti = f"{eksik_toplam} hücre İş Yatırım'da bulunamadı (işlem görmeyen hisseler olabilir)"
 
-        kayit_yaz("BAKIM", durum, tarih_metni, doluluk, time.time() - baslangic, ayrinti)
+        # Kur/altın/endeks sütunlarında boş hücre varsa bu, hisse eksiğinden daha önemlidir; durum buna göre işaretlenir
+        if kur_eksik:
+            durum = "KUR EKSİK"
+            ayrinti = f"Kur/altın/endeks sütunlarında boş hücre var: {_ad_ozeti(kur_eksik.keys(), 6)} | " + ayrinti
+
+        kayit_yaz("BAKIM", durum, tarih_metni, doluluk, time.time() - baslangic, _json_ekle(ayrinti, rapor))
     except Exception as e:
         print(traceback.format_exc(), flush=True)
         kayit_yaz("BAKIM", "HATA", "-", "-", time.time() - baslangic, f"{type(e).__name__}: {str(e)[:200]}")
@@ -1529,9 +1622,20 @@ def anomali_motoru():
 
         # --- GÜNCELLEME KAYDI ---
         etkilenen = len(set(x[0] for x in bulunanlar))
+        bugun_tarih = datetime.datetime.now().date()
+        kalici_30 = len([x for x in kalici if (bugun_tarih - x[3]).days <= 30])
+        kalici_365 = len([x for x in kalici if (bugun_tarih - x[3]).days <= 365])
+        rapor = {
+            "sut": len(hisseler), "top": len(bulunanlar), "kal": len(kalici), "tek": len(tek_gun),
+            "dus": len(dusuk), "his": etkilenen, "k30": kalici_30, "k365": kalici_365
+        }
+        if kalici:
+            en_yeni = kalici[0]
+            rapor["son"] = [en_yeni[0], en_yeni[3].strftime("%d.%m.%Y"), round(en_yeni[5], 4)]
+        ayrinti_metni = f"{len(hisseler)} sütun tarandı | Kalıcı kayma {len(kalici)}, tek günlük sapma {len(tek_gun)}, düşük fiyat {len(dusuk)} ({etkilenen} hisse etkilendi)"
         kayit_yaz(
             "ANOMALİ", "TARANDI", "-", f"{len(kalici)} kalıcı kayma", time.time() - baslangic,
-            f"{len(hisseler)} sütun tarandı | Kalıcı kayma {len(kalici)}, tek günlük sapma {len(tek_gun)}, düşük fiyat {len(dusuk)} ({etkilenen} hisse etkilendi)"
+            _json_ekle(ayrinti_metni, rapor)
         )
 
     except Exception as e:
