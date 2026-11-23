@@ -261,13 +261,18 @@
     .gunc-chip .v.uyari { color: var(--gold); }
 
     /* Tek tablo: içinde kayar, başlık sabit kalır */
-    .gunc-kap { flex: 1; min-height: 0; width: 100%; max-width: 1250px; margin: 0 auto; overflow: auto; border: 1px solid var(--panel-border); border-radius: 8px; background: #0e141b; -webkit-overflow-scrolling: touch; }
+    .gunc-kap { flex: 1; min-height: 0; width: 100%; max-width: 1250px; margin: 0 auto; overflow: auto; border: 1px solid var(--panel-border); border-radius: 8px; background: #0e141b; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+    /* Uzaktan kumanda (TV) ile odaklandığında kaydırılabildiği belli olsun */
+    .gunc-kap:focus { outline: 2px solid rgba(250,204,21,0.65) !important; outline-offset: -2px !important; }
     .gunc-tablo { width: 100%; min-width: 880px; margin: 0; border-collapse: collapse; background: transparent; box-shadow: none; border-radius: 0; border-style: none; text-align: left; table-layout: fixed; }
     .gunc-tablo thead { background-color: #0d131a; border-bottom: 2px solid #1E293B; position: sticky; top: 0; z-index: 5; }
     .gunc-tablo th { color: #94A3B8; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.4px; padding: 6px 8px; text-align: left; text-shadow: none; white-space: nowrap; }
-    .gunc-tablo td { padding: 5px 8px; font-size: 0.8rem; font-weight: 600; color: #E2E8F0; border-bottom: 1px solid rgba(255,255,255,0.06); vertical-align: middle; text-align: left; line-height: 1.25; height: auto; }
+    /* Her kaydın arasında belirgin ayırıcı çizgi */
+    .gunc-tablo td { padding: 5px 8px; font-size: 0.8rem; font-weight: 600; color: #E2E8F0; border-bottom: 1px solid rgba(148,163,184,0.38); vertical-align: middle; text-align: left; line-height: 1.25; height: auto; }
+    .gunc-tablo tbody tr.gunc-satir:last-child td { border-bottom: 1px solid rgba(148,163,184,0.38); }
     .gunc-tablo tbody tr.gunc-satir:hover td { background-color: rgba(255,255,255,0.04); }
-    .gunc-tablo tr.yeni-gun td { border-top: 2px solid rgba(56,189,248,0.45); }
+    /* Yeni gün başlangıcı: daha kalın ve mavi çizgi */
+    .gunc-tablo tr.yeni-gun td { border-top: 2px solid rgba(56,189,248,0.55); }
     .gunc-tablo tr.yeni-gun:first-child td { border-top: none; }
     .gunc-tablo td.g-zaman { white-space: nowrap; }
     .gunc-tablo td.g-zaman .zs { font-weight: 900; color: #F8FAFC; margin-right: 6px; }
@@ -510,7 +515,7 @@
 
   <script>
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxvISjns0Zle5VYIgTLzkoJa38T7LC20bRAEW9Sm6LZYpcW61PF1pzrcgBAulDV6XNM/exec";
-    const SURUM = "S32-ANOMALI-KISA";
+    const SURUM = "S33-TV-KAYDIRMA";
 
     const TV_MU = /Web0S|webOS|NetCast|SmartTV|SMART-TV|Tizen|HbbTV|VIDAA|Viera|BRAVIA|Hisense|AndroidTV|Android TV|CrKey|AFTM|GoogleTV|LG Browser|LGE|Opera TV|OPRTV|Maple|NETTV|WebTV|Large Screen/i.test(navigator.userAgent || "") || (window.location.search.indexOf('tv=1') > -1);
     const DOKUNMATIK = ('ontouchstart' in window) || ((navigator.maxTouchPoints || 0) > 0);
@@ -657,6 +662,9 @@
         if (onceki) onceki.classList.remove('secili');
         td.classList.add('secili');
       });
+
+      // Güncellemeler sekmesi: uzaktan kumanda / klavye ile yukarı-aşağı kaydırma
+      document.addEventListener('keydown', guncTusKaydirma);
 
       window.addEventListener('resize', aylikSigdir);
       window.addEventListener('resize', tabloSigdir);
@@ -1244,6 +1252,68 @@
       guncCiz();
     }
 
+    // ---- TV / klavye ile kaydırma ----
+    // Sorun: TV tarayıcılarında yön tuşları, kaydırılabilir alan odakta değilse
+    // "odak taşıma" yapar. Aşağı tuşu listeyi kaydırırken yukarı tuşu odağı
+    // üstteki butonlara götürüyordu. Burada yön tuşlarını listeye kendimiz bağlıyoruz.
+    function guncAktifFiltreyeOdaklan() {
+      const b = document.querySelector('#guncPanel .gunc-filtre.aktif') || document.querySelector('#guncPanel .gunc-filtre');
+      if (b) { try { b.focus(); } catch (e) {} }
+    }
+
+    function guncTusKaydirma(e) {
+      if (aktifSekme !== 'guncellemeler') return;
+      const kap = document.getElementById('guncKap');
+      if (!kap) return;
+
+      const kod = e.keyCode || e.which || 0;
+      const ak = document.activeElement;
+      const filtrede = !!(ak && ak.closest && ak.closest('#guncPanel'));
+      const kapta = (ak === kap) || (ak && kap.contains(ak));
+      const bostaOdak = (!ak || ak === document.body || ak === document.documentElement);
+
+      const adim = Math.max(70, Math.round(kap.clientHeight * 0.22));
+      const sayfa = Math.max(120, Math.round(kap.clientHeight * 0.85));
+
+      // Filtre/yenile butonlarındayken AŞAĞI: listeye geç
+      if (filtrede && kod === 40) {
+        e.preventDefault();
+        try { kap.focus({ preventScroll: true }); } catch (err) { kap.focus(); }
+        return;
+      }
+
+      if (!(kapta || bostaOdak)) return; // başka yerdeyse tarayıcının kendi davranışı
+
+      // YUKARI
+      if (kod === 38) {
+        e.preventDefault();
+        if (kap.scrollTop <= 1) { guncAktifFiltreyeOdaklan(); }
+        else { kap.scrollTop = Math.max(0, kap.scrollTop - adim); }
+        return;
+      }
+      // AŞAĞI
+      if (kod === 40) {
+        e.preventDefault();
+        if (bostaOdak) { try { kap.focus({ preventScroll: true }); } catch (err) { kap.focus(); } }
+        kap.scrollTop = kap.scrollTop + adim;
+        return;
+      }
+      // Sayfa yukarı / CH+ (427)
+      if (kod === 33 || kod === 427) {
+        e.preventDefault();
+        kap.scrollTop = Math.max(0, kap.scrollTop - sayfa);
+        return;
+      }
+      // Sayfa aşağı / CH- (428)
+      if (kod === 34 || kod === 428) {
+        e.preventDefault();
+        kap.scrollTop = kap.scrollTop + sayfa;
+        return;
+      }
+      if (kod === 36) { e.preventDefault(); kap.scrollTop = 0; return; }
+      if (kod === 35) { e.preventDefault(); kap.scrollTop = kap.scrollHeight; return; }
+    }
+
     function guncMesaj(mesaj, yukleniyorMu, hataMi) {
       const c = document.getElementById('guncContainer');
       c.innerHTML = '';
@@ -1329,6 +1399,11 @@
       if (!guncKayitlar) { guncMesaj("Güncelleme kayıtları yükleniyor...", true, false); return; }
       if (guncKayitlar.length === 0) { guncMesaj("Henüz güncelleme kaydı yok. Bir işlem çalıştığında burada görünecek.", false, false); return; }
 
+      // Yeniden çizimden önce: liste odakta mıydı? (TV'de odak kaybolmasın)
+      const eskiKap = document.getElementById('guncKap');
+      const kapOdaktaydi = !!(eskiKap && document.activeElement === eskiKap);
+      const eskiKaydirma = eskiKap ? eskiKap.scrollTop : 0;
+
       // Üst özet kartları (filtreden bağımsız)
       let sonYazim = null, sonHata = null, sonHataIdx = -1;
       for (let i = 0; i < guncKayitlar.length; i++) {
@@ -1375,7 +1450,7 @@
         return;
       }
 
-      html += '<div class="gunc-kap" id="guncKap"><table class="gunc-tablo"><colgroup>' +
+      html += '<div class="gunc-kap" id="guncKap" tabindex="0"><table class="gunc-tablo"><colgroup>' +
               '<col style="width:12%"><col style="width:15%"><col style="width:17%"><col style="width:48%"><col style="width:8%">' +
               '</colgroup><thead><tr>' +
               '<th>NE ZAMAN</th><th>HANGİ İŞLEM</th><th>SONUÇ</th><th>NE OLDU?</th><th>SÜRE</th>' +
@@ -1402,13 +1477,16 @@
       });
 
       html += '</tbody></table></div>';
-      html += '<div class="gunc-alt">' + liste.length + ' kayıt • en yeni üstte • her dakika kendiliğinden yenilenir • yeşil: işlem başarılı • sarı: bekleyen / dikkat • gri: yapılacak iş yoktu • kırmızı: hata</div>';
+      html += '<div class="gunc-alt">' + liste.length + ' kayıt • en yeni üstte • her dakika kendiliğinden yenilenir • yeşil: işlem başarılı • sarı: bekleyen / dikkat • gri: yapılacak iş yoktu • kırmızı: hata • TV: aşağı/yukarı tuşları listeyi kaydırır</div>';
 
-      const eskiKap = document.getElementById('guncKap');
-      const eskiKaydirma = eskiKap ? eskiKap.scrollTop : 0;
       c.innerHTML = html;
       const yeniKap = document.getElementById('guncKap');
-      if (yeniKap) yeniKap.scrollTop = eskiKaydirma;
+      if (yeniKap) {
+        yeniKap.scrollTop = eskiKaydirma;
+        if (kapOdaktaydi) {
+          try { yeniKap.focus({ preventScroll: true }); } catch (e) { yeniKap.focus(); }
+        }
+      }
     }
 
     function guncOtoYenilemeBaslat() {
