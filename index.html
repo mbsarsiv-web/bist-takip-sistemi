@@ -247,6 +247,8 @@
     .gunc-filtre.hata-f.aktif { background-color: #B91C1C; border-color: #F87171; }
     .gunc-yenile { background-color: #0F766E; border: 1px solid #14B8A6; color: white; padding: 5px 12px; border-radius: 6px; font-family: 'Inter', sans-serif; font-weight: 900; font-size: 0.82rem; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: 0.2s; white-space: nowrap; margin-left: 6px; }
     .gunc-yenile:hover { background-color: #0D9488; }
+    .gunc-gez { background-color: #1E293B; border: 1px solid #64748B; color: #F8FAFC; padding: 5px 12px; border-radius: 6px; font-family: 'Inter', sans-serif; font-weight: 900; font-size: 0.82rem; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: 0.2s; white-space: nowrap; }
+    .gunc-gez:hover { background-color: #334155; border-color: var(--gold); }
 
     #guncContainer { display: none; flex: 1; min-height: 0; flex-direction: column; overflow: hidden; position: relative; z-index: 10; padding: 0 0 4px 0; }
 
@@ -402,6 +404,7 @@
       .gunc-panel { padding: 5px 6px; gap: 5px; }
       .gunc-filtre { padding: 4px 8px; font-size: 0.72rem; }
       .gunc-yenile { padding: 4px 8px; font-size: 0.72rem; margin-left: 0; }
+      .gunc-gez { padding: 4px 8px; font-size: 0.72rem; }
       .gunc-chip { min-width: 46%; flex: 1 1 46%; padding: 3px 6px; }
       .gunc-chip .s { white-space: normal; }
       .gunc-tablo td { font-size: 0.76rem; padding: 5px 6px; }
@@ -485,6 +488,9 @@
       <button type="button" class="gunc-filtre" data-f="HAFTALIK" onclick="guncFiltreSec('HAFTALIK')">GEÇMİŞ YENİLEME</button>
       <button type="button" class="gunc-filtre" data-f="ANOMALİ" onclick="guncFiltreSec('ANOMALİ')">GARİP FİYAT</button>
       <button type="button" class="gunc-filtre hata-f" data-f="HATALAR" onclick="guncFiltreSec('HATALAR')">HATALAR</button>
+      <button type="button" class="gunc-gez" onclick="guncGez('yukari')" title="Listeyi yukarı kaydır"><i class="fa-solid fa-angles-up"></i> YUKARI</button>
+      <button type="button" class="gunc-gez" onclick="guncGez('asagi')" title="Listeyi aşağı kaydır"><i class="fa-solid fa-angles-down"></i> AŞAĞI</button>
+      <button type="button" class="gunc-gez" onclick="guncGez('ust')" title="Listenin en üstüne git"><i class="fa-solid fa-arrow-up-long"></i> EN ÜST</button>
       <button type="button" class="gunc-yenile" onclick="guncellemeleriYukle(true)"><i class="fa-solid fa-rotate"></i> YENİLE</button>
     </div>
 
@@ -515,7 +521,7 @@
 
   <script>
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxvISjns0Zle5VYIgTLzkoJa38T7LC20bRAEW9Sm6LZYpcW61PF1pzrcgBAulDV6XNM/exec";
-    const SURUM = "S33-TV-KAYDIRMA";
+    const SURUM = "S34-TV-KAYDIRMA-2";
 
     const TV_MU = /Web0S|webOS|NetCast|SmartTV|SMART-TV|Tizen|HbbTV|VIDAA|Viera|BRAVIA|Hisense|AndroidTV|Android TV|CrKey|AFTM|GoogleTV|LG Browser|LGE|Opera TV|OPRTV|Maple|NETTV|WebTV|Large Screen/i.test(navigator.userAgent || "") || (window.location.search.indexOf('tv=1') > -1);
     const DOKUNMATIK = ('ontouchstart' in window) || ((navigator.maxTouchPoints || 0) > 0);
@@ -664,7 +670,12 @@
       });
 
       // Güncellemeler sekmesi: uzaktan kumanda / klavye ile yukarı-aşağı kaydırma
-      document.addEventListener('keydown', guncTusKaydirma);
+      document.addEventListener('keydown', guncTusKaydirma, true);
+
+      // TV tarayıcıları, odak değişince "gizli" kapları (overflow:hidden) kaydırıp
+      // sayfayı kaydırılmış halde bırakabilir. Her kaydırmada sayfayı başa alıyoruz.
+      window.addEventListener('scroll', ekranSabitle, true);
+      document.addEventListener('focusin', function() { setTimeout(ekranSabitle, 0); });
 
       window.addEventListener('resize', aylikSigdir);
       window.addEventListener('resize', tabloSigdir);
@@ -1146,6 +1157,24 @@
           }
           const kalanHucre = j.top - j.ok;
           satirlar.push("Hisse fiyatı kutuları: " + j.top + " boş kutu bulundu. " + j.ok + " tanesi dolduruldu. " + kalanHucre + " tanesi doldurulamadı.");
+          if (kalanHucre > 0) {
+            const bosListe = j.bos || [];
+            const kisAdlar = Object.keys(j.kis || {});
+            const bosHucre = (j.bosN || 0) * j.n;
+            let kisHucre = 0;
+            kisAdlar.forEach(function(h) { kisHucre += (j.kis[h][0] || 0); });
+            const parcalarDagilim = [];
+            if (j.bosN > 0) {
+              parcalarDagilim.push(bosListe.map(function(h) { return h + " (" + j.n + " gün)"; }).join(", ") + (j.bosN > bosListe.length ? " ve " + (j.bosN - bosListe.length) + " hisse daha" : ""));
+            }
+            if (j.kisN > 0) {
+              parcalarDagilim.push(kisAdlar.map(function(h) { return h + " (" + j.kis[h][0] + " gün)"; }).join(", ") + (j.kisN > kisAdlar.length ? " ve " + (j.kisN - kisAdlar.length) + " hisse daha" : ""));
+            }
+            satirlar.push("Doldurulamayan " + kalanHucre + " kutu şu hisselere ait: " + parcalarDagilim.join(" • ") + ".");
+            if (j.bosN > 0) {
+              satirlar.push("Hiç fiyatı olmayan " + j.bosN + " hisse × " + j.n + " gün = " + bosHucre + " boş kutu." + (j.kisN > 0 ? " Kısmen eksik olanlar: " + kisHucre + " kutu." : ""));
+            }
+          }
           if (j.kisN > 0) {
             const adlar = Object.keys(j.kis || {});
             const liste = adlar.map(function(h) { return h + " (" + j.kis[h][0] + " gün: " + j.kis[h][1].join(", ") + ")"; });
@@ -1253,12 +1282,39 @@
     }
 
     // ---- TV / klavye ile kaydırma ----
-    // Sorun: TV tarayıcılarında yön tuşları, kaydırılabilir alan odakta değilse
-    // "odak taşıma" yapar. Aşağı tuşu listeyi kaydırırken yukarı tuşu odağı
-    // üstteki butonlara götürüyordu. Burada yön tuşlarını listeye kendimiz bağlıyoruz.
+    // Sayfanın kendisi (html/body/ana kap) asla kaymasın; sadece liste kaysın.
+    function ekranSabitle() {
+      if (aktifSekme === 'aylik') return;
+      try {
+        const d = document.documentElement, b = document.body, mc = document.querySelector('.main-content');
+        if (d && (d.scrollTop || d.scrollLeft)) { d.scrollTop = 0; d.scrollLeft = 0; }
+        if (b && (b.scrollTop || b.scrollLeft)) { b.scrollTop = 0; b.scrollLeft = 0; }
+        if (mc && (mc.scrollTop || mc.scrollLeft)) { mc.scrollTop = 0; mc.scrollLeft = 0; }
+      } catch (e) {}
+    }
+
+    function guncKapOdakla() {
+      const kap = document.getElementById('guncKap');
+      if (!kap) return;
+      try { kap.focus({ preventScroll: true }); } catch (err) { try { kap.focus(); } catch (e2) {} }
+      ekranSabitle();
+    }
+
     function guncAktifFiltreyeOdaklan() {
       const b = document.querySelector('#guncPanel .gunc-filtre.aktif') || document.querySelector('#guncPanel .gunc-filtre');
       if (b) { try { b.focus(); } catch (e) {} }
+      ekranSabitle();
+    }
+
+    // Ekrandaki YUKARI / AŞAĞI / EN ÜST düğmeleri (uzaktan kumanda yön tuşu çalışmasa bile işe yarar)
+    function guncGez(yon) {
+      const kap = document.getElementById('guncKap');
+      if (!kap) return;
+      const sayfa = Math.max(120, Math.round(kap.clientHeight * 0.8));
+      if (yon === 'yukari') kap.scrollTop = Math.max(0, kap.scrollTop - sayfa);
+      else if (yon === 'asagi') kap.scrollTop = kap.scrollTop + sayfa;
+      else if (yon === 'ust') kap.scrollTop = 0;
+      ekranSabitle();
     }
 
     function guncTusKaydirma(e) {
@@ -1266,52 +1322,45 @@
       const kap = document.getElementById('guncKap');
       if (!kap) return;
 
-      const kod = e.keyCode || e.which || 0;
+      let kod = e.keyCode || e.which || 0;
+      const harita = { ArrowUp: 38, ArrowDown: 40, PageUp: 33, PageDown: 34, Home: 36, End: 35 };
+      if (e.key && harita[e.key]) kod = harita[e.key];
+      if (kod !== 38 && kod !== 40 && kod !== 33 && kod !== 34 && kod !== 36 && kod !== 35 && kod !== 427 && kod !== 428) return;
+
       const ak = document.activeElement;
       const filtrede = !!(ak && ak.closest && ak.closest('#guncPanel'));
-      const kapta = (ak === kap) || (ak && kap.contains(ak));
-      const bostaOdak = (!ak || ak === document.body || ak === document.documentElement);
+      const sekmeDugmesinde = !!(ak && ak.classList && ak.classList.contains('tab-btn'));
+
+      // Filtre / kaydırma / yenile düğmelerindeyken AŞAĞI: listeye geç. YUKARI: tarayıcı sekmelere götürsün.
+      if (filtrede) {
+        if (kod === 40) { e.preventDefault(); e.stopPropagation(); guncKapOdakla(); }
+        return;
+      }
+      // Üstteki sekme düğmelerindeyken tarayıcının kendi odak geçişine karışma
+      if (sekmeDugmesinde) return;
 
       const adim = Math.max(70, Math.round(kap.clientHeight * 0.22));
       const sayfa = Math.max(120, Math.round(kap.clientHeight * 0.85));
 
-      // Filtre/yenile butonlarındayken AŞAĞI: listeye geç
-      if (filtrede && kod === 40) {
-        e.preventDefault();
-        try { kap.focus({ preventScroll: true }); } catch (err) { kap.focus(); }
-        return;
-      }
+      e.preventDefault();
+      e.stopPropagation();
 
-      if (!(kapta || bostaOdak)) return; // başka yerdeyse tarayıcının kendi davranışı
-
-      // YUKARI
+      // YUKARI: en üstteyse filtre düğmelerine çık, değilse yukarı kaydır
       if (kod === 38) {
-        e.preventDefault();
-        if (kap.scrollTop <= 1) { guncAktifFiltreyeOdaklan(); }
-        else { kap.scrollTop = Math.max(0, kap.scrollTop - adim); }
+        if (kap.scrollTop <= 1) guncAktifFiltreyeOdaklan();
+        else { kap.scrollTop = Math.max(0, kap.scrollTop - adim); ekranSabitle(); }
         return;
       }
-      // AŞAĞI
       if (kod === 40) {
-        e.preventDefault();
-        if (bostaOdak) { try { kap.focus({ preventScroll: true }); } catch (err) { kap.focus(); } }
+        if (ak !== kap) guncKapOdakla();
         kap.scrollTop = kap.scrollTop + adim;
+        ekranSabitle();
         return;
       }
-      // Sayfa yukarı / CH+ (427)
-      if (kod === 33 || kod === 427) {
-        e.preventDefault();
-        kap.scrollTop = Math.max(0, kap.scrollTop - sayfa);
-        return;
-      }
-      // Sayfa aşağı / CH- (428)
-      if (kod === 34 || kod === 428) {
-        e.preventDefault();
-        kap.scrollTop = kap.scrollTop + sayfa;
-        return;
-      }
-      if (kod === 36) { e.preventDefault(); kap.scrollTop = 0; return; }
-      if (kod === 35) { e.preventDefault(); kap.scrollTop = kap.scrollHeight; return; }
+      if (kod === 33 || kod === 427) { kap.scrollTop = Math.max(0, kap.scrollTop - sayfa); ekranSabitle(); return; }
+      if (kod === 34 || kod === 428) { kap.scrollTop = kap.scrollTop + sayfa; ekranSabitle(); return; }
+      if (kod === 36) { kap.scrollTop = 0; ekranSabitle(); return; }
+      if (kod === 35) { kap.scrollTop = kap.scrollHeight; ekranSabitle(); return; }
     }
 
     function guncMesaj(mesaj, yukleniyorMu, hataMi) {
@@ -1383,7 +1432,7 @@
       const parcalar = [];
       parcalar.push(kur === 0 ? "Kur/altın: tam" : "Kur/altın: " + kur + " sütunda eksik");
       parcalar.push(j.kisN + " hissede kısmi eksik");
-      parcalar.push(j.bosN + " hissede hiç fiyat yok");
+      parcalar.push(j.bosN + " hissede hiç fiyat yok" + ((j.bos && j.bos.length) ? " (" + j.bos.join(", ") + (j.bosN > j.bos.length ? " ve " + (j.bosN - j.bos.length) + " daha" : "") + ")" : ""));
       const sorunVar = (kur > 0 || j.kisN > 0);
       return guncChipHtml("EKSİK VERİ (SON KONTROL: " + bulunan.k[0] + ")", sorunVar ? "VAR" : "YOK", parcalar.join(" • "), sorunVar ? "uyari" : "iyi");
     }
@@ -1483,9 +1532,7 @@
       const yeniKap = document.getElementById('guncKap');
       if (yeniKap) {
         yeniKap.scrollTop = eskiKaydirma;
-        if (kapOdaktaydi) {
-          try { yeniKap.focus({ preventScroll: true }); } catch (e) { yeniKap.focus(); }
-        }
+        if (kapOdaktaydi) guncKapOdakla();
       }
     }
 
